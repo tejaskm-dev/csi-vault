@@ -1,4 +1,14 @@
-import type { GlyphKey } from '../components/art/Glyphs';
+/**
+ * Semantic icon names. Content-level, not design-level: each names WHAT the
+ * icon depicts, leaving the redesign free to render it as emoji, an icon set,
+ * a sprite sheet or hand-drawn art without touching this file.
+ */
+export type GlyphKey =
+  | 'mountain' | 'search' | 'headphones' | 'dog' | 'penguin' | 'camera'
+  | 'bubble' | 'star' | 'rocket' | 'code' | 'key' | 'shield' | 'terminal'
+  | 'dice' | 'flame' | 'wave' | 'lightning' | 'droplet' | 'leaf' | 'sun'
+  | 'box' | 'circle' | 'triangle' | 'hexagon' | 'wind'
+  | 'apple' | 'banana' | 'grapes' | 'orange';
 
 export type ChallengeType = 'multiple_choice' | 'image_grid' | 'text_input';
 
