@@ -22,7 +22,7 @@ export function Modal({ isOpen, onClose, children, variant = "centeredCard" }: M
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-ink/40 backdrop-blur-sm cursor-pointer"
+            className="fixed inset-0 bg-ink/50 cursor-pointer"
           />
 
           {/* Modal Container */}

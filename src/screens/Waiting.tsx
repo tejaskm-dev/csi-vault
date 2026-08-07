@@ -29,7 +29,7 @@ export function Waiting() {
                 <Padlock className="w-20 h-20" />
               </div>
             ) : (
-              <div className="animate-[tumble_3s_linear_infinite] scale-115">
+              <div className="animate-[tumble_3s_linear_infinite] spin-layer scale-115">
                 <Stopwatch className="w-20 h-20" />
               </div>
             )}

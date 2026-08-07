@@ -53,9 +53,9 @@ export function AnswerOptionCard({
       disabled={disabled}
       variants={cardVariants}
       animate={isWrong ? "shake" : "default"}
-      whileTap={disabled ? undefined : { x: 5, y: 5, boxShadow: "0px 0px 0px 0px #14110F" }}
+      whileTap={disabled ? undefined : { x: 5, y: 5 }}
       className={cn(
-        "ink rounded-card select-none text-ink text-left transition-[background-color,color] shadow-ink flex items-center gap-4 cursor-pointer disabled:pointer-events-none",
+        "ink rounded-card select-none text-ink text-left transition-[background-color,color] shadow-ink active:shadow-none flex items-center gap-4 cursor-pointer disabled:pointer-events-none",
         variant === "image"
           ? "flex-col items-center text-center p-6 w-full"
           : "p-4 w-full flex-row",

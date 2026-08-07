@@ -157,3 +157,22 @@
     font-weight: 400; /* Bungee is one weight */
   }
 }
+
+/* Continuous transform loops get their own compositor layer. Without this a
+   low-end GPU repaints the element every frame instead of just moving it. */
+@utility spin-layer {
+  /* will-change alone promotes the layer. A translateZ(0) here would be a
+     competing transform declaration on an element whose transform is already
+     being driven by the keyframes. */
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Motion is decoration everywhere in this app — nothing depends on it. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

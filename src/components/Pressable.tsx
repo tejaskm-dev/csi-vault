@@ -17,11 +17,12 @@ export function Pressable({ icon, children, className, onClick, ...props }: Pres
     <motion.button
       type="button"
       onClick={handleClick}
-      initial={{ boxShadow: "0 6px 0 0 var(--color-ink)", y: 0 }}
-      whileHover={{ y: -2, boxShadow: "0 8px 0 0 var(--color-ink)" }}
-      whileTap={{ y: 6, boxShadow: "0 0px 0 0 transparent" }}
+      // Shadow via CSS so Framer never repaints it per frame.
+      whileHover={{ y: -2 }}
+      whileTap={{ y: 6 }}
       transition={{ duration: 0.1 }}
       className={cn(
+        "shadow-[0_6px_0_0_var(--color-ink)] hover:shadow-[0_8px_0_0_var(--color-ink)] active:shadow-none",
         "ink tap select-none flex items-center justify-center cursor-pointer font-bold disabled:opacity-40 disabled:pointer-events-none text-ink bg-paper-deep",
         icon 
           ? "rounded-btn p-3 aspect-square" 

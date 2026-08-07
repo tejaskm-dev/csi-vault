@@ -39,7 +39,7 @@ export function Leaderboard() {
           
           {/* Pulse Live indicator */}
           <div className="flex items-center gap-1.5 bg-green/10 text-green font-display font-extrabold text-[11px] px-2.5 py-1 rounded-pill ink border-green rotate-[3deg]">
-            <RefreshCw className="w-3 h-3 animate-[tumble_3s_linear_infinite]" />
+            <RefreshCw className="w-3 h-3 animate-[tumble_3s_linear_infinite] spin-layer" />
             <span>LIVE</span>
           </div>
         </header>

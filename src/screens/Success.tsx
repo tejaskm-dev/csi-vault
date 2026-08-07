@@ -84,7 +84,7 @@ export function Success() {
         <div className="relative z-20 -mt-6 flex h-52 w-52 items-center justify-center overflow-visible">
           {/* Starburst only when it means something — the last one. */}
           {allDone && !isBonus && (
-            <div className="absolute inset-0 z-0 scale-125 animate-[tumble_12s_linear_infinite]">
+            <div className="absolute inset-0 z-0 scale-125 animate-[tumble_12s_linear_infinite] spin-layer">
               <Starburst fillColor="var(--color-brass)" />
             </div>
           )}
