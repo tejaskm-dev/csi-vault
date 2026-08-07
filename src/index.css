@@ -7,37 +7,53 @@
 @source not "../NAME-sandbox-main";
 
 @theme {
-  /* ---- Ink & paper ---- */
-  --color-ink:          #14110F;  /* every outline, every heading */
-  --color-paper:        #FDF3DC;  /* warm manila — the canvas */
-  --color-paper-deep:   #F0E2C0;  /* recessed, locked, disabled */
-  --color-plot:         #7FA8C9;  /* blueprint grid & guide lines */
+  /* ================================================================
+     Palette — taken directly from the asset sheet. Ten colours, and
+     nothing outside them. Every `-deep` is the hard-shadow underside of
+     its base, not a separate colour.
+     ================================================================ */
+
+  --color-ink:          #1F1F1F;  /* every outline, every heading */
+  --color-paper:        #F5F2E8;  /* the canvas */
+  --color-paper-deep:   #E7E2D2;  /* recessed, disabled, progress track */
+  --color-plot:         #DED8C6;  /* the faint grid on the canvas */
   --color-white:        #FFFFFF;
 
-  /* ---- Brand. Locked — this is CSI's red. ---- */
-  --color-red:          #E8332B;  --color-red-deep:    #A8201A;
+  --color-red:          #E53935;  --color-red-deep:    #A82A27;
+  --color-green:        #2ECC71;  --color-green-deep:  #219653;
+  --color-grass:        #4CAF50;  --color-grass-deep:  #357A38;
+  --color-brass:        #FFB02E;  --color-brass-deep:  #C4820C;
+  --color-purple:       #6C5CE7;  --color-purple-deep: #4A3FA8;
+  --color-blue:         #3498DB;  --color-blue-deep:   #21688F;
+  --color-teal:         #00B894;  --color-teal-deep:   #008066;
+  --color-steel:        #9E9E9E;  --color-steel-deep:  #6E6E6E;
 
-  /* ---- Steel & brass: the vault's own materials ---- */
-  --color-steel:        #DCDAD2;  --color-steel-deep:  #A9A69B;
-  --color-brass:        #F2B233;  --color-brass-deep:  #B87F0C;
+  /* Aliases so existing call sites keep working while screens get reworked.
+     `orange` and `pink` are not in the sheet — they resolve to the nearest
+     sheet colour rather than reintroducing off-palette hues. */
+  --color-orange:       #FFB02E;  --color-orange-deep: #C4820C;
+  --color-pink:         #6C5CE7;  --color-pink-deep:   #4A3FA8;
+  --color-violet:       #6C5CE7;  --color-violet-deep: #4A3FA8;
 
-  /* ---- Signal colours ---- */
-  --color-green:        #2FBF5B;  --color-green-deep:  #17803A;
-  --color-blue:         #2F6BE8;  --color-blue-deep:   #1A44A0;
-  --color-violet:       #8B5BE0;  --color-violet-deep: #5C33A8;
-  --color-orange:       #FF8A3D;  --color-orange-deep: #C4570E;
-  --color-pink:         #FF5F9E;  --color-pink-deep:   #C42868;
-  --color-teal:         #17C4C4;  --color-teal-deep:   #0A8686;
-
-  /* ---- Nine tile fills, by grid position. Saturated, never pastel. ---- */
-  --color-tile-1: #F2B233;  --color-tile-2: #17C4C4;  --color-tile-3: #8B5BE0;
-  --color-tile-4: #FF8A3D;  --color-tile-5: #2FBF5B;  --color-tile-6: #2F6BE8;
-  --color-tile-7: #FF5F9E;  --color-tile-8: #FFD84D;  --color-tile-9: #5AC8FA;
+  /* Nine board colours — the same nine the Safe component paints with. */
+  --color-tile-1: #2ECC71;  --color-tile-2: #4CAF50;  --color-tile-3: #6C5CE7;
+  --color-tile-4: #FFB02E;  --color-tile-5: #3498DB;  --color-tile-6: #D9CBB0;
+  --color-tile-7: #5A5A5A;  --color-tile-8: #E53935;  --color-tile-9: #00B894;
 
   /* ---- Radii. Three values. Nothing else exists. ---- */
   --radius-plate: 26px;   /* cards, tiles, modals */
+  --radius-card:  26px;   /* alias — used widely across the screens */
   --radius-btn:   18px;   /* buttons, inputs */
   --radius-pill:  999px;  /* chips, badges, tags */
+
+  /* Generic ink shadows. These are referenced in ~11 files and were never
+     defined, so every card, badge and modal was rendering with no shadow. */
+  --shadow-ink:    0 6px 0 0 #1F1F1F;
+  --shadow-ink-sm: 0 3px 0 0 #1F1F1F;
+  --shadow-ink-lg: 0 9px 0 0 #1F1F1F;
+
+  /* `yellow` is the sheet's amber under the name the screens already use. */
+  --color-yellow:      #FFB02E;  --color-yellow-deep: #C4820C;
 
   /* ---- Type ---- */
   --font-display: 'Bungee', system-ui, sans-serif;      /* signage. ALL CAPS only. */
@@ -50,6 +66,7 @@
   --shadow-plate-green:  0 6px 0 0 var(--color-green-deep);
   --shadow-plate-steel:  0 6px 0 0 var(--color-steel-deep);
   --shadow-plate-ink:    0 6px 0 0 var(--color-ink);
+  --shadow-plate-purple: 0 6px 0 0 var(--color-purple-deep);
   --shadow-plate-none:   0 0 0 0 transparent;
 
   /* Chips and small plates — 3px depth so they read as lighter than cards. */
@@ -59,13 +76,14 @@
   --shadow-chip-blue:    0 3px 0 0 var(--color-blue-deep);
   --shadow-chip-pink:    0 3px 0 0 var(--color-pink-deep);
   --shadow-chip-steel:   0 3px 0 0 var(--color-steel-deep);
+  --shadow-chip-purple:  0 3px 0 0 var(--color-purple-deep);
   --shadow-chip-none:    0 0 0 0 transparent;
 
   /* stacked: hard slab + coloured glow, for the hero element only */
-  --shadow-hero-red:   0 6px 0 0 var(--color-red-deep),   0 16px 34px -8px rgb(232 51 43 / 0.5);
-  --shadow-hero-brass: 0 6px 0 0 var(--color-brass-deep), 0 16px 34px -8px rgb(242 178 51 / 0.55);
-  --shadow-hero-green: 0 6px 0 0 var(--color-green-deep), 0 16px 34px -8px rgb(47 191 91 / 0.5);
-  --shadow-hero-steel: 0 6px 0 0 var(--color-steel-deep), 0 16px 34px -8px rgb(220 218 210 / 0.5);
+  --shadow-hero-red:   0 6px 0 0 var(--color-red-deep),   0 16px 34px -8px rgb(229 57 53 / 0.45);
+  --shadow-hero-brass: 0 6px 0 0 var(--color-brass-deep), 0 16px 34px -8px rgb(255 176 46 / 0.5);
+  --shadow-hero-green: 0 6px 0 0 var(--color-green-deep), 0 16px 34px -8px rgb(46 204 113 / 0.45);
+  --shadow-hero-steel: 0 6px 0 0 var(--color-steel-deep), 0 16px 34px -8px rgb(158 158 158 / 0.4);
   --shadow-hero-none:  0 0 0 0 transparent;
 
   /* ---- Motion ---- */
@@ -110,6 +128,15 @@
 @utility tap {
   min-height: 56px;
   min-width: 56px;
+}
+
+/* Numerals: digits, timers, ranks, counts. Referenced across the screens and
+   never defined, so every readout was falling back to the body font. */
+@utility pixel {
+  font-family: var(--font-readout);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 @layer base {

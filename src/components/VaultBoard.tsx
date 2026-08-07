@@ -1,7 +1,11 @@
 import { VaultTile, type VaultState } from "./VaultTile";
-import { useGame } from "../context/GameContext";
 import { cn } from "../lib/utils";
 
+/**
+ * How many positions are playable at once. Strictly sequential lets one hard
+ * question stall a player for the whole event; fully open means the locked
+ * state never appears. A rolling window of three keeps both.
+ */
 const OPEN_WINDOW = 3;
 
 export function vaultStates(unlockedVaults: string[]): VaultState[] {
@@ -18,28 +22,27 @@ interface VaultBoardProps {
   className?: string;
 }
 
-export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardProps) {
-  const { challenges } = useGame();
-  const states = vaultStates(unlockedVaults);
+/** Slight per-position tilt so the grid never reads as machine-set. */
+const TILTS = [-2, 1.5, -1, 2, -1.5, 1, -2, 1.5, -1];
 
-  // Tiles alternate tilt by position
-  const tilts = [-2, 1.5, -1, 2, -1.5, 1, -2, 1.5, -1];
+export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardProps) {
+  const states = vaultStates(unlockedVaults);
 
   return (
     <div
       className={cn(
-        "grid grid-cols-3 gap-3.5 w-full p-4 bg-paper-deep ink rounded-card shadow-ink select-none",
+        "ink grid w-full select-none grid-cols-3 gap-3 rounded-plate bg-paper-deep p-3.5",
         className
       )}
+      style={{ boxShadow: "var(--shadow-plate-ink)" }}
     >
       {states.map((state, i) => (
         <VaultTile
           key={i + 1}
           digit={i + 1}
           state={state}
-          icon={<span>{challenges[i]?.glyph ?? "star"}</span>}
           onClick={() => onSelect(i + 1, state)}
-          tilt={tilts[i]}
+          tilt={TILTS[i]}
         />
       ))}
     </div>
