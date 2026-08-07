@@ -27,8 +27,9 @@ const RED_LIGHT = "#F5726E";
 const RED_DEEP = "#A82A27";
 
 const GOLD = "#FFB02E";
+const GOLD_LIGHT = "#FFD888";
+const GOLD_DEEP = "#C4820C";
 const GREEN = "#2ECC71";
-const CREAM = "#F5F2E8";
 const WHITE = "#FFFFFF";
 const CAVITY = "#171310";
 
@@ -105,13 +106,35 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
           {/* cavity — revealed as the door swings */}
           <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z" fill={CAVITY} stroke={INK} strokeWidth="3" />
           <path d="M56 168 V95 a44 44 0 0 1 88 0 v73 z" fill="#2B2420" />
-          {/* warm interior glow + stacked discs, only meaningful once open */}
+          {/* Interior: shelf, glow, and two coin stacks.
+              Flat concentric ellipses read as stacked pancakes — coins need a
+              visible edge band under each face to have thickness. */}
           <g opacity={isOpen ? 1 : 0} style={{ transition: "opacity .3s .55s" }}>
-            <ellipse cx="100" cy="130" rx="40" ry="34" fill={GOLD} opacity="0.2" />
-            <g stroke={INK} strokeWidth="2.4">
-              <ellipse cx="100" cy="152" rx="26" ry="8" fill={GOLD} />
-              <ellipse cx="100" cy="144" rx="22" ry="7" fill={GOLD} />
-              <ellipse cx="100" cy="136" rx="17" ry="5.5" fill={GOLD} />
+            <ellipse cx="100" cy="132" rx="40" ry="32" fill={GOLD} opacity="0.18" />
+
+            {/* back shelf */}
+            <rect x="62" y="126" width="76" height="4" rx="2" fill={STEEL_DARK} opacity="0.5" />
+
+            {/* left stack — each coin is a face plus an edge band */}
+            <g stroke={INK} strokeWidth="2">
+              {[0, 1, 2, 3].map((i) => (
+                <g key={i}>
+                  <rect x="72" y={150 - i * 7} width="28" height="5" fill={GOLD_DEEP} />
+                  <ellipse cx="86" cy={150 - i * 7} rx="14" ry="5" fill={GOLD} />
+                </g>
+              ))}
+              <ellipse cx="86" cy="129" rx="14" ry="5" fill={GOLD_LIGHT} />
+            </g>
+
+            {/* right stack, shorter */}
+            <g stroke={INK} strokeWidth="2">
+              {[0, 1].map((i) => (
+                <g key={i}>
+                  <rect x="106" y={152 - i * 7} width="24" height="5" fill={GOLD_DEEP} />
+                  <ellipse cx="118" cy={152 - i * 7} rx="12" ry="4.4" fill={GOLD} />
+                </g>
+              ))}
+              <ellipse cx="118" cy="145" rx="12" ry="4.4" fill={GOLD_LIGHT} />
             </g>
           </g>
 
@@ -131,7 +154,7 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
           className="absolute inset-0"
           style={{ transformOrigin: "22% 50%", transformStyle: "preserve-3d" }}
           initial={false}
-          animate={{ rotateY: isOpen ? -108 : 0 }}
+          animate={{ rotateY: isOpen ? -74 : 0 }}
           transition={{ duration: isOpen ? 1.0 : 0.35, ease: [0.32, 1.06, 0.4, 1], delay: isOpen ? 0.25 : 0 }}
         >
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
@@ -143,6 +166,14 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
             <path d="M54 162 V95 a46 46 0 0 1 92 0 v67 z"
               fill="none" stroke={INK} strokeWidth="2.4" opacity="0.4" />
 
+            {/* Fine face detail fades as the door turns edge-on. Foreshortened
+                bolts read as a spiky comb and the wheel flattens to an ellipse,
+                so past ~45deg none of it should still be on screen. */}
+            <motion.g
+              initial={false}
+              animate={{ opacity: isOpen ? 0 : 1 }}
+              transition={{ duration: 0.3, delay: isOpen ? 0.3 : 0.25 }}
+            >
             {/* panel seams — the diagonals from the reference */}
             <g stroke={INK} strokeWidth="2.2" opacity="0.35">
               <line x1="100" y1="48" x2="100" y2="96" />
@@ -210,6 +241,8 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
               <circle cx="100" cy="112" r="10" fill={RED} stroke={INK} strokeWidth="3.5" />
               <circle cx="100" cy="112" r="4.4" fill={RED_DEEP} stroke={INK} strokeWidth="2" />
               <circle cx="96.6" cy="108.6" r="2.2" fill={WHITE} opacity="0.5" />
+            </motion.g>
+
             </motion.g>
 
             {/* door edge highlight, last so it sits on top */}
