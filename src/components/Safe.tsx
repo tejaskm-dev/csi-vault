@@ -112,7 +112,7 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
 
         {/* the recovered digit, sitting inside */}
         <motion.text
-          x="58"
+          x="56"
           y="52"
           textAnchor="middle"
           dominantBaseline="central"
@@ -137,13 +137,42 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
         </motion.text>
       </g>
 
-      {/* ---- the door: collapses toward its left hinge to open ---- */}
+      {/* ---- door EDGE: the slab you actually see once it has swung ----
+           Compressing the face works as motion but is wrong at rest — edge-on
+           you see the door's edge, not a squashed picture of its front. So the
+           face hands off to this in the last 40% of the swing. */}
       <motion.g
         initial={false}
-        animate={{ scaleX: open ? 0.24 : 1 }}
+        animate={{ opacity: open ? 1 : 0 }}
         transition={
           playing
-            ? { delay: SWING_DELAY / 1000, duration: SWING_MS / 1000, ease: [0.5, 0, 0.3, 1] }
+            ? {
+                delay: (SWING_DELAY + SWING_MS * 0.55) / 1000,
+                duration: (SWING_MS * 0.45) / 1000,
+              }
+            : { duration: 0 }
+        }
+      >
+        <rect x="17" y="17" width="10" height="66" rx="5" fill={s.deep} stroke={INK} strokeWidth="3" />
+        {/* thin lit face along the leading edge, so it has thickness */}
+        <rect x="19" y="21" width="3.5" height="58" rx="1.75" fill={s.light} opacity="0.55" />
+      </motion.g>
+
+      {/* ---- door FACE: compresses toward the left hinge, then fades out ---- */}
+      <motion.g
+        initial={false}
+        animate={{ scaleX: open ? 0.1 : 1, opacity: open ? 0 : 1 }}
+        transition={
+          playing
+            ? {
+                scaleX: { delay: SWING_DELAY / 1000, duration: SWING_MS / 1000, ease: [0.5, 0, 0.3, 1] },
+                // fades only in the last 40%, so most of the swing is visibly
+                // the door turning rather than a cross-dissolve
+                opacity: {
+                  delay: (SWING_DELAY + SWING_MS * 0.6) / 1000,
+                  duration: (SWING_MS * 0.4) / 1000,
+                },
+              }
             : { duration: 0 }
         }
         // Framer ignores CSS transform-origin on SVG and uses its own origin,
