@@ -2,16 +2,19 @@ import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 
 /**
- * The vault door, in code.
+ * The vault door.
  *
- * Replaces a 636KB + 644KB PNG pair with one component that swings for real:
- * the frame and cavity are static, and the door is a separate layer rotated in
- * 3D on its hinge. Two PNGs could only cross-fade between two fixed drawings.
+ * Built the same way as the Safe, because that approach works and the 3D one
+ * did not: no perspective, no preserve-3d, no second plane. The door is a group
+ * whose scaleX collapses toward its left hinge, its face detail fades out over
+ * the back half of the swing, and a plain edge slab fades in behind it.
  *
- * The 3D swing has to be driven from a wrapping <motion.div> with perspective,
- * NOT from an SVG <g> — Framer routes SVG transforms through the `transform`
- * attribute, which has no rotateY, so a swing written inside the SVG silently
- * does nothing.
+ * Compressing a detailed face reads fine as motion and wrong at rest — edge-on
+ * you see a door's edge, not a squashed picture of its front. The handoff to a
+ * clean slab is the whole trick.
+ *
+ * Framer ignores CSS transform-origin on SVG and uses its own originX/originY,
+ * defaulting to the bbox centre. originX: 0 pins the collapse to the hinge.
  */
 
 const INK = "#1F1F1F";
@@ -33,6 +36,11 @@ const GREEN = "#2ECC71";
 const WHITE = "#FFFFFF";
 const CAVITY = "#171310";
 
+/** Swing timings, mirroring the Safe. */
+const SPIN_MS = 620;
+const SWING_MS = 620;
+const SWING_DELAY = 540;
+
 interface VaultDoorProps {
   state: "closed" | "open";
   className?: string;
@@ -41,17 +49,16 @@ interface VaultDoorProps {
   shake?: boolean;
 }
 
-/** Bolts around the arch, placed on the arc rather than eyeballed. */
+/** Bolts along the arch, computed rather than eyeballed. */
 const ARCH_BOLTS = (() => {
   const out: { x: number; y: number }[] = [];
   for (let i = 0; i <= 8; i++) {
-    const a = Math.PI + (i / 8) * Math.PI; // 180° → 360°
-    out.push({ x: 100 + Math.cos(a) * 58, y: 92 + Math.sin(a) * 58 });
+    const a = Math.PI + (i / 8) * Math.PI;
+    out.push({ x: 100 + Math.cos(a) * 46, y: 93 + Math.sin(a) * 46 });
   }
-  // down the two jambs
-  for (const y of [110, 132, 154]) {
-    out.push({ x: 42, y });
-    out.push({ x: 158, y });
+  for (const y of [118, 140, 158]) {
+    out.push({ x: 56, y });
+    out.push({ x: 144, y });
   }
   return out;
 })();
@@ -59,10 +66,9 @@ const ARCH_BOLTS = (() => {
 function IndicatorPanel({ x, y }: { x: number; y: number }) {
   return (
     <g>
-      <rect x={x} y={y} width="20" height="13" rx="3" fill={STEEL_DEEP} stroke={INK} strokeWidth="2.4" />
-      <circle cx={x + 6} cy={y + 6.5} r="2.6" fill={RED} stroke={INK} strokeWidth="1.5" />
-      <circle cx={x + 14} cy={y + 6.5} r="2.6" fill={GREEN} stroke={INK} strokeWidth="1.5" />
-      <circle cx={x + 5} cy={y + 5.4} r="0.9" fill={WHITE} opacity="0.6" />
+      <rect x={x} y={y} width="18" height="12" rx="3" fill={STEEL_DEEP} stroke={INK} strokeWidth="2.2" />
+      <circle cx={x + 5.5} cy={y + 6} r="2.4" fill={RED} stroke={INK} strokeWidth="1.4" />
+      <circle cx={x + 12.5} cy={y + 6} r="2.4" fill={GREEN} stroke={INK} strokeWidth="1.4" />
     </g>
   );
 }
@@ -71,21 +77,17 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
   const isOpen = state === "open";
 
   return (
-    <div
-      className={cn("relative mx-auto aspect-square w-64 select-none", className)}
-      style={{ perspective: 1100 }}
-    >
+    <div className={cn("relative mx-auto aspect-square w-64 select-none", className)}>
       <motion.div
         className="h-full w-full"
         animate={shake ? { x: [0, -5, 5, -4, 4, -2, 0] } : { x: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* ================= STATIC: ground, frame, cavity ================= */}
-        <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full" aria-hidden>
-          {/* ground shadow */}
+        <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
+          {/* ---------------- STATIC: ground, frame, cavity ---------------- */}
           <ellipse cx="100" cy="182" rx="70" ry="9" fill={INK} opacity="0.14" />
 
-          {/* threshold plinth */}
+          {/* threshold */}
           <path d="M28 168 h144 l6 12 H22 z" fill={STEEL_MID} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
           <path d="M28 168 h30 l-4 12 H22 z" fill={STEEL_LIGHT} opacity="0.6" />
           <g fill={STEEL_DEEP} stroke={INK} strokeWidth="1.6">
@@ -93,200 +95,151 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
             <circle cx="158" cy="174" r="2.4" />
           </g>
 
-          {/* outer frame — arch + jambs */}
+          {/* outer frame */}
           <path d="M30 168 V92 a70 70 0 0 1 140 0 v76 z"
             fill={STEEL_MID} stroke={INK} strokeWidth="4.5" strokeLinejoin="round" />
-          {/* frame light zone, upper-left */}
           <path d="M30 168 V92 a70 70 0 0 1 40 -60 v14 a56 56 0 0 0 -28 48 v74 z"
             fill={STEEL_LIGHT} opacity="0.55" />
-          {/* frame shade, lower-right */}
           <path d="M170 168 V92 a70 70 0 0 0 -28 -54 v15 a56 56 0 0 1 16 41 v74 z"
             fill={STEEL_DEEP} opacity="0.45" />
 
-          {/* cavity — revealed as the door swings */}
+          {/* cavity */}
           <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z" fill={CAVITY} stroke={INK} strokeWidth="3" />
           <path d="M56 168 V95 a44 44 0 0 1 88 0 v73 z" fill="#2B2420" />
-          {/* Interior: shelf, glow, and two coin stacks.
-              Flat concentric ellipses read as stacked pancakes — coins need a
-              visible edge band under each face to have thickness. */}
-          <g opacity={isOpen ? 1 : 0} style={{ transition: "opacity .3s .55s" }}>
-            <ellipse cx="100" cy="132" rx="40" ry="32" fill={GOLD} opacity="0.18" />
+          <path d="M44 93 a56 56 0 0 1 112 0 h-12 a44 44 0 0 0 -88 0 z" fill="#000" opacity="0.3" />
 
-            {/* back shelf */}
-            <rect x="62" y="126" width="76" height="4" rx="2" fill={STEEL_DARK} opacity="0.5" />
-
-            {/* left stack — each coin is a face plus an edge band */}
+          {/* interior: shelf and two coin stacks */}
+          <motion.g
+            initial={false}
+            animate={{ opacity: isOpen ? 1 : 0 }}
+            transition={{ duration: 0.3, delay: isOpen ? (SWING_DELAY + SWING_MS * 0.5) / 1000 : 0 }}
+          >
+            <ellipse cx="104" cy="134" rx="38" ry="30" fill={GOLD} opacity="0.16" />
+            <rect x="66" y="128" width="72" height="4" rx="2" fill={STEEL_DARK} opacity="0.5" />
             <g stroke={INK} strokeWidth="2">
               {[0, 1, 2, 3].map((i) => (
                 <g key={i}>
-                  <rect x="72" y={150 - i * 7} width="28" height="5" fill={GOLD_DEEP} />
-                  <ellipse cx="86" cy={150 - i * 7} rx="14" ry="5" fill={GOLD} />
+                  <rect x="82" y={152 - i * 7} width="26" height="5" fill={GOLD_DEEP} />
+                  <ellipse cx="95" cy={152 - i * 7} rx="13" ry="4.8" fill={GOLD} />
                 </g>
               ))}
-              <ellipse cx="86" cy="129" rx="14" ry="5" fill={GOLD_LIGHT} />
+              <ellipse cx="95" cy="131" rx="13" ry="4.8" fill={GOLD_LIGHT} />
             </g>
-
-            {/* right stack, shorter */}
             <g stroke={INK} strokeWidth="2">
               {[0, 1].map((i) => (
                 <g key={i}>
-                  <rect x="106" y={152 - i * 7} width="24" height="5" fill={GOLD_DEEP} />
-                  <ellipse cx="118" cy={152 - i * 7} rx="12" ry="4.4" fill={GOLD} />
+                  <rect x="114" y={154 - i * 7} width="22" height="5" fill={GOLD_DEEP} />
+                  <ellipse cx="125" cy={154 - i * 7} rx="11" ry="4.2" fill={GOLD} />
                 </g>
               ))}
-              <ellipse cx="118" cy="145" rx="12" ry="4.4" fill={GOLD_LIGHT} />
+              <ellipse cx="125" cy="147" rx="11" ry="4.2" fill={GOLD_LIGHT} />
             </g>
-          </g>
+          </motion.g>
 
-          {/* FIXED hinge barrels — these belong to the frame and never move.
-              The matching leaves live on the door and rotate with it. */}
+          {/* FIXED hinge barrels — frame side, never move */}
           <g fill={STEEL_DEEP} stroke={INK} strokeWidth="3">
-            <rect x="34" y="86" width="15" height="26" rx="7" />
-            <rect x="34" y="132" width="15" height="26" rx="7" />
+            <rect x="33" y="88" width="15" height="24" rx="7" />
+            <rect x="33" y="136" width="15" height="24" rx="7" />
           </g>
           <g fill={STEEL_LIGHT} opacity="0.5">
-            <rect x="37" y="90" width="4" height="18" rx="2" />
-            <rect x="37" y="136" width="4" height="18" rx="2" />
+            <rect x="36" y="92" width="4" height="16" rx="2" />
+            <rect x="36" y="140" width="4" height="16" rx="2" />
           </g>
-        </svg>
 
-        {/* ================= THE DOOR — swings on the left hinge ================= */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ transformOrigin: "22% 50%", transformStyle: "preserve-3d" }}
-          initial={false}
-          animate={{ rotateY: isOpen ? -56 : 0 }}
-          transition={{ duration: isOpen ? 1.0 : 0.35, ease: [0.32, 1.06, 0.4, 1], delay: isOpen ? 0.25 : 0 }}
-        >
-          {/* ---- BACK PLATE: the far side of the slab ----
-              14 units behind the face. At an angle the two silhouettes separate
-              and that gap reads as the door's thickness. A single plane can
-              never do this — it has no depth to show. */}
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateZ(-7px)", backfaceVisibility: "hidden" }}
+          {/* ---------------- DOOR EDGE ----------------
+              The crescent you see once the door has swung: a slab hugging the
+              left of the arch, in the shadowed shade with a lit leading face.
+              Fades in over the back half of the swing. */}
+          <motion.g
+            initial={false}
+            animate={{ opacity: isOpen ? 1 : 0 }}
+            transition={{
+              duration: (SWING_MS * 0.4) / 1000,
+              delay: isOpen ? (SWING_DELAY + SWING_MS * 0.55) / 1000 : 0,
+            }}
           >
-            <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
-              <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z"
-                fill={STEEL_DARK} stroke={INK} strokeWidth="4.5" strokeLinejoin="round" />
-              <path d="M56 160 V96 a44 44 0 0 1 88 0 v64 z" fill={STEEL_DEEP} opacity="0.6" />
-            </svg>
-          </div>
+            <path d="M44 168 V93 A56 56 0 0 1 52 64 L66 71 A44 44 0 0 0 58 95 V168 Z"
+              fill={STEEL_DARK} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+            <path d="M47 164 V95 A53 53 0 0 1 51 74 L56 77 A48 48 0 0 0 52 96 V164 Z"
+              fill={STEEL_LIGHT} opacity="0.4" />
+          </motion.g>
 
-          {/* ---- FACE: everything you can see when it is shut ---- */}
-          <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full"
-            style={{ transform: "translateZ(7px)" }} aria-hidden>
-            {/* moving hinge leaves — these are ON the door, so they swing with
-                it and stay married to the fixed barrels on the jamb */}
-            <g fill={STEEL_MID} stroke={INK} strokeWidth="3">
-              <rect x="44" y="88" width="18" height="22" rx="4" />
-              <rect x="44" y="134" width="18" height="22" rx="4" />
-            </g>
-            <g fill={STEEL_DEEP}>
-              <circle cx="53" cy="99" r="2.4" /><circle cx="53" cy="145" r="2.4" />
-            </g>
-
-            {/* door slab */}
+          {/* ---------------- DOOR FACE ----------------
+              Collapses toward the hinge, then fades so the resting open state
+              is the clean slab above rather than a squashed front. */}
+          <motion.g
+            initial={false}
+            animate={{ scaleX: isOpen ? 0.12 : 1, opacity: isOpen ? 0 : 1 }}
+            transition={{
+              scaleX: { duration: SWING_MS / 1000, delay: isOpen ? SWING_DELAY / 1000 : 0, ease: [0.5, 0, 0.3, 1] },
+              opacity: {
+                duration: (SWING_MS * 0.35) / 1000,
+                delay: isOpen ? (SWING_DELAY + SWING_MS * 0.6) / 1000 : 0,
+              },
+            }}
+            style={{ originX: 0, originY: 0.5 }}
+          >
+            {/* slab */}
             <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z"
               fill={STEEL} stroke={INK} strokeWidth="4.5" strokeLinejoin="round" />
-
-            {/* inset bevel */}
-            <path d="M54 162 V95 a46 46 0 0 1 92 0 v67 z"
-              fill="none" stroke={INK} strokeWidth="2.4" opacity="0.4" />
-
-            {/* Fine face detail fades as the door turns edge-on. Foreshortened
-                bolts read as a spiky comb and the wheel flattens to an ellipse,
-                so past ~45deg none of it should still be on screen. */}
-            <g>
-            {/* panel seams — the diagonals from the reference */}
-            <g stroke={INK} strokeWidth="2.2" opacity="0.35">
-              <line x1="100" y1="48" x2="100" y2="96" />
-              <line x1="56" y1="150" x2="100" y2="112" />
-              <line x1="144" y1="150" x2="100" y2="112" />
-              <line x1="54" y1="150" x2="146" y2="150" />
+            {/* moving hinge leaves — on the door, so they swing with it */}
+            <g fill={STEEL_MID} stroke={INK} strokeWidth="2.8">
+              <rect x="44" y="90" width="16" height="20" rx="4" />
+              <rect x="44" y="138" width="16" height="20" rx="4" />
             </g>
 
-            {/* cast texture */}
-            <g fill={STEEL_DEEP} opacity="0.16">
-              <circle cx="72" cy="72" r="2.4" /><circle cx="128" cy="66" r="1.9" />
-              <circle cx="64" cy="120" r="2.1" /><circle cx="140" cy="128" r="2.6" />
-              <circle cx="86" cy="158" r="1.8" /><circle cx="118" cy="90" r="1.6" />
-            </g>
-
-            {/* light + shade zones */}
-            <path d="M44 168 V93 a56 56 0 0 1 34 -51 v13 a44 44 0 0 0 -22 38 v75 z"
+            {/* light / shade zones */}
+            <path d="M44 168 V93 a56 56 0 0 1 32 -50 v13 a44 44 0 0 0 -20 37 v75 z"
               fill={STEEL_LIGHT} opacity="0.55" />
-            <path d="M156 168 V93 a56 56 0 0 0 -24 -46 v14 a44 44 0 0 1 12 32 v75 z"
+            <path d="M156 168 V93 a56 56 0 0 0 -22 -45 v14 a44 44 0 0 1 10 31 v75 z"
               fill={STEEL_DEEP} opacity="0.4" />
 
-            {/* perimeter bolts */}
+            {/* inset bevel + panel seams */}
+            <path d="M56 160 V95 a44 44 0 0 1 88 0 v65 z" fill="none" stroke={INK} strokeWidth="2.2" opacity="0.35" />
+            <g stroke={INK} strokeWidth="2" opacity="0.3">
+              <line x1="100" y1="50" x2="100" y2="92" />
+              <line x1="60" y1="152" x2="100" y2="116" />
+              <line x1="140" y1="152" x2="100" y2="116" />
+            </g>
+
+            {/* bolts */}
             <g fill={STEEL_MID} stroke={INK} strokeWidth="2">
-              {ARCH_BOLTS.map((b, i) => (
-                <circle key={i} cx={b.x} cy={b.y} r="4" />
-              ))}
+              {ARCH_BOLTS.map((b, i) => <circle key={i} cx={b.x} cy={b.y} r="3.6" />)}
             </g>
             <g fill={WHITE} opacity="0.4">
-              {ARCH_BOLTS.map((b, i) => (
-                <circle key={i} cx={b.x - 1.2} cy={b.y - 1.2} r="1.2" />
-              ))}
+              {ARCH_BOLTS.map((b, i) => <circle key={i} cx={b.x - 1} cy={b.y - 1} r="1.1" />)}
             </g>
 
-            {/* indicator panels, right side */}
-            <IndicatorPanel x={126} y={86} />
-            <IndicatorPanel x={126} y={118} />
+            <IndicatorPanel x={126} y={92} />
+            <IndicatorPanel x={126} y={122} />
 
-            {/* ---- handwheel ---- */}
-            <g>
-              {/* mounting boss */}
-              <circle cx="100" cy="112" r="34" fill={STEEL_MID} stroke={INK} strokeWidth="3" />
-              <circle cx="100" cy="112" r="34" fill={STEEL_DEEP} opacity="0.25" />
-            </g>
+            {/* handwheel */}
+            <circle cx="96" cy="116" r="32" fill={STEEL_MID} stroke={INK} strokeWidth="2.8" />
+            <circle cx="96" cy="116" r="32" fill={STEEL_DEEP} opacity="0.22" />
             <motion.g
               initial={false}
               animate={{ rotate: (isOpen ? 300 : 0) + wheelRotate }}
-              transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: SPIN_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
               style={{ originX: 0.5, originY: 0.5 }}
             >
-              {/* spokes */}
-              <g stroke={INK} strokeWidth="13" strokeLinecap="round">
-                <line x1="100" y1="84" x2="100" y2="140" />
-                <line x1="72" y1="112" x2="128" y2="112" />
+              <g stroke={INK} strokeWidth="12" strokeLinecap="round">
+                <line x1="96" y1="90" x2="96" y2="142" />
+                <line x1="70" y1="116" x2="122" y2="116" />
               </g>
-              <g stroke={RED} strokeWidth="8" strokeLinecap="round">
-                <line x1="100" y1="84" x2="100" y2="140" />
-                <line x1="72" y1="112" x2="128" y2="112" />
+              <g stroke={RED} strokeWidth="7" strokeLinecap="round">
+                <line x1="96" y1="90" x2="96" y2="142" />
+                <line x1="70" y1="116" x2="122" y2="116" />
               </g>
-              {/* rim */}
-              <circle cx="100" cy="112" r="27" fill="none" stroke={INK} strokeWidth="13" />
-              <circle cx="100" cy="112" r="27" fill="none" stroke={RED} strokeWidth="8" />
-              <circle cx="100" cy="112" r="27" fill="none" stroke={RED_LIGHT} strokeWidth="2.6"
-                strokeDasharray="14 60" strokeDashoffset="-8" opacity="0.9" />
-              {/* hub */}
-              <circle cx="100" cy="112" r="10" fill={RED} stroke={INK} strokeWidth="3.5" />
-              <circle cx="100" cy="112" r="4.4" fill={RED_DEEP} stroke={INK} strokeWidth="2" />
-              <circle cx="96.6" cy="108.6" r="2.2" fill={WHITE} opacity="0.5" />
+              <circle cx="96" cy="116" r="25" fill="none" stroke={INK} strokeWidth="12" />
+              <circle cx="96" cy="116" r="25" fill="none" stroke={RED} strokeWidth="7" />
+              <circle cx="96" cy="116" r="25" fill="none" stroke={RED_LIGHT} strokeWidth="2.4"
+                strokeDasharray="12 56" opacity="0.9" />
+              <circle cx="96" cy="116" r="9" fill={RED} stroke={INK} strokeWidth="3.2" />
+              <circle cx="96" cy="116" r="4" fill={RED_DEEP} stroke={INK} strokeWidth="1.8" />
+              <circle cx="93" cy="113" r="2" fill={WHITE} opacity="0.5" />
             </motion.g>
-
-            </g>
-
-            {/* door edge highlight, last so it sits on top */}
-            <path d="M44 168 V93 a56 56 0 0 1 56 -56 v6 a50 50 0 0 0 -50 50 v75 z"
-              fill={WHITE} opacity="0.14" />
-          </svg>
-        </motion.div>
-
-        {/* door edge slab, visible once swung — the door has thickness */}
-        <motion.div
-          className="absolute inset-0"
-          initial={false}
-          animate={{ opacity: isOpen ? 1 : 0 }}
-          transition={{ duration: 0.25, delay: isOpen ? 0.9 : 0 }}
-        >
-          <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
-            <path d="M44 168 V93 a56 56 0 0 1 10 -30 v105 z" fill={STEEL_DARK} stroke={INK} strokeWidth="3" />
-            <path d="M46 160 V95 a54 54 0 0 1 4 -18 v83 z" fill={STEEL_LIGHT} opacity="0.35" />
-          </svg>
-        </motion.div>
+          </motion.g>
+        </svg>
       </motion.div>
     </div>
   );
