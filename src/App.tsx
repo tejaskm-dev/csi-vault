@@ -12,6 +12,7 @@ import { Winner } from "./screens/Winner";
 import { BonusFound } from "./screens/BonusFound";
 import { Waiting } from "./screens/Waiting";
 import { SafePreview } from "./screens/SafePreview";
+import { AssetsPreview } from "./screens/AssetsPreview";
 import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
@@ -61,6 +62,7 @@ function AnimatedRoutes() {
         <Route path="/winner" element={<PageWrapper><Winner /></PageWrapper>} />
         <Route path="/bonus-found" element={<PageWrapper><BonusFound /></PageWrapper>} />
         <Route path="/safes" element={<SafePreview />} />
+            <Route path="/assets" element={<AssetsPreview />} />
             <Route path="/waiting" element={<PageWrapper><Waiting /></PageWrapper>} />
         <Route path="*" element={<PageWrapper><Splash /></PageWrapper>} />
       </Routes>
