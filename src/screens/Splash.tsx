@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../context/GameContext";
 import { VaultDoor } from "../components/VaultDoor";
+import { Art } from "../components/Art";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { Starburst } from "../components/Starburst";
 import { playUnlock } from "../lib/sound";
 import { motion, AnimatePresence } from "motion/react";
@@ -14,6 +16,7 @@ export function Splash() {
   const [wheelRotate, setWheelRotate] = useState(0);
   const [shake, setShake] = useState(false);
   const [showStarburst, setShowStarburst] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     // 0ms: Vault door drops in
@@ -38,17 +41,17 @@ export function Splash() {
       setShowStarburst(true);
     }, 1600);
 
-    // 2400ms: Navigate away
-    const navTimer = setTimeout(() => {
-      navigate(username ? "/home" : "/name", { replace: true });
-    }, 2400);
+    // 2400ms: the sequence finishes and the CTA appears. No auto-advance —
+    // players arrive off a QR code at different moments, so a timed splash
+    // means some of them never see it.
+    const ctaTimer = setTimeout(() => setReady(true), 2200);
 
     return () => {
       clearTimeout(dropTimer);
       clearTimeout(unlockTimer);
       clearTimeout(stopShakeTimer);
       clearTimeout(starburstTimer);
-      clearTimeout(navTimer);
+      clearTimeout(ctaTimer);
     };
   }, [navigate, username]);
 
@@ -56,6 +59,16 @@ export function Splash() {
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-7 select-none overflow-hidden relative">
       {/* Title Group */}
       <div className="flex flex-col items-center relative z-10">
+        {/* Society logo — the real mark, not a text chip */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.55 }}
+          className="mb-2 h-16 w-16"
+        >
+          <Art name="csi-logo" alt="CSI ASIET" className="h-full w-full object-contain" />
+        </motion.div>
+
         {/* CSI ASIET chip fades up at 700ms */}
         <motion.span
           initial={{ opacity: 0, y: 8 }}
@@ -110,9 +123,26 @@ export function Splash() {
         </motion.div>
       </div>
 
-      {/* A briefing, not a spinner. The wait is already budgeted; spend it
-          saying something true instead of "LOADING". */}
-      <BriefingLine />
+      {/* Briefing runs during the sequence, then hands over to the CTA. */}
+      {!ready && <BriefingLine />}
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={ready ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        className="relative z-10 flex w-full max-w-xs flex-col items-center gap-3"
+        style={{ pointerEvents: ready ? "auto" : "none" }}
+      >
+        <PrimaryButton
+          className="w-full"
+          onClick={() => navigate(username ? "/home" : "/name", { replace: true })}
+        >
+          BEGIN MISSION
+        </PrimaryButton>
+        <p className="font-body text-[12px] font-bold text-ink/40">
+          Built by CSI ASIET for the next intake.
+        </p>
+      </motion.div>
     </div>
   );
 }

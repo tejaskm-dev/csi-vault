@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatBlock } from "../components/StatBlock";
 import { VaultTile } from "../components/VaultTile";
+import { motion } from "motion/react";
 import { VaultDoor } from "../components/VaultDoor";
+import { Art } from "../components/Art";
 import { useGame } from "../context/GameContext";
 import { formatClock } from "../lib/utils";
 import { playComplete } from "../lib/sound";
@@ -37,7 +39,19 @@ export function VaultComplete() {
 
         {/* Vault Door (Opening / Open) */}
         <div className="my-2">
-          <VaultDoor state="open" />
+          <div className="relative">
+            <VaultDoor state="open" />
+            {/* Mascot celebrating in front of the open vault — the climax is
+                the one place it should be unmissable. */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 1.4, type: "spring", stiffness: 300, damping: 16 }}
+              className="pointer-events-none absolute -bottom-4 -right-2 z-20 h-36 w-36 rotate-[8deg]"
+            >
+              <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
+            </motion.div>
+          </div>
         </div>
 
         {/* Compact Solved Digits Strip */}

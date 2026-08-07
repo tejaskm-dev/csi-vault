@@ -98,6 +98,17 @@ export function Success() {
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />
             )}
           </div>
+
+          {/* Mascot celebrating alongside the unlocked digit, overlapping the
+              tile so it breaks its container rather than sitting in a row. */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.4, type: "spring", stiffness: 380, damping: 18 }}
+            className="pointer-events-none absolute -bottom-3 -right-5 z-20 h-28 w-28 rotate-[6deg]"
+          >
+            <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
+          </motion.div>
         </div>
 
         <motion.div

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, HelpCircle } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { ProgressDots } from "../components/ProgressDots";
 import { CountdownPill } from "../components/CountdownPill";
 import { AnswerOptionCard } from "../components/AnswerOptionCard";
@@ -9,6 +9,8 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Pressable } from "../components/Pressable";
 import { Toast } from "../components/Toast";
 import { Modal } from "../components/Modal";
+import { Art } from "../components/Art";
+import { HintBulb } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import { playCorrect, playWrong } from "../lib/sound";
 import { shakeVariants } from "../lib/motion";
@@ -49,6 +51,7 @@ export function ChallengeScreen() {
   const [toast, setToast] = useState<null | "wrong" | "timeup">(null);
   const [hintOpen, setHintOpen] = useState(false);
   const [misses, setMisses] = useState(0);
+  const [showMiss, setShowMiss] = useState(false);
   const timers = useRef<number[]>([]);
 
   const isBonus = Boolean(challenge?.isBonus);
@@ -110,10 +113,8 @@ export function ChallengeScreen() {
         setMisses((m) => m + 1);
         setWrongId(isTextInput ? "__text__" : selectedId);
         setToast("wrong");
-        const rst = window.setTimeout(() => {
-          setStatus("idle");
-          setWrongId(null);
-        }, WRONG_HOLD_MS);
+        // Shake the wrong option first, then raise the full-screen miss.
+        const rst = window.setTimeout(() => setShowMiss(true), WRONG_HOLD_MS);
         timers.current.push(rst);
       }
     }, CHECKING_MS);
@@ -123,7 +124,7 @@ export function ChallengeScreen() {
   const busy = status === "checking" || status === "correct";
 
   return (
-    <div className="flex-1 flex flex-col justify-between select-none">
+    <div className="relative flex-1 flex flex-col justify-between select-none">
       {/* Header Bar */}
       <header
         className={cn(
@@ -155,7 +156,11 @@ export function ChallengeScreen() {
         )}
 
         {/* Question Title & Description */}
-        <div>
+        <div className="relative">
+          {/* Mascot thinking alongside the question, overlapping the card edge */}
+          <div className="pointer-events-none absolute -right-3 -top-4 z-10 h-20 w-20 rotate-[5deg]">
+            <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
+          </div>
           <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
             CHALLENGE PUZZLE
           </span>
@@ -246,9 +251,60 @@ export function ChallengeScreen() {
         </PrimaryButton>
       </div>
 
+      {/* ---- Full-screen miss. Approved over the inline-only rule because it
+             gives the loss a beat, the way Duolingo does. ---- */}
+      <AnimatePresence>
+        {showMiss && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-paper p-8 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.7, y: 14 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 360, damping: 18 }}
+              className="h-40 w-40"
+            >
+              <Art name="mascot-sad" alt="" className="h-full w-full object-contain" />
+            </motion.div>
+
+            <div>
+              <h2 className="font-display text-[34px] uppercase leading-none tracking-tighter text-red">
+                Not quite
+              </h2>
+              <p className="mt-2 font-body text-[15px] font-bold text-ink/65">
+                {MISS_LINES[Math.min(misses - 1, MISS_LINES.length - 1)] ?? MISS_LINES[0]}
+              </p>
+            </div>
+
+            <PrimaryButton
+              className="w-full max-w-xs"
+              onClick={() => {
+                setShowMiss(false);
+                setStatus("idle");
+                setWrongId(null);
+              }}
+            >
+              TRY AGAIN
+            </PrimaryButton>
+
+            <button
+              type="button"
+              onClick={() => { setShowMiss(false); setStatus("idle"); setWrongId(null); setHintOpen(true); }}
+              className="font-body text-[14px] font-bold text-ink/50 underline underline-offset-4"
+            >
+              Show me a nudge
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hint Modal */}
       <Modal isOpen={hintOpen} onClose={() => setHintOpen(false)}>
-        <HelpCircle className="w-12 h-12 text-yellow mx-auto mb-2 stroke-[2.5px]" />
+        <HintBulb className="mx-auto mb-2 h-16 w-16" />
         <h2 className="text-[26px] font-extrabold uppercase text-ink leading-tight">NEED A NUDGE?</h2>
         <p className="font-body text-base font-bold text-ink/70 leading-relaxed px-2">
           {challenge.hint}
