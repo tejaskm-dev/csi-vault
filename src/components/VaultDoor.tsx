@@ -138,14 +138,15 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
             </g>
           </g>
 
-          {/* hinge barrels on the left jamb */}
+          {/* FIXED hinge barrels — these belong to the frame and never move.
+              The matching leaves live on the door and rotate with it. */}
           <g fill={STEEL_DEEP} stroke={INK} strokeWidth="3">
-            <rect x="26" y="86" width="16" height="26" rx="7" />
-            <rect x="26" y="132" width="16" height="26" rx="7" />
+            <rect x="34" y="86" width="15" height="26" rx="7" />
+            <rect x="34" y="132" width="15" height="26" rx="7" />
           </g>
-          <g fill={STEEL_LIGHT} opacity="0.55">
-            <rect x="29" y="90" width="4" height="18" rx="2" />
-            <rect x="29" y="136" width="4" height="18" rx="2" />
+          <g fill={STEEL_LIGHT} opacity="0.5">
+            <rect x="37" y="90" width="4" height="18" rx="2" />
+            <rect x="37" y="136" width="4" height="18" rx="2" />
           </g>
         </svg>
 
@@ -154,10 +155,37 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
           className="absolute inset-0"
           style={{ transformOrigin: "22% 50%", transformStyle: "preserve-3d" }}
           initial={false}
-          animate={{ rotateY: isOpen ? -74 : 0 }}
+          animate={{ rotateY: isOpen ? -56 : 0 }}
           transition={{ duration: isOpen ? 1.0 : 0.35, ease: [0.32, 1.06, 0.4, 1], delay: isOpen ? 0.25 : 0 }}
         >
-          <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
+          {/* ---- BACK PLATE: the far side of the slab ----
+              14 units behind the face. At an angle the two silhouettes separate
+              and that gap reads as the door's thickness. A single plane can
+              never do this — it has no depth to show. */}
+          <div
+            className="absolute inset-0"
+            style={{ transform: "translateZ(-7px)", backfaceVisibility: "hidden" }}
+          >
+            <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden>
+              <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z"
+                fill={STEEL_DARK} stroke={INK} strokeWidth="4.5" strokeLinejoin="round" />
+              <path d="M56 160 V96 a44 44 0 0 1 88 0 v64 z" fill={STEEL_DEEP} opacity="0.6" />
+            </svg>
+          </div>
+
+          {/* ---- FACE: everything you can see when it is shut ---- */}
+          <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full"
+            style={{ transform: "translateZ(7px)" }} aria-hidden>
+            {/* moving hinge leaves — these are ON the door, so they swing with
+                it and stay married to the fixed barrels on the jamb */}
+            <g fill={STEEL_MID} stroke={INK} strokeWidth="3">
+              <rect x="44" y="88" width="18" height="22" rx="4" />
+              <rect x="44" y="134" width="18" height="22" rx="4" />
+            </g>
+            <g fill={STEEL_DEEP}>
+              <circle cx="53" cy="99" r="2.4" /><circle cx="53" cy="145" r="2.4" />
+            </g>
+
             {/* door slab */}
             <path d="M44 168 V93 a56 56 0 0 1 112 0 v75 z"
               fill={STEEL} stroke={INK} strokeWidth="4.5" strokeLinejoin="round" />
@@ -169,11 +197,7 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
             {/* Fine face detail fades as the door turns edge-on. Foreshortened
                 bolts read as a spiky comb and the wheel flattens to an ellipse,
                 so past ~45deg none of it should still be on screen. */}
-            <motion.g
-              initial={false}
-              animate={{ opacity: isOpen ? 0 : 1 }}
-              transition={{ duration: 0.3, delay: isOpen ? 0.3 : 0.25 }}
-            >
+            <g>
             {/* panel seams — the diagonals from the reference */}
             <g stroke={INK} strokeWidth="2.2" opacity="0.35">
               <line x1="100" y1="48" x2="100" y2="96" />
@@ -243,7 +267,7 @@ export function VaultDoor({ state, className, wheelRotate = 0, shake }: VaultDoo
               <circle cx="96.6" cy="108.6" r="2.2" fill={WHITE} opacity="0.5" />
             </motion.g>
 
-            </motion.g>
+            </g>
 
             {/* door edge highlight, last so it sits on top */}
             <path d="M44 168 V93 a56 56 0 0 1 56 -56 v6 a50 50 0 0 0 -50 50 v75 z"
