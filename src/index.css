@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* The two reference projects are vendored in this repo for their code, not
+   their styles. Tailwind v4 auto-scans the project root, so without these it
+   compiles every class from both codebases into our stylesheet. */
+@source not "../skloop-main";
+@source not "../NAME-sandbox-main";
+
 @theme {
   /* ---- Ink & paper ---- */
   --color-ink:          #14110F;  /* every outline, every heading */
