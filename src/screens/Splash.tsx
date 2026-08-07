@@ -4,7 +4,7 @@ import { useGame } from "../context/GameContext";
 import { VaultDoor } from "../components/VaultDoor";
 import { Starburst } from "../components/Starburst";
 import { playUnlock } from "../lib/sound";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 export function Splash() {
   const navigate = useNavigate();
@@ -110,15 +110,44 @@ export function Splash() {
         </motion.div>
       </div>
 
-      {/* Loading subtext */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
-        className="pixel text-[10px] text-ink font-bold tracking-wider mt-4"
-      >
-        LOADING MISSION...
-      </motion.div>
+      {/* A briefing, not a spinner. The wait is already budgeted; spend it
+          saying something true instead of "LOADING". */}
+      <BriefingLine />
+    </div>
+  );
+}
+
+const BRIEFING = [
+  "Pulling your file…",
+  "Cutting nine locks…",
+  "These nine are yours alone.",
+];
+
+function BriefingLine() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setStep(1), 1100),
+      setTimeout(() => setStep(2), 1900),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="mt-4 h-4">
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={step}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 0.55, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18 }}
+          className="font-readout text-[10px] font-bold tracking-wider text-ink"
+        >
+          {BRIEFING[step]}
+        </motion.p>
+      </AnimatePresence>
     </div>
   );
 }

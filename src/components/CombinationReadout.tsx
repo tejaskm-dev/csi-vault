@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
+import { digitLandVariants } from "../lib/motion";
 
 interface CombinationReadoutProps {
   /** Digits recovered so far, as strings "1".."9". */
@@ -45,9 +46,14 @@ export function CombinationReadout({ unlocked, className }: CombinationReadoutPr
               )}
             >
               {got ? (
-                <span className="font-readout text-[15px] font-bold leading-none text-white">
+                <motion.span
+                  variants={digitLandVariants}
+                  initial="initial"
+                  animate="animate"
+                  className="font-readout text-[15px] font-bold leading-none text-white"
+                >
                   {digit}
-                </span>
+                </motion.span>
               ) : (
                 /* a closed shutter — a single ink slot, not a number */
                 <span className="block h-[2px] w-3 rounded-pill bg-ink/35" />

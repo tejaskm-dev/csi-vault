@@ -1,17 +1,34 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { VaultTile } from "../components/VaultTile";
 import { useGame } from "../context/GameContext";
 import { celebrate } from "../lib/motion";
+import { playUnlock, playComplete } from "../lib/sound";
 import { Art } from "../components/Art";
 import { Starburst } from "../components/Starburst";
 import { WavyDivider } from "../components/WavyDivider";
 
+/**
+ * Escalating headlines. The same word nine times is the clearest possible
+ * signal that nobody sat with this screen.
+ */
+const BEATS = [
+  "That's one.",
+  "Two down.",
+  "Three.",
+  "Getting quick at this.",
+  "Halfway.",
+  "Six. The wheel's loosening.",
+  "Seven. Two locks left.",
+  "Eight. One to go.",
+];
+
 export function Success() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { unlockVault, unlockedVaults } = useGame();
+  const { unlockVault, unlockedVaults, username } = useGame();
 
   const isBonus = id === "bonus";
   const digit = parseInt(id ?? "1", 10);
@@ -19,48 +36,62 @@ export function Success() {
   const [tileSolved, setTileSolved] = useState(false);
   const committed = useRef(false);
 
+  const remaining = 9 - unlockedVaults.length;
+  const allDone = remaining === 0;
+
   useEffect(() => {
     if (!committed.current && !isBonus && id) {
       unlockVault(id);
       committed.current = true;
     }
-    
+
     const t = setTimeout(() => {
       setTileSolved(true);
-      celebrate(); // Burst confetti exactly when the tile flips to green!
+
+      // Confetti is reserved for the ninth. Firing it on all nine unlocks
+      // spends the payoff eight times before the moment it was meant for —
+      // one moment stands out, many become noise.
+      if (allDone) {
+        celebrate();
+        playComplete();
+      } else {
+        playUnlock();
+      }
     }, 260);
 
     return () => clearTimeout(t);
-  }, [id, isBonus, unlockVault]);
+  }, [id, isBonus, unlockVault, allDone]);
 
-  const remaining = 9 - unlockedVaults.length;
-  const allDone = remaining === 0;
+  const headline = isBonus
+    ? "Bonus cleared"
+    : allDone
+      ? "That's all nine."
+      : BEATS[Math.min(unlockedVaults.length, BEATS.length) - 1] ?? "That's one.";
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 select-none text-center">
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 mt-6">
-        {/* Title Group */}
-        <div className="flex flex-col items-center relative z-10">
-          <span className="text-[12px] font-bold uppercase tracking-[0.2em] text-red-deep mb-2 bg-red/10 px-3 py-1 rounded-pill ink">
-            ACCESS GRANTED
+    <div className="flex flex-1 select-none flex-col justify-between p-6 text-center">
+      <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-6">
+        <div className="relative z-10 flex flex-col items-center">
+          <span className="ink mb-2 rounded-pill bg-red/10 px-3 py-1 font-body text-[12px] font-bold uppercase tracking-[0.2em] text-red-deep">
+            {allDone ? "Vault ready" : "Lock released"}
           </span>
-          <h1 className="text-[48px] font-extrabold uppercase leading-[0.9] tracking-tighter text-ink mt-2">
-            {isBonus ? "BONUS!" : "WOOHOO!"}
+          <h1 className="mt-2 font-display text-[42px] uppercase leading-[0.9] tracking-tighter text-ink">
+            {headline}
           </h1>
         </div>
 
-        {/* Central visual indicator with Starburst backing and negative margin overlap */}
-        <div className="w-52 h-52 flex items-center justify-center relative -mt-6 z-20 overflow-visible">
-          {!isBonus && (
-            <div className="absolute inset-0 scale-125 z-0 animate-[tumble_12s_linear_infinite]">
-              <Starburst fillColor="var(--color-yellow)" />
+        <div className="relative z-20 -mt-6 flex h-52 w-52 items-center justify-center overflow-visible">
+          {/* Starburst only when it means something — the last one. */}
+          {allDone && !isBonus && (
+            <div className="absolute inset-0 z-0 scale-125 animate-[tumble_12s_linear_infinite]">
+              <Starburst fillColor="var(--color-brass)" />
             </div>
           )}
 
-          <div className="w-36 h-36 z-10 relative">
+          <div className="relative z-10 h-36 w-36">
             {isBonus ? (
-              <div className="w-36 h-36 bg-pink/10 ink rounded-card flex items-center justify-center rotate-[3deg] shadow-ink">
-                <Art name="popper" alt="Popper" className="w-22 h-22 object-contain" />
+              <div className="ink flex h-36 w-36 rotate-[3deg] items-center justify-center rounded-plate bg-pink/10 shadow-plate-steel">
+                <Art name="popper" alt="Popper" className="h-22 w-22 object-contain" />
               </div>
             ) : (
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />
@@ -68,20 +99,27 @@ export function Success() {
           </div>
         </div>
 
-        {/* Informational Progress Text */}
-        <div className="flex flex-col gap-2 mt-4 relative z-10">
-          <p className="font-display font-extrabold text-[22px] text-ink leading-tight">
-            {isBonus ? "Bonus Cleared!" : `Digit ${digit} is yours!`}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.2 }}
+          className="relative z-10 flex flex-col gap-1.5"
+        >
+          <p className="font-body text-[15px] font-bold text-ink/70">
+            {isBonus
+              ? "Off the board, and it cost you nothing."
+              : allDone
+                ? `Nine of nine, ${username || "recruit"}. Go and open it.`
+                : `Digit ${digit} is on the board.`}
           </p>
-          <p className="font-body text-base font-bold text-ink/60">
-            {allDone
-               ? "All 9 digits recovered. The vault is ready!"
-               : `${remaining} ${remaining === 1 ? "digit" : "digits"} left to unlock.`}
-          </p>
-        </div>
+          {!allDone && !isBonus && (
+            <p className="font-readout text-[12px] font-bold text-ink/40">
+              {remaining} {remaining === 1 ? "LOCK" : "LOCKS"} REMAINING
+            </p>
+          )}
+        </motion.div>
       </div>
 
-      {/* Continue CTA */}
       <div className="mb-6 flex flex-col gap-4">
         <WavyDivider className="opacity-75" />
         <PrimaryButton
@@ -89,7 +127,7 @@ export function Success() {
           variant={allDone ? "reward" : "primary"}
           className="w-full"
         >
-          {allDone ? "OPEN THE VAULT" : "CONTINUE"}
+          {allDone ? "OPEN THE VAULT" : "KEEP GOING"}
         </PrimaryButton>
       </div>
     </div>

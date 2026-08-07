@@ -11,7 +11,7 @@ import { CombinationReadout } from "../components/CombinationReadout";
 import { CrewFeed } from "../components/CrewFeed";
 import { useGame } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
-import { getMuted, setMuted } from "../lib/sound";
+import { getMuted, setMuted, playTap } from "../lib/sound";
 import { formatClock } from "../lib/utils";
 
 export function Home() {
@@ -62,10 +62,18 @@ export function Home() {
       <div className="flex flex-1 flex-col px-5 pb-3 pt-2">
         {/* Hero. Takes the space it deserves — flex-1, not a fixed min-height. */}
         <div className="relative flex flex-1 items-center justify-center">
+          {/* Tap, not hover. On a phone onPointerEnter fires oddly or never, so
+              the most tactile thing on screen was invisible to the actual
+              audience. Each poke advances the dial a quarter turn. */}
           {showHero ? (
             <div
-              onPointerEnter={() => setWheelRotate(120)}
-              onPointerLeave={() => setWheelRotate(0)}
+              role="button"
+              tabIndex={0}
+              aria-label="Spin the handwheel"
+              onClick={() => {
+                setWheelRotate((r) => r + 90);
+                playTap();
+              }}
               className="group relative z-20 flex aspect-square w-full max-w-[268px] rotate-[-3deg] cursor-pointer items-center justify-center"
             >
               <TumblerRing />

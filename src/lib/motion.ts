@@ -55,6 +55,67 @@ export const shakeVariants = {
   },
 };
 
+/* ------------------------------------------------------------------ *
+ * GAME FEEL
+ *
+ * Durations follow the standard perceived-responsiveness bands: ~100ms for
+ * simple state feedback, 150–200ms for a press, 200–300ms for a change that
+ * moves a lot of pixels. Interactive springs sit at stiffness 200–300 so the
+ * response is immediate and spends its time settling rather than travelling.
+ * ------------------------------------------------------------------ */
+
+/** Press. Real squash — widen as it flattens, so it deforms instead of
+ *  merely shrinking. This is the difference between "smaller" and "squishy". */
+export const SQUASH = { scaleX: 1.04, scaleY: 0.93 };
+
+export const PRESS_SPRING = {
+  type: "spring" as const,
+  stiffness: 280,
+  damping: 18,
+  mass: 0.7,
+};
+
+/**
+ * ANTICIPATION — a small pull-back before a large move.
+ *
+ * Disney's second principle, and the cheapest way to make a payoff feel
+ * earned rather than merely triggered. The tile flinches inward for 90ms
+ * before the unlock wipe runs, which reads as the mechanism taking up slack.
+ */
+export const anticipateVariants = {
+  rest: { scale: 1 },
+  wind: {
+    scale: 0.93,
+    transition: { duration: 0.09, ease: "easeIn" as const },
+  },
+  release: {
+    scale: [0.93, 1.08, 1],
+    transition: { duration: 0.32, times: [0, 0.55, 1], ease: "easeOut" as const },
+  },
+};
+
+/**
+ * HIT-STOP — freeze for a beat on impact.
+ *
+ * Fighting games hold a frame when a hit lands; the pause is what sells the
+ * weight. Await this between "answer is correct" and navigating away so the
+ * confirmation registers before the screen changes.
+ */
+export function hitStop(ms = 90) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/** A single digit landing in the combination readout: overshoot and settle. */
+export const digitLandVariants = {
+  initial: { scale: 0.4, y: -8, opacity: 0 },
+  animate: {
+    scale: [0.4, 1.18, 1],
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.34, times: [0, 0.6, 1], ease: "easeOut" as const },
+  },
+};
+
 // CELEBRATE — canvas-confetti, 1.2s.
 export function celebrate() {
   const duration = 1200;

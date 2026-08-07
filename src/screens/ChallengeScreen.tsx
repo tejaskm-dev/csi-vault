@@ -17,6 +17,21 @@ import { cn } from "../lib/utils";
 const CHECKING_MS = 400;
 const WRONG_HOLD_MS = 360;
 
+/**
+ * Escalating failure copy. One hardcoded string repeated on every miss is the
+ * single loudest tell that nobody sat with the screen — and it's the message a
+ * struggling player sees most often. Later lines nudge toward the hint.
+ */
+const MISS_LINES = [
+  "The seal held.",
+  "Not that one.",
+  "Still shut. Try the nudge?",
+  "That's three. Take the hint.",
+];
+
+/** Varying the wait keeps a 400ms pause from reading as a fixed spinner. */
+const CHECKING_LINES = ["CHECKING", "TESTING", "READING DIAL"];
+
 type Status = "idle" | "checking" | "wrong" | "correct";
 
 export function ChallengeScreen() {
@@ -33,6 +48,7 @@ export function ChallengeScreen() {
   const [wrongId, setWrongId] = useState<string | null>(null);
   const [toast, setToast] = useState<null | "wrong" | "timeup">(null);
   const [hintOpen, setHintOpen] = useState(false);
+  const [misses, setMisses] = useState(0);
   const timers = useRef<number[]>([]);
 
   const isBonus = Boolean(challenge?.isBonus);
@@ -91,6 +107,7 @@ export function ChallengeScreen() {
       } else {
         setStatus("wrong");
         playWrong();
+        setMisses((m) => m + 1);
         setWrongId(isTextInput ? "__text__" : selectedId);
         setToast("wrong");
         const rst = window.setTimeout(() => {
@@ -154,7 +171,11 @@ export function ChallengeScreen() {
         <Toast
           isVisible={toast !== null}
           type={toast === "timeup" ? "info" : "error"}
-          message={toast === "timeup" ? "Time's up — you can still submit!" : "Access denied — try again"}
+          message={
+            toast === "timeup"
+              ? "Clock's out — the answer still counts."
+              : MISS_LINES[Math.min(misses - 1, MISS_LINES.length - 1)] ?? MISS_LINES[0]
+          }
           actionText="NUDGE?"
           onAction={() => {
             setToast(null);
@@ -219,7 +240,9 @@ export function ChallengeScreen() {
           variant={isBonus ? "reward" : "primary"}
           className="w-full"
         >
-          {status === "checking" ? "VALIDATING..." : "SUBMIT ANSWER"}
+          {status === "checking"
+            ? `${CHECKING_LINES[misses % CHECKING_LINES.length]}...`
+            : "CRACK IT"}
         </PrimaryButton>
       </div>
 
