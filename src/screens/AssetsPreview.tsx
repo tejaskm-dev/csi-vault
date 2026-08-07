@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Safe } from "../components/Safe";
+import { VaultDoor } from "../components/VaultDoor";
 import {
   Trophy, GiftBox, Key, Stopwatch, HintBulb,
   Padlock, Medal, Flag, MysteryBox,
@@ -37,6 +39,59 @@ function Cell({ label, children }: { label: string; children: React.ReactNode })
       <span className="text-center text-[10px] font-bold uppercase tracking-wider text-ink/50">
         {label}
       </span>
+    </div>
+  );
+}
+
+function DoorBench() {
+  const [open, setOpen] = useState(false);
+  const [wheel, setWheel] = useState(0);
+  const [shake, setShake] = useState(false);
+
+  return (
+    <div className="ink rounded-plate bg-white p-4 shadow-ink-sm">
+      <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-ink/50">
+        Vault door — code version, plays live
+      </h2>
+      <div className="flex flex-wrap items-start gap-5">
+        <VaultDoor
+          state={open ? "open" : "closed"}
+          wheelRotate={wheel}
+          shake={shake}
+          className="w-56 shrink-0"
+        />
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => { setOpen(false); setTimeout(() => setOpen(true), 60); }}
+            className="rounded-btn border-3 border-ink bg-red px-4 py-2 text-left font-display text-[13px] text-white active:translate-y-[2px]"
+          >
+            SWING OPEN
+          </button>
+          <button
+            onClick={() => setOpen(false)}
+            className="rounded-btn border-3 border-ink bg-paper px-4 py-2 text-left font-display text-[13px] text-ink active:translate-y-[2px]"
+          >
+            CLOSE
+          </button>
+          <button
+            onClick={() => setWheel((w) => w + 90)}
+            className="rounded-btn border-3 border-ink bg-paper px-4 py-2 text-left font-display text-[13px] text-ink active:translate-y-[2px]"
+          >
+            SPIN WHEEL +90°
+          </button>
+          <button
+            onClick={() => { setShake(true); setTimeout(() => setShake(false), 450); }}
+            className="rounded-btn border-3 border-ink bg-paper px-4 py-2 text-left font-display text-[13px] text-ink active:translate-y-[2px]"
+          >
+            SHAKE (REJECT)
+          </button>
+          <p className="mt-1 max-w-[17rem] text-[12px] leading-snug text-ink/55">
+            Frame and cavity are static; the door is a separate layer rotated in
+            3D on its hinge, then a thickness slab fades in. Replaces 1.25&nbsp;MB
+            of PNGs.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -93,6 +148,11 @@ export function AssetsPreview() {
           </div>
         </Panel>
       )}
+
+      {/* ---- the door, live ---- */}
+      <div className="mb-8">
+        <DoorBench />
+      </div>
 
       {/* ---- code-built props ---- */}
       <Panel title="Props — built in code" note="No exports needed. Recolour and animate from tokens.">
