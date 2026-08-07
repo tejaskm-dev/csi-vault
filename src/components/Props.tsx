@@ -108,44 +108,41 @@ export function Trophy({ className }: PropProps) {
 export function GiftBox({ className }: PropProps) {
   return (
     <Frame className={className} label="Gift box">
-      {/* ---- box: three faces ---- */}
-      {/* right face */}
-      <path d="M66 50 L84 40 L84 78 L66 88 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      {/* front face */}
-      <path d="M20 50 H66 V88 H20 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      {/* top face */}
-      <path d="M20 50 L38 40 L84 40 L66 50 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      {/* ---- box: three faces. Sits low so the bow has room to be big. ---- */}
+      <path d="M64 56 L82 47 L82 82 L64 91 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 56 H64 V91 H22 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 56 L40 47 L82 47 L64 56 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
 
-      {/* surface speckle, so the faces aren't dead flat */}
-      <g fill={WHITE} opacity="0.14">
-        <circle cx="29" cy="62" r="1.6" /><circle cx="57" cy="70" r="1.3" />
-        <circle cx="35" cy="80" r="1.2" /><circle cx="61" cy="57" r="1.1" />
-        <circle cx="75" cy="60" r="1.3" /><circle cx="46" cy="46" r="1.2" />
-      </g>
+      {/* ONE ribbon run — front band continuing over the top. The previous
+          version crossed four bands and read as a waffle. */}
+      <rect x="37" y="56" width="13" height="35" fill={PURPLE_MID} stroke={INK} strokeWidth="3" />
+      <path d="M37 56 L55 47 L68 47 L50 56 Z" fill={PURPLE_MID} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+      <rect x="39" y="58" width="3" height="31" fill={WHITE} opacity="0.22" />
 
-      {/* ---- ribbon: front band, top band, side band ---- */}
-      <rect x="37" y="50" width="13" height="38" fill={PURPLE_MID} stroke={INK} strokeWidth="3" />
-      <path d="M37 50 L55 40 L68 40 L50 50 Z" fill={PURPLE_MID} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
-      <path d="M66 62 L84 52 L84 61 L66 71 Z" fill={PURPLE_MID} opacity="0.9" stroke={INK} strokeWidth="2.5" />
-      <rect x="20" y="62" width="46" height="9" fill={PURPLE_MID} stroke={INK} strokeWidth="3" />
-      {/* ribbon light edge */}
-      <rect x="39" y="52" width="3" height="34" fill={WHITE} opacity="0.22" />
+      {/* light corner + shaded lower band on the front face */}
+      <path d="M22 56 h10 v35 H22 z" fill={PURPLE_LIGHT} opacity="0.28" />
+      <path d="M22 82 h42 v9 H22 z" fill={PURPLE_DEEP} opacity="0.25" />
 
-      {/* ---- bow: two loops, knot, two tails ---- */}
-      {/* tails first, behind */}
-      <path d="M56 32 q-6 8 -14 10 q6 3 10 -1 z" fill={PURPLE_MID} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
-      <path d="M58 32 q7 7 15 8 q-6 4 -11 0 z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+      {/* ---- bow: two big round loops, knot, two tails ---- */}
+      {/* tails behind */}
+      <path d="M48 34 q-9 14 -19 17 q9 4 14 -4 z" fill={PURPLE_MID} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+      <path d="M56 34 q9 14 19 17 q-9 4 -14 -4 z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+
       {/* left loop */}
-      <path d="M56 30 q-20 -14 -25 -4 q-4 9 8 10 q9 1 17 -6 z"
-        fill={PURPLE_LIGHT} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
-      <path d="M44 27 q-8 -3 -11 1 q-2 4 4 5 q-2 -4 7 -6 z" fill={PURPLE_DEEP} opacity="0.35" />
+      <path d="M52 32 C 40 12, 18 15, 20 28 C 21 38, 40 38, 52 32 Z"
+        fill={PURPLE_LIGHT} stroke={INK} strokeWidth="3.6" strokeLinejoin="round" />
+      <path d="M34 20 C 26 20, 22 24, 24 29 C 26 32, 31 31, 30 27 C 29 23, 31 21, 34 20 Z"
+        fill={PURPLE_DEEP} opacity="0.3" />
+
       {/* right loop */}
-      <path d="M58 30 q20 -14 25 -4 q4 9 -8 10 q-9 1 -17 -6 z"
-        fill={PURPLE} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
-      <path d="M70 27 q8 -3 11 1 q2 4 -4 5 q2 -4 -7 -6 z" fill={PURPLE_DEEP} opacity="0.4" />
+      <path d="M56 32 C 68 12, 90 15, 88 28 C 87 38, 68 38, 56 32 Z"
+        fill={PURPLE} stroke={INK} strokeWidth="3.6" strokeLinejoin="round" />
+      <path d="M74 20 C 82 20, 86 24, 84 29 C 82 32, 77 31, 78 27 C 79 23, 77 21, 74 20 Z"
+        fill={PURPLE_DEEP} opacity="0.4" />
+
       {/* knot */}
-      <ellipse cx="57" cy="32" rx="7.5" ry="6" fill={PURPLE_MID} stroke={INK} strokeWidth="3.5" />
-      <ellipse cx="54.5" cy="30" rx="2.6" ry="2" fill={WHITE} opacity="0.35" />
+      <ellipse cx="54" cy="33" rx="9" ry="7" fill={PURPLE_MID} stroke={INK} strokeWidth="3.6" />
+      <ellipse cx="50.5" cy="30.6" rx="3" ry="2.2" fill={WHITE} opacity="0.4" />
     </Frame>
   );
 }
@@ -387,22 +384,41 @@ export function Flag({ className }: PropProps) {
 export function MysteryBox({ className }: PropProps) {
   return (
     <Frame className={className} label="Bonus">
-      <path d="M66 50 L84 40 L84 78 L66 88 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      <path d="M20 50 H66 V88 H20 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      <path d="M20 50 L38 40 L84 40 L66 50 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      <g fill={WHITE} opacity="0.14">
-        <circle cx="30" cy="64" r="1.6" /><circle cx="56" cy="76" r="1.3" />
-        <circle cx="74" cy="58" r="1.3" />
+      {/* glow behind — this is a reward, it should read as lit */}
+      <circle cx="50" cy="60" r="36" fill={GOLD} opacity="0.14" />
+
+      {/* three faces */}
+      <path d="M64 52 L82 43 L82 80 L64 89 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 52 H64 V89 H22 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 52 L40 43 L82 43 L64 52 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+
+      {/* recessed front panel — the detail the plain version was missing */}
+      <rect x="28" y="58" width="30" height="25" rx="4" fill={PURPLE_DEEP} opacity="0.35"
+        stroke={INK} strokeWidth="2.4" />
+      {/* corner rivets, like the safe */}
+      <g fill={PURPLE_DEEP} stroke={INK} strokeWidth="1.5">
+        <circle cx="26" cy="56" r="1.9" /><circle cx="60" cy="56" r="1.9" />
+        <circle cx="26" cy="85" r="1.9" /><circle cx="60" cy="85" r="1.9" />
       </g>
+      {/* top-face seam */}
+      <path d="M40 43 L22 52" stroke={INK} strokeWidth="2" opacity="0.35" />
+
+      {/* the mark, centred on the front panel */}
       <text x="43" y="70" textAnchor="middle" dominantBaseline="central"
-        fill={CREAM} fontSize="30" fontWeight="800" stroke={INK} strokeWidth="1.4"
+        fill={GOLD} fontSize="26" fontWeight="800"
         fontFamily="var(--font-display), system-ui, sans-serif">
         ?
       </text>
+
+      {/* light corner + shaded base */}
+      <path d="M22 52 h9 v37 H22 z" fill={PURPLE_LIGHT} opacity="0.25" />
+      <path d="M22 81 h42 v8 H22 z" fill={PURPLE_DEEP} opacity="0.28" />
+
       {/* sparkles */}
-      <g fill={GOLD} stroke={INK} strokeWidth="1.6" strokeLinejoin="round">
-        <path d="M84 18 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 z" />
-        <path d="M16 26 l1.6 4 4 1.6 -4 1.6 -1.6 4 -1.6 -4 -4 -1.6 4 -1.6 z" />
+      <g fill={GOLD} stroke={INK} strokeWidth="1.7" strokeLinejoin="round">
+        <path d="M83 15 l2.4 6 6 2.4 -6 2.4 -2.4 6 -2.4 -6 -6 -2.4 6 -2.4 z" />
+        <path d="M15 27 l1.8 4.6 4.6 1.8 -4.6 1.8 -1.8 4.6 -1.8 -4.6 -4.6 -1.8 4.6 -1.8 z" />
+        <path d="M68 26 l1.4 3.6 3.6 1.4 -3.6 1.4 -1.4 3.6 -1.4 -3.6 -3.6 -1.4 3.6 -1.4 z" />
       </g>
     </Frame>
   );
