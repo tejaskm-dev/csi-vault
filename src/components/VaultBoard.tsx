@@ -1,11 +1,7 @@
 import { VaultTile, type VaultState } from "./VaultTile";
 import { useGame } from "../context/GameContext";
+import { cn } from "../lib/utils";
 
-/**
- * How many tiles are playable at once. A strictly sequential board lets one
- * hard question stall a player for the whole event; a fully open board means
- * the locked state never appears. A rolling window of three keeps both.
- */
 const OPEN_WINDOW = 3;
 
 export function vaultStates(unlockedVaults: string[]): VaultState[] {
@@ -22,12 +18,20 @@ interface VaultBoardProps {
   className?: string;
 }
 
-export function VaultBoard({ unlockedVaults, onSelect }: VaultBoardProps) {
+export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardProps) {
   const { challenges } = useGame();
   const states = vaultStates(unlockedVaults);
 
+  // Tiles alternate tilt by position
+  const tilts = [-2, 1.5, -1, 2, -1.5, 1, -2, 1.5, -1];
+
   return (
-    <div>
+    <div
+      className={cn(
+        "grid grid-cols-3 gap-3.5 w-full p-4 bg-paper-deep ink rounded-card shadow-ink select-none",
+        className
+      )}
+    >
       {states.map((state, i) => (
         <VaultTile
           key={i + 1}
@@ -35,6 +39,7 @@ export function VaultBoard({ unlockedVaults, onSelect }: VaultBoardProps) {
           state={state}
           icon={<span>{challenges[i]?.glyph ?? "star"}</span>}
           onClick={() => onSelect(i + 1, state)}
+          tilt={tilts[i]}
         />
       ))}
     </div>

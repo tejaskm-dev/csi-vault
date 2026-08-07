@@ -1,5 +1,79 @@
 @import "tailwindcss";
 
-/* Intentionally bare.
-   The entire design system was stripped for a from-scratch redesign.
-   Tokens, fonts, radii, shadows and motion all get defined by the redesign. */
+@theme {
+  /* ---- Ink & paper ---- */
+  --color-ink:        #14110F;   /* every outline, every heading */
+  --color-paper:      #FFF4DA;   /* the base canvas — warm, not white */
+  --color-paper-deep: #F5E4BE;   /* recessed areas, progress track */
+  --color-white:      #FFFFFF;
+
+  /* ---- Brand (locked — this is CSI's red, do not alter) ---- */
+  --color-red:        #E8332B;
+  --color-red-deep:   #B01F19;
+
+  /* ---- Play palette. Each has a -deep for the 3D underside. ---- */
+  --color-blue:       #2B6BE4;   --color-blue-deep:   #1B4BA8;
+  --color-yellow:     #FFC93C;   --color-yellow-deep: #D99A0B;
+  --color-green:      #35C46A;   --color-green-deep:  #1F8F49;
+  --color-purple:     #9B5DE5;   --color-purple-deep: #6E37B5;
+  --color-orange:     #FF8A3D;   --color-orange-deep: #D45F13;
+  --color-pink:       #FF6FA5;   --color-pink-deep:   #D13C77;
+  --color-teal:       #21C7C7;   --color-teal-deep:   #128A8A;
+
+  /* ---- Nine tile fills. Saturated, NOT pastel. One per grid position. ---- */
+  --color-tile-1: #FFC93C;  --color-tile-2: #21C7C7;  --color-tile-3: #9B5DE5;
+  --color-tile-4: #FF8A3D;  --color-tile-5: #35C46A;  --color-tile-6: #2B6BE4;
+  --color-tile-7: #FF6FA5;  --color-tile-8: #FFE066;  --color-tile-9: #6FD8FF;
+
+  /* ---- Radii. Three values. Nothing else exists. ---- */
+  --radius-card: 28px;
+  --radius-btn:  20px;
+  --radius-pill: 999px;
+
+  /* ---- Hard shadows. Zero blur, always. ---- */
+  --shadow-ink:      5px 5px 0 0 #14110F;
+  --shadow-ink-lg:   8px 8px 0 0 #14110F;
+  --shadow-ink-sm:   3px 3px 0 0 #14110F;
+  --shadow-ink-none: 0 0 0 0 #14110F;
+
+  /* ---- Type ---- */
+  --font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  --font-body:    'Nunito Sans', system-ui, sans-serif;
+  --font-pixel:   'Press Start 2P', monospace;
+}
+
+@utility ink {
+  border: 3px solid var(--color-ink);
+}
+
+/* Vault digits, timer, ranks. The ONLY place the pixel font appears. */
+@utility pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+/* 56px minimum touch target — phone in hand, standing up. */
+@utility tap {
+  min-height: 56px;
+  min-width: 56px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  input {
+    font-size: 16px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 800;
+  }
+}

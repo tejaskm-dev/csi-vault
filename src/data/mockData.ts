@@ -311,7 +311,7 @@ export const mockBonusChallenge: Challenge = {
   id: 'bonus',
   title: 'Spot the Match',
   type: 'image_grid',
-  question: '🍎 🍌 🍇 🍊 🍇 🍌 🍇 🍎 🍇 — which fruit shows up the most?',
+  question: 'Apple, banana, grapes, orange, grapes, banana, grapes, apple, grapes — which one shows up the most?',
   glyph: 'star',
   options: [
     { id: 'a', label: 'Apple', glyph: 'apple' },
