@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Art } from "../components/Art";
+import { Padlock, Stopwatch } from "../components/Props";
 
 export function Waiting() {
   const navigate = useNavigate();
@@ -25,11 +26,11 @@ export function Waiting() {
           <div className="bg-paper-deep/60 rounded-pill p-4 ink shadow-ink flex items-center justify-center w-36 h-36 relative overflow-visible">
             {isPost ? (
               <div className="scale-115">
-                <Art name="lock" alt="Locked" className="w-20 h-20 object-contain" />
+                <Padlock className="w-20 h-20" />
               </div>
             ) : (
               <div className="animate-[tumble_3s_linear_infinite] scale-115">
-                <Art name="hourglass" alt="Hourglass" className="w-20 h-20 object-contain" />
+                <Stopwatch className="w-20 h-20" />
               </div>
             )}
           </div>

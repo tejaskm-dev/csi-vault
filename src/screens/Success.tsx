@@ -9,6 +9,7 @@ import { playUnlock, playComplete } from "../lib/sound";
 import { Art } from "../components/Art";
 import { Starburst } from "../components/Starburst";
 import { WavyDivider } from "../components/WavyDivider";
+import { MysteryBox } from "../components/Props";
 
 /**
  * Escalating headlines. The same word nine times is the clearest possible
@@ -91,7 +92,7 @@ export function Success() {
           <div className="relative z-10 h-36 w-36">
             {isBonus ? (
               <div className="ink flex h-36 w-36 rotate-[3deg] items-center justify-center rounded-plate bg-pink/10 shadow-plate-steel">
-                <Art name="popper" alt="Popper" className="h-22 w-22 object-contain" />
+                <MysteryBox className="h-22 w-22" />
               </div>
             ) : (
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Pressable } from "../components/Pressable";
 import { Art } from "../components/Art";
+import { MysteryBox } from "../components/Props";
 
 export function BonusFound() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export function BonusFound() {
         {/* Hero Art Asset (gift) */}
         <div className="my-2">
           <div className="bg-pink/5 rounded-card p-4 ink shadow-ink-lg flex items-center justify-center w-40 h-40 rotate-[2.2deg]">
-            <Art name="gift" alt="Bonus Reward Box" className="w-28 h-28 object-contain" />
+            <MysteryBox className="w-28 h-28" />
           </div>
         </div>
 

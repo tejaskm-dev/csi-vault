@@ -8,6 +8,7 @@ import { Pressable } from "../components/Pressable";
 import { useGame } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
 import { Art } from "../components/Art";
+import { GiftBox, Padlock } from "../components/Props";
 
 export function VaultGrid() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export function VaultGrid() {
             disabled={bonusSolved}
             className="w-full text-center flex items-center justify-center gap-2"
           >
-            <Art name="gift" alt="Gift" className="w-5 h-5 shrink-0" />
+            <GiftBox className="w-5 h-5 shrink-0" />
             <span>{bonusSolved ? "BONUS COMPLETE" : "SPOT THE BONUS ROUND"}</span>
           </PrimaryButton>
         )}
@@ -82,7 +83,7 @@ export function VaultGrid() {
 
       {/* Locked Digit Modal */}
       <Modal isOpen={lockedDigit !== null} onClose={() => setLockedDigit(null)}>
-        <Art name="lock" alt="Locked" className="w-12 h-12 mx-auto mb-2 object-contain" />
+        <Padlock className="w-12 h-12 mx-auto mb-2" />
         <h2 className="text-[28px] font-extrabold uppercase text-ink leading-tight mt-2">NOT YET, RECRUIT</h2>
         <p className="font-body text-base font-bold text-ink/70 leading-relaxed px-2 mt-1">
           Digit {lockedDigit} opens as you clear the tiles ahead of it. A rolling window of three is always open — try another active tile!

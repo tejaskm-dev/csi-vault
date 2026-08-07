@@ -5,6 +5,7 @@ import { useGame } from "../context/GameContext";
 import type { LeaderboardEntry } from "../data/mockData";
 import { Art } from "../components/Art";
 import { cn } from "../lib/utils";
+import { Trophy } from "../components/Props";
 
 const SLOTS = [2, 1, 3];
 
@@ -30,7 +31,7 @@ export function Winner() {
         {/* Hero Illustration (Trophy) */}
         <div className="my-1 flex justify-center">
           <div className="bg-yellow/10 rounded-card p-3 ink shadow-ink-sm flex items-center justify-center w-28 h-28 rotate-[-2deg]">
-            <Art name="trophy" alt="Trophy" className="w-20 h-20 object-contain" />
+            <Trophy className="w-20 h-20" />
           </div>
         </div>
 
