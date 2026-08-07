@@ -90,10 +90,11 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
       role="img"
       aria-label={`Safe ${digit}, ${state}`}
     >
-      {/* hinges, behind everything */}
+      {/* Hinges sit on the LEFT, because that is the edge the door swings on.
+          They were on the right while the door opened leftward. */}
       <g>
-        <rect x="88" y="24" width="8" height="12" rx="3" fill={s.deep} stroke={INK} strokeWidth="2.5" />
-        <rect x="88" y="64" width="8" height="12" rx="3" fill={s.deep} stroke={INK} strokeWidth="2.5" />
+        <rect x="2" y="24" width="8" height="12" rx="3" fill={s.deep} stroke={INK} strokeWidth="2.5" />
+        <rect x="2" y="64" width="8" height="12" rx="3" fill={s.deep} stroke={INK} strokeWidth="2.5" />
       </g>
 
       {/* ---- body ---- */}
@@ -111,7 +112,7 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
 
         {/* the recovered digit, sitting inside */}
         <motion.text
-          x="54"
+          x="58"
           y="52"
           textAnchor="middle"
           dominantBaseline="central"
@@ -130,7 +131,7 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
               ? { delay: (SWING_DELAY + SWING_MS * 0.55) / 1000, duration: 0.28, ease: [0.34, 1.56, 0.64, 1] }
               : { duration: 0 }
           }
-          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          style={{ originX: 0.5, originY: 0.5 }}
         >
           {digit}
         </motion.text>
@@ -139,13 +140,16 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
       {/* ---- the door: collapses toward its left hinge to open ---- */}
       <motion.g
         initial={false}
-        animate={{ scaleX: open ? 0.2 : 1 }}
+        animate={{ scaleX: open ? 0.24 : 1 }}
         transition={
           playing
             ? { delay: SWING_DELAY / 1000, duration: SWING_MS / 1000, ease: [0.5, 0, 0.3, 1] }
             : { duration: 0 }
         }
-        style={{ transformBox: "view-box", transformOrigin: "17px 50px" }}
+        // Framer ignores CSS transform-origin on SVG and uses its own origin,
+        // defaulting to the bbox centre — which collapsed the door to the
+        // middle. originX: 0 pins it to the left edge of the door's bbox.
+        style={{ originX: 0, originY: 0.5 }}
       >
         {/* door face */}
         <rect x="17" y="17" width="66" height="66" rx="9" fill={s.base} stroke={INK} strokeWidth="3.5" />
@@ -172,16 +176,20 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
           />
         ))}
 
-        {/* handwheel — spins first, then the door gives */}
+        {/* Handwheel — spins first, then fades as the door turns edge-on.
+            At 22% width it would otherwise squash into an illegible sliver. */}
         <motion.g
           initial={false}
-          animate={{ rotate: open ? 900 : 0 }}
+          animate={{ rotate: open ? 900 : 0, opacity: open ? 0 : 1 }}
           transition={
             playing
-              ? { duration: SPIN_MS / 1000, ease: [0.4, 0, 0.2, 1] }
+              ? {
+                  rotate: { duration: SPIN_MS / 1000, ease: [0.4, 0, 0.2, 1] },
+                  opacity: { delay: SWING_DELAY / 1000, duration: SWING_MS / 2000 },
+                }
               : { duration: 0 }
           }
-          style={{ transformBox: "view-box", transformOrigin: "50px 50px" }}
+          style={{ originX: 0.5, originY: 0.5 }}
         >
           <circle cx="50" cy="50" r="17" fill={locked ? "#8A857C" : "#4A4A4A"} stroke={INK} strokeWidth="3" />
           <circle cx="50" cy="50" r="12.5" fill={locked ? "#6E6A62" : "#2B2B2B"} stroke={INK} strokeWidth="2" />
