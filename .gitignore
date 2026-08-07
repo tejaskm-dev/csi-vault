@@ -7,3 +7,7 @@ coverage/
 .env*
 !.env.example
 art-source/
+
+# Reference projects — kept locally for their code, never committed
+skloop-main/
+NAME-sandbox-main/
