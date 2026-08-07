@@ -123,26 +123,32 @@ export function GiftBox({ className }: PropProps) {
       <path d="M22 56 h10 v35 H22 z" fill={PURPLE_LIGHT} opacity="0.28" />
       <path d="M22 82 h42 v9 H22 z" fill={PURPLE_DEEP} opacity="0.25" />
 
-      {/* ---- bow: two big round loops, knot, two tails ---- */}
-      {/* tails behind */}
-      <path d="M48 34 q-9 14 -19 17 q9 4 14 -4 z" fill={PURPLE_MID} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
-      <path d="M56 34 q9 14 19 17 q-9 4 -14 -4 z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+      {/* ---- bow ----
+           Sits ON the top face and spans ~38 units against the box's 42 —
+           the previous version was 68 wide on a 42-wide box, i.e. the bow was
+           wider than the present, which is most of why it read as goofy. */}
 
-      {/* left loop */}
-      <path d="M52 32 C 40 12, 18 15, 20 28 C 21 38, 40 38, 52 32 Z"
-        fill={PURPLE_LIGHT} stroke={INK} strokeWidth="3.6" strokeLinejoin="round" />
-      <path d="M34 20 C 26 20, 22 24, 24 29 C 26 32, 31 31, 30 27 C 29 23, 31 21, 34 20 Z"
-        fill={PURPLE_DEEP} opacity="0.3" />
+      {/* tails, short, falling across the top face */}
+      <path d="M49 47 C 45 53, 40 56, 36 57 C 40 59, 46 55, 50 50 Z"
+        fill={PURPLE_MID} stroke={INK} strokeWidth="2.8" strokeLinejoin="round" />
+      <path d="M55 47 C 59 53, 64 56, 68 57 C 64 59, 58 55, 54 50 Z"
+        fill={PURPLE_DEEP} stroke={INK} strokeWidth="2.8" strokeLinejoin="round" />
+
+      {/* left loop — closed teardrop, folds back under the knot */}
+      <path d="M52 45 C 47 36, 36 32, 33 38 C 30 45, 43 49, 52 45 Z"
+        fill={PURPLE_LIGHT} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+      <path d="M40 36 C 35 36, 33 39, 35 42 C 37 44, 40 42, 39 40 Z"
+        fill={PURPLE_DEEP} opacity="0.28" />
 
       {/* right loop */}
-      <path d="M56 32 C 68 12, 90 15, 88 28 C 87 38, 68 38, 56 32 Z"
-        fill={PURPLE} stroke={INK} strokeWidth="3.6" strokeLinejoin="round" />
-      <path d="M74 20 C 82 20, 86 24, 84 29 C 82 32, 77 31, 78 27 C 79 23, 77 21, 74 20 Z"
-        fill={PURPLE_DEEP} opacity="0.4" />
+      <path d="M52 45 C 57 36, 68 32, 71 38 C 74 45, 61 49, 52 45 Z"
+        fill={PURPLE} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+      <path d="M64 36 C 69 36, 71 39, 69 42 C 67 44, 64 42, 65 40 Z"
+        fill={PURPLE_DEEP} opacity="0.35" />
 
       {/* knot */}
-      <ellipse cx="54" cy="33" rx="9" ry="7" fill={PURPLE_MID} stroke={INK} strokeWidth="3.6" />
-      <ellipse cx="50.5" cy="30.6" rx="3" ry="2.2" fill={WHITE} opacity="0.4" />
+      <ellipse cx="52" cy="45" rx="6.5" ry="5.4" fill={PURPLE_MID} stroke={INK} strokeWidth="3.2" />
+      <ellipse cx="49.6" cy="43.2" rx="2.2" ry="1.7" fill={WHITE} opacity="0.42" />
     </Frame>
   );
 }
@@ -381,44 +387,71 @@ export function Flag({ className }: PropProps) {
 /* ================================================================
    MYSTERY BOX — bonus announcement
    ================================================================ */
+/**
+ * A loot crate rather than a wrapped gift — banded corners, plank seams and a
+ * latch. All rigid geometry, which is the category that survives being built
+ * in code.
+ */
 export function MysteryBox({ className }: PropProps) {
   return (
     <Frame className={className} label="Bonus">
-      {/* glow behind — this is a reward, it should read as lit */}
-      <circle cx="50" cy="60" r="36" fill={GOLD} opacity="0.14" />
+      <circle cx="50" cy="58" r="35" fill={GOLD} opacity="0.13" />
 
-      {/* three faces */}
-      <path d="M64 52 L82 43 L82 80 L64 89 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      <path d="M22 52 H64 V89 H22 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
-      <path d="M22 52 L40 43 L82 43 L64 52 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      {/* ---- three faces ---- */}
+      <path d="M64 50 L82 41 L82 80 L64 89 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 50 H64 V89 H22 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
+      <path d="M22 50 L40 41 L82 41 L64 50 Z" fill={PURPLE_LIGHT} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
 
-      {/* recessed front panel — the detail the plain version was missing */}
-      <rect x="28" y="58" width="30" height="25" rx="4" fill={PURPLE_DEEP} opacity="0.35"
-        stroke={INK} strokeWidth="2.4" />
-      {/* corner rivets, like the safe */}
-      <g fill={PURPLE_DEEP} stroke={INK} strokeWidth="1.5">
-        <circle cx="26" cy="56" r="1.9" /><circle cx="60" cy="56" r="1.9" />
-        <circle cx="26" cy="85" r="1.9" /><circle cx="60" cy="85" r="1.9" />
+      {/* plank seams */}
+      <g stroke={INK} strokeWidth="1.8" opacity="0.3">
+        <line x1="22" y1="64" x2="64" y2="64" />
+        <line x1="22" y1="77" x2="64" y2="77" />
+        <line x1="64" y1="64" x2="82" y2="55" />
+        <line x1="64" y1="77" x2="82" y2="68" />
       </g>
-      {/* top-face seam */}
-      <path d="M40 43 L22 52" stroke={INK} strokeWidth="2" opacity="0.35" />
 
-      {/* the mark, centred on the front panel */}
-      <text x="43" y="70" textAnchor="middle" dominantBaseline="central"
-        fill={GOLD} fontSize="26" fontWeight="800"
+      {/* lid band across the top face */}
+      <path d="M22 50 L40 41 L82 41 L64 50 Z" fill={GOLD} opacity="0.14" />
+      <path d="M31 55 L49 46 L82 46 L64 55 Z" fill={PURPLE_MID} opacity="0.35" />
+
+      {/* ---- metal corner brackets ---- */}
+      <g fill={GOLD} stroke={INK} strokeWidth="2.6" strokeLinejoin="round">
+        {/* front-left */}
+        <path d="M22 50 h9 v5 h-4 v30 h4 v4 h-9 z" />
+        {/* front-right */}
+        <path d="M64 50 h-9 v5 h4 v30 h-4 v4 h9 z" />
+        {/* right face rear edge */}
+        <path d="M82 41 v9 l-5 2.5 v30 l5 -2.5 v-8 l-4 2 v-30 z" />
+      </g>
+      <g fill={GOLD_DEEP} opacity="0.45">
+        <path d="M55 50 h9 v39 h-9 v-4 h4 v-30 h-4 z" />
+      </g>
+
+      {/* bracket rivets */}
+      <g fill={GOLD_DEEP} stroke={INK} strokeWidth="1.4">
+        <circle cx="26.5" cy="55" r="1.9" /><circle cx="26.5" cy="84" r="1.9" />
+        <circle cx="59.5" cy="55" r="1.9" /><circle cx="59.5" cy="84" r="1.9" />
+      </g>
+
+      {/* ---- latch ---- */}
+      <rect x="38" y="60" width="10" height="9" rx="2" fill={GOLD} stroke={INK} strokeWidth="2.6" />
+      <circle cx="43" cy="64.5" r="2" fill={INK} />
+
+      {/* ---- the mark ---- */}
+      <text x="43" y="79" textAnchor="middle" dominantBaseline="central"
+        fill={GOLD} fontSize="22" fontWeight="800"
         fontFamily="var(--font-display), system-ui, sans-serif">
         ?
       </text>
 
       {/* light corner + shaded base */}
-      <path d="M22 52 h9 v37 H22 z" fill={PURPLE_LIGHT} opacity="0.25" />
-      <path d="M22 81 h42 v8 H22 z" fill={PURPLE_DEEP} opacity="0.28" />
+      <path d="M31 55 h6 v30 h-6 z" fill={PURPLE_LIGHT} opacity="0.3" />
+      <path d="M31 82 h24 v3 H31 z" fill={PURPLE_DEEP} opacity="0.3" />
 
-      {/* sparkles */}
+      {/* sparkles, close enough to belong to the crate */}
       <g fill={GOLD} stroke={INK} strokeWidth="1.7" strokeLinejoin="round">
-        <path d="M83 15 l2.4 6 6 2.4 -6 2.4 -2.4 6 -2.4 -6 -6 -2.4 6 -2.4 z" />
-        <path d="M15 27 l1.8 4.6 4.6 1.8 -4.6 1.8 -1.8 4.6 -1.8 -4.6 -4.6 -1.8 4.6 -1.8 z" />
-        <path d="M68 26 l1.4 3.6 3.6 1.4 -3.6 1.4 -1.4 3.6 -1.4 -3.6 -3.6 -1.4 3.6 -1.4 z" />
+        <path d="M76 24 l2.2 5.4 5.4 2.2 -5.4 2.2 -2.2 5.4 -2.2 -5.4 -5.4 -2.2 5.4 -2.2 z" />
+        <path d="M20 32 l1.7 4.2 4.2 1.7 -4.2 1.7 -1.7 4.2 -1.7 -4.2 -4.2 -1.7 4.2 -1.7 z" />
       </g>
     </Frame>
   );
