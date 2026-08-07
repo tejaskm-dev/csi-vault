@@ -11,3 +11,9 @@ art-source/
 # Reference projects — kept locally for their code, never committed
 skloop-main/
 NAME-sandbox-main/
+
+# IDE session transcripts — contain prompt history, not project code
+.antigravity/
+
+# Design reference screenshots — kept locally, not part of the codebase
+references/
