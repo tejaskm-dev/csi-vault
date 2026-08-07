@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "motion/react";
 import { playTap } from "../lib/sound";
 import { cn } from "../lib/utils";
 
@@ -13,19 +14,23 @@ export function Pressable({ icon, children, className, onClick, ...props }: Pres
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={handleClick}
+      initial={{ boxShadow: "0 6px 0 0 var(--color-ink)", y: 0 }}
+      whileHover={{ y: -2, boxShadow: "0 8px 0 0 var(--color-ink)" }}
+      whileTap={{ y: 6, boxShadow: "0 0px 0 0 transparent" }}
+      transition={{ duration: 0.1 }}
       className={cn(
-        "ink tap select-none transition-[transform,box-shadow] duration-75 flex items-center justify-center cursor-pointer font-bold disabled:opacity-40 disabled:pointer-events-none text-ink bg-paper-deep shadow-ink-sm active:translate-x-[3px] active:translate-y-[3px] active:shadow-ink-none",
+        "ink tap select-none flex items-center justify-center cursor-pointer font-bold disabled:opacity-40 disabled:pointer-events-none text-ink bg-paper-deep",
         icon 
           ? "rounded-btn p-3 aspect-square" 
           : "rounded-pill px-5 py-2 text-[14px] uppercase tracking-wider",
         className
       )}
-      {...props}
+      {...(props as any)}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

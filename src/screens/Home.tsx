@@ -7,14 +7,47 @@ import { Pressable } from "../components/Pressable";
 import { VaultBoard } from "../components/VaultBoard";
 import { VaultDoor } from "../components/VaultDoor";
 import { Starburst } from "../components/Starburst";
+import { TumblerRing } from "../components/TumblerRing";
+import { CombinationReadout } from "../components/CombinationReadout";
+import { CrewFeed } from "../components/CrewFeed";
+import { Annotation } from "../components/Annotation";
 import { useGame } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
 import { getMuted, setMuted } from "../lib/sound";
-import { cn } from "../lib/utils";
+import { formatClock } from "../lib/utils";
+
+/** A small riveted plate. Three on the readout row. */
+function StatPlate({
+  value,
+  label,
+  tone,
+  tilt,
+}: {
+  value: string;
+  label: string;
+  tone: "brass" | "pink" | "steel";
+  tilt: string;
+}) {
+  const fill =
+    tone === "brass" ? "bg-brass text-ink shadow-chip-brass"
+    : tone === "pink" ? "bg-pink text-white shadow-chip-pink"
+    : "bg-steel text-ink shadow-chip-steel";
+
+  return (
+    <div
+      className={`ink riveted flex flex-1 flex-col items-center rounded-btn px-2 py-2 ${fill} ${tilt}`}
+    >
+      <span className="font-readout text-[17px] font-bold leading-none">{value}</span>
+      <span className="mt-1 font-body text-[9px] font-bold uppercase tracking-[0.16em] opacity-70">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export function Home() {
   const navigate = useNavigate();
-  const { unlockedVaults, bonusSolved, leaderboard } = useGame();
+  const { unlockedVaults, bonusSolved, leaderboard, elapsedSeconds } = useGame();
   const [muted, setMutedState] = useState(getMuted());
   const [wheelRotate, setWheelRotate] = useState(0);
 
@@ -22,137 +55,127 @@ export function Home() {
   const showHero = progress === 0 || progress === 9;
 
   const handleSelect = (digit: number, state: VaultState) => {
-    if (state === "locked") {
-      navigate("/vault");
-      return;
-    }
-    navigate(`/challenge/${digit}`);
+    navigate(state === "locked" ? "/vault" : `/challenge/${digit}`);
   };
 
   const toggleMute = () => {
-    const nextMuted = !muted;
-    setMuted(nextMuted);
-    setMutedState(nextMuted);
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between select-none">
-      {/* 56px Coloured Header */}
-      <header className="h-[56px] flex justify-between items-center px-4 border-b-3 border-ink bg-red text-white shrink-0 relative z-10">
-        <div className="flex items-center gap-1.5 font-display font-extrabold text-[15px] tracking-wide">
-          <span>CSI ASIET</span>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Live players badge */}
-          <div className="flex items-center gap-1 bg-ink border-2 border-white text-white text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-pill">
-            <Users className="w-3.5 h-3.5 text-white/90" />
-            <span>{leaderboard.length} PLAYING</span>
-          </div>
+    <div className="flex flex-1 select-none flex-col">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <header className="riveted relative z-20 flex h-14 shrink-0 items-center justify-between border-b-3 border-ink bg-red px-4 text-white">
+        <span className="font-display text-[15px] tracking-wide">CSI ASIET</span>
 
-          {/* Sound Toggle */}
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 rounded-pill border-2 border-white bg-ink px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider">
+            <Users className="h-3 w-3" />
+            {leaderboard.length} LIVE
+          </span>
+
           <button
             type="button"
             onClick={toggleMute}
-            className="rounded-btn p-1.5 bg-ink text-white border-2 border-white cursor-pointer hover:bg-red transition-colors"
-            title={muted ? "Unmute audio" : "Mute audio"}
+            aria-label={muted ? "Unmute" : "Mute"}
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-btn border-2 border-white bg-ink transition-colors hover:bg-red-deep"
           >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-4 gap-4 overflow-y-auto">
-        {/* Board or Hanger Door Hero (Overlaps header bottom edge) */}
-        <div className="flex items-center justify-center relative min-h-[220px]">
+      {/* ── Crew wire: 60 people are playing; say so ───────────── */}
+      <CrewFeed className="relative z-20 shrink-0" />
+
+      {/* ── Body ───────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col gap-4 px-5 pb-4 pt-3">
+        {/* Hero: door at 0/9 and 9/9, board in between */}
+        <div className="relative flex min-h-[196px] items-center justify-center">
+          <Annotation
+            label="FIG.01 — SEAL"
+            className="absolute left-0 top-1 z-30"
+          />
+          <Annotation
+            label="CLASS III"
+            direction="left"
+            className="absolute bottom-2 right-0 z-30"
+          />
+
           {showHero ? (
             <div
-              onMouseEnter={() => setWheelRotate(90)}
-              onMouseLeave={() => setWheelRotate(0)}
-              className="relative w-[220px] h-[220px] -mt-8 z-20 rotate-[-4deg] flex items-center justify-center cursor-pointer group"
+              onPointerEnter={() => setWheelRotate(120)}
+              onPointerLeave={() => setWheelRotate(0)}
+              className="group relative z-20 -mt-6 flex h-[200px] w-[200px] rotate-[-4deg] cursor-pointer items-center justify-center"
             >
-              {/* Starburst rotating slowly and pulsing behind the door */}
+              <TumblerRing />
+
               <motion.div
-                className="absolute inset-0 w-[308px] h-[308px] -left-11 -top-11 z-0 pointer-events-none"
-                animate={{
-                  rotate: 360,
-                  scale: [0.95, 1.05, 0.95]
-                }}
+                aria-hidden
+                className="pointer-events-none absolute -left-10 -top-10 z-0 h-[280px] w-[280px]"
+                animate={{ rotate: 360, scale: [0.95, 1.04, 0.95] }}
                 transition={{
-                  rotate: { repeat: Infinity, duration: 20, ease: "linear" },
-                  scale: { repeat: Infinity, duration: 4, ease: "easeInOut" }
+                  rotate: { repeat: Infinity, duration: 22, ease: "linear" },
+                  scale: { repeat: Infinity, duration: 4.5, ease: "easeInOut" },
                 }}
               >
-                <Starburst fillColor="var(--color-yellow)" />
+                <Starburst fillColor="var(--color-brass)" />
               </motion.div>
-              <div className="relative z-10 w-full h-full transition-transform duration-300 group-hover:scale-[1.03]">
+
+              <div className="relative z-10 h-full w-full transition-transform duration-300 group-hover:scale-[1.03]">
                 <VaultDoor
                   state={progress === 9 ? "open" : "closed"}
                   wheelRotate={wheelRotate}
-                  className="w-full h-full"
+                  className="h-full w-full"
                 />
               </div>
             </div>
           ) : (
-            <div className="scale-[0.9] origin-center -my-3 z-20">
+            <div className="z-20 w-full">
               <VaultBoard unlockedVaults={unlockedVaults} onSelect={handleSelect} />
             </div>
           )}
         </div>
 
-        {/* Left-Aligned Title Group */}
-        <div className="flex flex-col items-start text-left mt-2">
-          <span className="text-[28px] font-extrabold uppercase leading-none tracking-[0.25em] text-ink">
+        {/* Title — the ratio is the effect */}
+        <div className="flex flex-col items-start">
+          <span className="ink rounded-pill bg-blue px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-chip-blue">
+            Session active
+          </span>
+          <span className="mt-2 font-display text-[22px] leading-none tracking-[0.26em] text-ink">
             OPERATION
           </span>
-          <h1 className="text-[76px] font-extrabold uppercase leading-[0.8] tracking-tighter text-red -mt-2 z-20 relative">
+          <h1 className="relative z-10 -mt-1 font-display text-[62px] leading-[0.82] tracking-tight text-red">
             VAULT
           </h1>
         </div>
 
-        {/* Left-aligned pill tag chip rotated -2deg */}
-        <div className="flex justify-start">
-          <div className="ink rounded-pill bg-blue text-white px-4 py-1.5 font-display text-[14px] font-extrabold shadow-ink-sm rotate-[-2deg]">
-            ╱ 9 PUZZLES · 1 MISSION ╱
-          </div>
-        </div>
+        {/* The combination — the game state, made physical */}
+        <CombinationReadout unlocked={unlockedVaults} />
 
-        {/* Left-aligned Stats Bar (Varying tilts, bigger sizes) */}
-        <div className="flex justify-start gap-4 mt-2">
-          {/* Digits found chip */}
-          <div className="ink rounded-pill bg-yellow text-ink px-5 py-2.5 font-display text-[15px] font-extrabold shadow-ink-sm flex items-center gap-1.5 rotate-[-3deg]">
-            <span className="pixel text-[11px]">{progress}/9</span>
-            <span>DIGITS</span>
-          </div>
-
-          {/* Bonus status chip */}
-          <div className="ink rounded-pill bg-pink text-white px-5 py-2.5 font-display text-[15px] font-extrabold shadow-ink-sm flex items-center gap-1.5 rotate-[2.5deg]">
-            <span className="pixel text-[11px]">{bonusSolved ? "1" : "0"}</span>
-            <span>BONUS</span>
-          </div>
+        {/* Three plates, varying tilt */}
+        <div className="flex items-stretch gap-2.5">
+          <StatPlate value={`${progress}/9`} label="Digits" tone="brass" tilt="rotate-[-2deg]" />
+          <StatPlate value={bonusSolved ? "1" : "0"} label="Bonus" tone="pink" tilt="rotate-[1.5deg]" />
+          <StatPlate value={formatClock(elapsedSeconds)} label="On the clock" tone="steel" tilt="rotate-[-1deg]" />
         </div>
       </div>
 
-      {/* Solid Divider Bottom CTA Block */}
-      <div className="p-5 flex flex-col gap-3 bg-white border-t-3 border-ink shrink-0 z-10">
+      {/* ── CTA ────────────────────────────────────────────────── */}
+      <div className="z-20 flex shrink-0 flex-col gap-2.5 border-t-3 border-ink bg-white p-4">
         <PrimaryButton
           onClick={() => navigate(progress === 9 ? "/vault-complete" : "/vault")}
-          className="w-full h-16"
           variant={progress === 9 ? "reward" : "primary"}
+          className="h-16 w-full"
         >
-          {progress === 9
-            ? "OPEN THE VAULT"
-            : progress > 0
-            ? "RESUME MISSION"
-            : "ENTER THE VAULT"}
+          {progress === 9 ? "OPEN THE VAULT" : progress > 0 ? "BACK TO WORK" : "CRACK THE VAULT"}
         </PrimaryButton>
 
-        <div className="flex justify-center">
-          <Pressable onClick={() => navigate("/leaderboard")} className="w-full h-14">
-            VIEW LEADERBOARD
-          </Pressable>
-        </div>
+        <Pressable onClick={() => navigate("/leaderboard")} className="h-14 w-full">
+          THE CREW
+        </Pressable>
       </div>
     </div>
   );

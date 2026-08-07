@@ -52,7 +52,7 @@ export function VaultDoor({ state, className, wheelRotate, shake }: VaultDoorPro
         {!isOpen && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <motion.svg
-              className="w-[108px] h-[108px] drop-shadow-md overflow-visible"
+              className="w-[108px] h-[108px] overflow-visible"
               viewBox="0 0 100 100"
               fill="none"
               animate={{ rotate: wheelRotate ?? 0 }}

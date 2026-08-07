@@ -28,7 +28,7 @@ export function Waiting() {
                 <Art name="lock" alt="Locked" className="w-20 h-20 object-contain" />
               </div>
             ) : (
-              <div className="animate-spin [animation-duration:3s] scale-115">
+              <div className="animate-[tumble_3s_linear_infinite] scale-115">
                 <Art name="hourglass" alt="Hourglass" className="w-20 h-20 object-contain" />
               </div>
             )}

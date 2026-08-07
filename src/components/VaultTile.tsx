@@ -150,8 +150,16 @@ export function VaultTile({ digit, state, icon, onClick, size = "grid", tilt, cl
             initial={{ scaleY: justSolved ? 0 : 1 }}
             animate={{ scaleY: 1 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 bg-green origin-bottom"
-          />
+            className="absolute inset-0 bg-green origin-bottom overflow-hidden"
+          >
+            {/* Sheen sweep */}
+            {justSolved && (
+              <div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-[200%] -top-[50%] -skew-x-[20deg]"
+                style={{ animation: "sheen 0.7s 0.3s ease-out both" }}
+              />
+            )}
+          </motion.div>
         )}
       </div>
 

@@ -2,56 +2,103 @@
 
 @theme {
   /* ---- Ink & paper ---- */
-  --color-ink:        #14110F;   /* every outline, every heading */
-  --color-paper:      #FFF4DA;   /* the base canvas — warm, not white */
-  --color-paper-deep: #F5E4BE;   /* recessed areas, progress track */
-  --color-white:      #FFFFFF;
+  --color-ink:          #14110F;  /* every outline, every heading */
+  --color-paper:        #FDF3DC;  /* warm manila — the canvas */
+  --color-paper-deep:   #F0E2C0;  /* recessed, locked, disabled */
+  --color-plot:         #7FA8C9;  /* blueprint grid & guide lines */
+  --color-white:        #FFFFFF;
 
-  /* ---- Brand (locked — this is CSI's red, do not alter) ---- */
-  --color-red:        #E8332B;
-  --color-red-deep:   #B01F19;
+  /* ---- Brand. Locked — this is CSI's red. ---- */
+  --color-red:          #E8332B;  --color-red-deep:    #A8201A;
 
-  /* ---- Play palette. Each has a -deep for the 3D underside. ---- */
-  --color-blue:       #2B6BE4;   --color-blue-deep:   #1B4BA8;
-  --color-yellow:     #FFC93C;   --color-yellow-deep: #D99A0B;
-  --color-green:      #35C46A;   --color-green-deep:  #1F8F49;
-  --color-purple:     #9B5DE5;   --color-purple-deep: #6E37B5;
-  --color-orange:     #FF8A3D;   --color-orange-deep: #D45F13;
-  --color-pink:       #FF6FA5;   --color-pink-deep:   #D13C77;
-  --color-teal:       #21C7C7;   --color-teal-deep:   #128A8A;
+  /* ---- Steel & brass: the vault's own materials ---- */
+  --color-steel:        #DCDAD2;  --color-steel-deep:  #A9A69B;
+  --color-brass:        #F2B233;  --color-brass-deep:  #B87F0C;
 
-  /* ---- Nine tile fills. Saturated, NOT pastel. One per grid position. ---- */
-  --color-tile-1: #FFC93C;  --color-tile-2: #21C7C7;  --color-tile-3: #9B5DE5;
-  --color-tile-4: #FF8A3D;  --color-tile-5: #35C46A;  --color-tile-6: #2B6BE4;
-  --color-tile-7: #FF6FA5;  --color-tile-8: #FFE066;  --color-tile-9: #6FD8FF;
+  /* ---- Signal colours ---- */
+  --color-green:        #2FBF5B;  --color-green-deep:  #17803A;
+  --color-blue:         #2F6BE8;  --color-blue-deep:   #1A44A0;
+  --color-violet:       #8B5BE0;  --color-violet-deep: #5C33A8;
+  --color-orange:       #FF8A3D;  --color-orange-deep: #C4570E;
+  --color-pink:         #FF5F9E;  --color-pink-deep:   #C42868;
+  --color-teal:         #17C4C4;  --color-teal-deep:   #0A8686;
+
+  /* ---- Nine tile fills, by grid position. Saturated, never pastel. ---- */
+  --color-tile-1: #F2B233;  --color-tile-2: #17C4C4;  --color-tile-3: #8B5BE0;
+  --color-tile-4: #FF8A3D;  --color-tile-5: #2FBF5B;  --color-tile-6: #2F6BE8;
+  --color-tile-7: #FF5F9E;  --color-tile-8: #FFD84D;  --color-tile-9: #5AC8FA;
 
   /* ---- Radii. Three values. Nothing else exists. ---- */
-  --radius-card: 28px;
-  --radius-btn:  20px;
-  --radius-pill: 999px;
-
-  /* ---- Hard shadows. Zero blur, always. ---- */
-  --shadow-ink:      5px 5px 0 0 #14110F;
-  --shadow-ink-lg:   8px 8px 0 0 #14110F;
-  --shadow-ink-sm:   3px 3px 0 0 #14110F;
-  --shadow-ink-none: 0 0 0 0 #14110F;
+  --radius-plate: 26px;   /* cards, tiles, modals */
+  --radius-btn:   18px;   /* buttons, inputs */
+  --radius-pill:  999px;  /* chips, badges, tags */
 
   /* ---- Type ---- */
-  --font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
-  --font-body:    'Nunito Sans', system-ui, sans-serif;
-  --font-pixel:   'Press Start 2P', monospace;
+  --font-display: 'Bungee', system-ui, sans-serif;      /* signage. ALL CAPS only. */
+  --font-body:    'Archivo', system-ui, sans-serif;     /* UI text */
+  --font-readout: 'Space Mono', ui-monospace, monospace;/* numerals, timers, ranks */
+
+  /* ---- Hard shadows. Zero blur, always. ---- */
+  --shadow-plate-red:    0 6px 0 0 var(--color-red-deep);
+  --shadow-plate-brass:  0 6px 0 0 var(--color-brass-deep);
+  --shadow-plate-green:  0 6px 0 0 var(--color-green-deep);
+  --shadow-plate-steel:  0 6px 0 0 var(--color-steel-deep);
+  --shadow-plate-ink:    0 6px 0 0 var(--color-ink);
+  --shadow-plate-none:   0 0 0 0 transparent;
+
+  /* Chips and small plates — 3px depth so they read as lighter than cards. */
+  --shadow-chip-ink:     0 3px 0 0 var(--color-ink);
+  --shadow-chip-brass:   0 3px 0 0 var(--color-brass-deep);
+  --shadow-chip-green:   0 3px 0 0 var(--color-green-deep);
+  --shadow-chip-blue:    0 3px 0 0 var(--color-blue-deep);
+  --shadow-chip-pink:    0 3px 0 0 var(--color-pink-deep);
+  --shadow-chip-steel:   0 3px 0 0 var(--color-steel-deep);
+  --shadow-chip-none:    0 0 0 0 transparent;
+
+  /* stacked: hard slab + coloured glow, for the hero element only */
+  --shadow-hero-red:   0 6px 0 0 var(--color-red-deep),   0 16px 34px -8px rgb(232 51 43 / 0.5);
+  --shadow-hero-brass: 0 6px 0 0 var(--color-brass-deep), 0 16px 34px -8px rgb(242 178 51 / 0.55);
+  --shadow-hero-green: 0 6px 0 0 var(--color-green-deep), 0 16px 34px -8px rgb(47 191 91 / 0.5);
+  --shadow-hero-steel: 0 6px 0 0 var(--color-steel-deep), 0 16px 34px -8px rgb(220 218 210 / 0.5);
+  --shadow-hero-none:  0 0 0 0 transparent;
+
+  /* ---- Motion ---- */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);   /* overshoot. use constantly. */
+
+  @keyframes tumble   { to   { transform: rotate(360deg); } }
+  @keyframes bob      { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes sheen    { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
+  @keyframes pulseGlow{ 0%,100% { opacity: 0.45; } 50% { opacity: 0.9; } }
 }
 
 @utility ink {
   border: 3px solid var(--color-ink);
 }
 
-/* Vault digits, timer, ranks. The ONLY place the pixel font appears. */
-@utility pixel {
-  font-family: var(--font-pixel);
-  letter-spacing: 0;
-  line-height: 1.4;
+@utility riveted {
+  position: relative;
+  &::before, &::after {
+    content: ""; position: absolute; width: 5px; height: 5px;
+    border-radius: 999px; background: var(--color-ink); opacity: 0.35;
+    top: 10px;
+    pointer-events: none;
+  }
+  &::before { left: 10px; }
+  &::after  { right: 10px; }
 }
+
+.rivets-bottom {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.rivets-bottom::before, .rivets-bottom::after {
+  content: ""; position: absolute; width: 5px; height: 5px;
+  border-radius: 999px; background: var(--color-ink); opacity: 0.35;
+  bottom: 10px;
+}
+.rivets-bottom::before { left: 10px; }
+.rivets-bottom::after  { right: 10px; }
 
 /* 56px minimum touch target — phone in hand, standing up. */
 @utility tap {
@@ -74,6 +121,6 @@
   
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 400; /* Bungee is one weight */
   }
 }

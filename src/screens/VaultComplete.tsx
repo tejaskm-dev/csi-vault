@@ -62,7 +62,7 @@ export function VaultComplete() {
           />
           
           <div className="relative flex justify-center items-center h-full">
-            <div className="absolute w-24 h-24 z-0 animate-[spin_16s_linear_infinite] scale-120 opacity-30">
+            <div className="absolute w-24 h-24 z-0 animate-[tumble_16s_linear_infinite] scale-120 opacity-30">
               <Starburst fillColor="var(--color-yellow)" />
             </div>
             <StatBlock

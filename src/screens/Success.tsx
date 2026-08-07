@@ -52,7 +52,7 @@ export function Success() {
         {/* Central visual indicator with Starburst backing and negative margin overlap */}
         <div className="w-52 h-52 flex items-center justify-center relative -mt-6 z-20 overflow-visible">
           {!isBonus && (
-            <div className="absolute inset-0 scale-125 z-0 animate-[spin_12s_linear_infinite]">
+            <div className="absolute inset-0 scale-125 z-0 animate-[tumble_12s_linear_infinite]">
               <Starburst fillColor="var(--color-yellow)" />
             </div>
           )}

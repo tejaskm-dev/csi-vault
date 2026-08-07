@@ -13,7 +13,7 @@ import { BonusFound } from "./screens/BonusFound";
 import { Waiting } from "./screens/Waiting";
 import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
-import { Backdrop } from "./components/Backdrop";
+import { Blueprint } from "./components/Blueprint";
 
 function GameShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
@@ -31,13 +31,13 @@ function GameShell({ children }: { children: React.ReactNode }) {
       <div
         className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col
                    overflow-x-hidden bg-paper
-                   md:min-h-0 md:rounded-[32px] md:border-3 md:border-ink md:shadow-ink-lg"
+                   md:min-h-0 md:rounded-[32px] md:border-3 md:border-ink md:shadow-[0_8px_0_0_var(--color-ink)]"
         style={{
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        <Backdrop variant={variant} />
+        <Blueprint variant={variant} />
         <main className="relative z-10 flex flex-1 flex-col">{children}</main>
       </div>
     </div>
