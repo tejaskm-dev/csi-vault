@@ -4,6 +4,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Pressable } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { MysteryBox } from "../components/Props";
+import { Starburst } from "../components/Starburst";
 import { screenChoreo, popIn, riseIn } from "../lib/motion";
 
 export function BonusFound() {
@@ -26,14 +27,20 @@ export function BonusFound() {
         animate="animate"
         className="flex flex-1 flex-col"
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-7 p-6 text-center">
-          {/* 208px plate, p-4, so 176 of interior for a 160px box. */}
-          <motion.div
-            variants={popIn}
-            style={{ rotate: 2.2 }}
-            className="ink flex h-52 w-52 items-center justify-center rounded-plate bg-purple/10 shadow-ink-lg"
-          >
-            <MysteryBox className="h-40 w-40" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 pt-8 text-center">
+          {/* The plate was bg-purple/10 — a pale lavender behind a purple box,
+              so the hero had nothing to sit against. Ink gives the box an
+              actual ground, and the burst behind it carries the celebration. */}
+          <motion.div variants={popIn} className="relative flex items-center justify-center">
+            <div className="spin-layer absolute inset-0 -m-5 animate-[tumble_18s_linear_infinite] opacity-70">
+              <Starburst fillColor="var(--color-purple)" />
+            </div>
+            <div
+              style={{ rotate: "2.2deg" }}
+              className="ink relative flex h-52 w-52 items-center justify-center rounded-plate bg-ink shadow-plate-purple"
+            >
+              <MysteryBox className="h-40 w-40" />
+            </div>
           </motion.div>
 
           <motion.div

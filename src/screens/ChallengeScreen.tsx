@@ -166,10 +166,13 @@ export function ChallengeScreen() {
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
 
-          <span className="relative z-10 block pr-24 text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
+          {/* pr-32, not pr-24. The mascot is 128px wide sitting at -right-3,
+              so it covers the rightmost 116px of the row — a 96px gutter left
+              it clipping the last letter of a long title like SPOT THE MATCH. */}
+          <span className="relative z-10 block pr-32 text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
             CHALLENGE PUZZLE
           </span>
-          <h1 className="relative z-10 mt-1 pr-24 text-[28px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink">
+          <h1 className="relative z-10 mt-1 pr-32 text-[26px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink">
             {challenge.title}
           </h1>
           <p className="relative z-10 mt-3 rotate-[-1deg] rounded-card bg-white p-4 font-body text-base font-bold leading-relaxed text-ink/75 ink shadow-ink-sm">

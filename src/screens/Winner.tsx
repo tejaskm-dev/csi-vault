@@ -22,14 +22,56 @@ const SLOTS = [2, 1, 3] as const;
  * numeral clipped. Cards size to their content and win height by padding
  * instead of by a hardcoded bar, which is also just what the reference does.
  */
-const CARD = {
+/**
+ * Each place is a CARD sitting on a STEP, and the three steps butt together
+ * into one block. That is what was missing: three cards floating at different
+ * offsets above a thin bar read as three separate things, and the rank only
+ * appeared as a small medal. The step carries a large numeral and gives the
+ * podium its actual shape.
+ *
+ * Tints follow the medals rather than repeating one grey twice — silver and
+ * bronze are the fastest read on a podium and they were being thrown away.
+ */
+const PLACE = {
   1: {
-    wrap: "flex-[1.18] pt-7 pb-4 bg-brass shadow-plate-brass z-20",
-    name: "text-[15px]",
-    delay: 0.4,
+    card: "bg-brass",
+    band: "bg-brass-deep",
+    step: "bg-brass h-24",
+    stepFace: "bg-brass-deep",
+    grow: "flex-[1.22]",
+    lift: "",
+    avatar: "h-14 w-14 text-[17px]",
+    name: "text-[14px]",
+    medal: "h-11 w-11",
+    numeral: "text-[30px]",
+    delay: 0.42,
   },
-  2: { wrap: "flex-1 mt-7 pt-6 pb-3 bg-paper-deep shadow-plate-ink z-10", name: "text-[12px]", delay: 0.24 },
-  3: { wrap: "flex-1 mt-11 pt-6 pb-3 bg-paper-deep shadow-plate-ink z-10", name: "text-[12px]", delay: 0.1 },
+  2: {
+    card: "bg-[#E6E9F0]",
+    band: "bg-[#B9BEC7]",
+    step: "bg-[#D5D9E0] h-16",
+    stepFace: "bg-[#B9BEC7]",
+    grow: "flex-1",
+    lift: "mt-9",
+    avatar: "h-11 w-11 text-[13px]",
+    name: "text-[12px]",
+    medal: "h-9 w-9",
+    numeral: "text-[24px]",
+    delay: 0.26,
+  },
+  3: {
+    card: "bg-[#F2DEC9]",
+    band: "bg-[#D6B189]",
+    step: "bg-[#E8CFB2] h-11",
+    stepFace: "bg-[#D6B189]",
+    grow: "flex-1",
+    lift: "mt-14",
+    avatar: "h-11 w-11 text-[13px]",
+    name: "text-[12px]",
+    medal: "h-9 w-9",
+    numeral: "text-[24px]",
+    delay: 0.1,
+  },
 } as const;
 
 export function Winner() {
@@ -102,58 +144,95 @@ export function Winner() {
           </motion.div>
         </div>
 
-        <div className="flex items-start justify-center gap-2">
-        {SLOTS.map((rank) => {
-          const entry: LeaderboardEntry | undefined = leaderboard[rank - 1];
-          const c = CARD[rank];
+        <div className="flex items-end justify-center">
+          {SLOTS.map((rank) => {
+            const entry: LeaderboardEntry | undefined = leaderboard[rank - 1];
+            const p = PLACE[rank];
 
-          return (
-            <motion.div
-              key={rank}
-              initial={{ y: 46, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 250, damping: 20, delay: c.delay }}
-              className={cn(
-                "ink relative flex flex-col items-center gap-1.5 rounded-plate px-2",
-                c.wrap
-              )}
-            >
-              <div
+            return (
+              <motion.div
+                key={rank}
+                initial={{ y: 46, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 250, damping: 20, delay: p.delay }}
                 className={cn(
-                  "ink flex items-center justify-center rounded-pill bg-white font-display text-ink",
-                  rank === 1 ? "h-14 w-14 text-[17px]" : "h-11 w-11 text-[13px]"
+                  "relative flex flex-col self-end",
+                  p.grow,
+                  rank === 1 ? "z-20" : "z-10",
+                  // The winner overlaps its neighbours by a hair so the block
+                  // reads as one object rather than three columns in a row.
+                  rank === 1 ? "-mx-1" : ""
                 )}
               >
-                {entry?.initials ?? "–"}
-              </div>
+                {/* ---- card ---- */}
+                <div
+                  className={cn(
+                    "ink relative flex flex-col items-center gap-1 overflow-hidden rounded-t-plate px-2 pb-2.5 pt-3",
+                    p.card,
+                    p.lift
+                  )}
+                >
+                  {/* A light zone across the top and a dark band at the foot.
+                      Same construction as the Safe: a flat fill reads as a
+                      rectangle, discrete light and dark zones read as an
+                      object. */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-white/25"
+                  />
 
-              <span className={cn("w-full truncate font-display uppercase leading-tight text-ink", c.name)}>
-                {entry?.name.split(" ")[0] ?? "OPEN"}
-              </span>
+                  <div
+                    className={cn(
+                      "ink relative flex items-center justify-center rounded-pill bg-white font-display text-ink",
+                      p.avatar
+                    )}
+                  >
+                    {entry?.initials ?? "–"}
+                  </div>
 
-              <span className="font-readout text-[12px] font-bold text-ink/45">
-                <span className={rank === 1 ? "text-red" : "text-ink/70"}>{entry?.digits ?? 0}</span>
-                {" / 9"}
-              </span>
+                  <span
+                    className={cn(
+                      "relative w-full truncate font-display uppercase leading-tight text-ink",
+                      p.name
+                    )}
+                  >
+                    {entry?.name.split(" ")[0] ?? "OPEN"}
+                  </span>
 
-              {/* The real medal, not a number in a box. Gold, silver and
-                  bronze are the fastest possible read of a podium, and Props
-                  already carries a properly built one — the cards were showing
-                  a flat digit instead, which is most of why they read cheap. */}
-              <span className={cn("mt-1", rank === 1 ? "h-14 w-14" : "h-11 w-11")}>
-                <Medal rank={rank} />
-              </span>
-            </motion.div>
-          );
-        })}
+                  <span className="relative font-readout text-[11px] font-bold text-ink/45">
+                    <span className="text-ink/75">{entry?.digits ?? 0}</span>
+                    {" / 9"}
+                  </span>
+
+                  <span className={cn("relative mt-0.5", p.medal)}>
+                    <Medal rank={rank} />
+                  </span>
+                </div>
+
+                {/* ---- step ---- */}
+                <div className={cn("ink relative flex items-center justify-center border-t-0", p.step)}>
+                  <span
+                    aria-hidden
+                    className={cn("pointer-events-none absolute inset-x-0 bottom-0 h-1/3", p.stepFace)}
+                  />
+                  <span
+                    className={cn(
+                      "relative font-display leading-none text-ink/70",
+                      p.numeral
+                    )}
+                    style={{ textShadow: "0 2px 0 rgba(255,255,255,0.45)" }}
+                  >
+                    {rank}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* A plinth the cards stand on. Without it three cards of different
-            heights just float at different offsets; the base is what makes
-            them read as one podium. */}
-        <motion.div variants={riseIn} className="relative -mt-[3px] px-1">
-          <div className="ink h-4 rounded-b-[14px] rounded-t-[4px] bg-brass-deep shadow-plate-ink" />
-          <div className="ink -mt-[3px] h-3 rounded-b-[12px] bg-ink" />
+        {/* Floor slab the three steps stand on. */}
+        <motion.div variants={riseIn} className="relative -mt-[3px]">
+          <div className="ink h-3.5 rounded-b-[12px] bg-ink" />
         </motion.div>
       </div>
 
