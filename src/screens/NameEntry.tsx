@@ -5,6 +5,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Art } from "../components/Art";
 import { useGame } from "../context/GameContext";
+import { screenChoreo, riseIn } from "../lib/motion";
 
 /**
  * Every player sees this screen, once, before anything else in the game.
@@ -32,10 +33,15 @@ export function NameEntry() {
     <div className="flex flex-1 select-none flex-col">
       <ScreenHeader eyebrow="Recruitment" title="Welcome, Recruit" tone="red" />
 
-      <div className="flex flex-1 flex-col p-6 pt-7">
+      <motion.div
+        variants={screenChoreo}
+        initial="initial"
+        animate="animate"
+        className="flex flex-1 flex-col p-6 pt-7"
+      >
         {/* The mascot leans on the input plate rather than sitting in its own
             row — overlap is what stops a stack of blocks reading as a form. */}
-        <div className="relative">
+        <motion.div variants={riseIn} className="relative">
           <motion.div
             // The tilt lives in `animate`, not in a class. Framer writes an
             // inline transform, so a Tailwind rotate-* on the same element is
@@ -88,11 +94,15 @@ export function NameEntry() {
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* The one genuinely interesting fact about this game, on a coloured
             surface rather than the grey box it was in. */}
-        <div className="ink mt-5 rotate-[-1.2deg] rounded-plate bg-brass p-4 shadow-ink-sm">
+        <motion.div
+          variants={riseIn}
+          style={{ rotate: -1.2 }}
+          className="ink mt-5 rounded-plate bg-brass p-4 shadow-ink-sm"
+        >
           <span className="font-display text-[11px] uppercase tracking-[0.16em] text-ink/70">
             How this works
           </span>
@@ -100,14 +110,16 @@ export function NameEntry() {
             Your nine challenges are drawn from your name. No two phones in this
             room get the same board.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-auto pt-6">
+        {/* Last in the sequence — the research point that attention should end
+            on the primary action. */}
+        <motion.div variants={riseIn} className="mt-auto pt-6">
           <PrimaryButton disabled={!valid} onClick={handleStart} className="h-16 w-full">
             START MISSION
           </PrimaryButton>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

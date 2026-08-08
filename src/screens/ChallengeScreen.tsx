@@ -13,7 +13,14 @@ import { Art } from "../components/Art";
 import { HintBulb } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import { playCorrect, playWrong } from "../lib/sound";
-import { shakeVariants, listStagger, riseIn } from "../lib/motion";
+import {
+  shakeVariants,
+  listStagger,
+  riseIn,
+  screenChoreo,
+  dropIn,
+  popIn,
+} from "../lib/motion";
 import { cn } from "../lib/utils";
 
 const CHECKING_MS = 400;
@@ -144,20 +151,28 @@ export function ChallengeScreen() {
 
         {/* Question Title & Description */}
         <div className="relative">
-          {/* Mascot thinking alongside the question, overlapping the card edge */}
-          <div className="pointer-events-none absolute -right-4 -top-8 z-10 h-32 w-32 rotate-[5deg]">
+          {/* The mascot sits BEHIND the question card (z-0 against the card's
+              z-10), so it peeks over the top edge and can never cover a word.
+              Padding alone could not fix this: the card wraps to two or three
+              lines depending on the question, so any reserved gutter is either
+              wasted on short questions or too small on long ones. Occlusion
+              is the only version that is right for all eighteen. */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10, rotate: -3 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 300, damping: 17, delay: 0.1 }}
+            className="pointer-events-none absolute -right-3 -top-10 z-0 h-32 w-32"
+          >
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
-          </div>
-          {/* pr-24 keeps the title out from under the mascot. The art used to
-              occupy half its frame, so a 128px box only looked ~60px wide and
-              long titles cleared it by accident. */}
-          <span className="block pr-24 text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
+          </motion.div>
+
+          <span className="relative z-10 block pr-24 text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
             CHALLENGE PUZZLE
           </span>
-          <h1 className="mt-1 pr-24 text-[28px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink">
+          <h1 className="relative z-10 mt-1 pr-24 text-[28px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink">
             {challenge.title}
           </h1>
-          <p className="font-body text-base font-bold text-ink/75 leading-relaxed mt-3 bg-white ink rounded-card p-4 shadow-ink-sm rotate-[-1deg]">
+          <p className="relative z-10 mt-3 rotate-[-1deg] rounded-card bg-white p-4 font-body text-base font-bold leading-relaxed text-ink/75 ink shadow-ink-sm">
             {challenge.question}
           </p>
         </div>
@@ -253,17 +268,20 @@ export function ChallengeScreen() {
       <AnimatePresence>
         {showMiss && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            variants={screenChoreo}
+            initial="initial"
+            animate="animate"
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
             className="absolute inset-0 z-50 flex flex-col bg-paper"
           >
-            {/* A coloured plate, not a bare page. The screen was a small column
-                of text floating in cream — the emptiness was the problem, not
-                the wording. The plate also lets the mascot overlap something,
-                which is what stops the layout reading as a stack of blocks. */}
-            <div className="relative shrink-0 overflow-hidden rounded-b-[28px] bg-red px-6 pb-20 pt-9 text-center shadow-[0_4px_0_0_var(--color-ink)]">
+            {/* Sequenced by stability: the plate lands first because it is the
+                most fixed thing here, and TRY AGAIN lands last because that is
+                where attention should finish. Everything arriving at once is
+                what made this read as a page load rather than a beat. */}
+            <motion.div
+              variants={dropIn}
+              className="relative shrink-0 overflow-hidden rounded-b-[28px] bg-red px-6 pb-20 pt-9 text-center shadow-[0_4px_0_0_var(--color-ink)]"
+            >
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
@@ -272,33 +290,34 @@ export function ChallengeScreen() {
                     "repeating-linear-gradient(115deg, rgba(255,255,255,0.14) 0 7px, transparent 7px 18px)",
                 }}
               />
-              <motion.h2
-                initial={{ scale: 0.85, y: -8 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 420, damping: 16 }}
+              <h2
                 className="relative font-display text-[46px] uppercase leading-none tracking-tight text-white"
                 style={{ textShadow: "0 4px 0 var(--color-ink)" }}
               >
                 Not quite
-              </motion.h2>
+              </h2>
               <span className="relative mt-3 inline-block rounded-pill border-2 border-white/40 bg-red-deep px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
                 Attempt {misses + 1}
               </span>
-            </div>
-
-            {/* Mascot straddling the plate edge, large. */}
-            <motion.div
-              initial={{ scale: 0.7, y: 14 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 360, damping: 18 }}
-              className="pointer-events-none z-10 -mt-16 flex shrink-0 justify-center"
-            >
-              <Art name="mascot-sad" alt="" className="h-44 w-44 object-contain" />
             </motion.div>
 
-            <div className="px-6">
-              <div className="ink rotate-[-1deg] rounded-plate bg-white p-5 text-center shadow-ink">
-                <p className="font-body text-[16px] font-bold leading-snug text-ink">
+            {/* The middle region centres itself in whatever space is left, so
+                the slack is shared above and below instead of collecting into
+                one dead gap above the buttons. */}
+            <div className="flex flex-1 flex-col justify-center gap-1 px-6">
+              <motion.div
+                variants={popIn}
+                className="pointer-events-none z-10 -mt-24 flex shrink-0 justify-center"
+              >
+                <Art name="mascot-sad" alt="" className="h-52 w-52 object-contain" />
+              </motion.div>
+
+              <motion.div
+                variants={riseIn}
+                style={{ rotate: -1 }}
+                className="ink -mt-2 rounded-plate bg-white p-5 text-center shadow-ink"
+              >
+                <p className="font-body text-[17px] font-bold leading-snug text-ink">
                   {MISS_LINES[Math.min(misses - 1, MISS_LINES.length - 1)] ?? MISS_LINES[0]}
                 </p>
                 {/* Redirect rather than punish — the miss costs nothing, and
@@ -307,10 +326,10 @@ export function ChallengeScreen() {
                 <p className="mt-2 font-body text-[13px] font-semibold text-ink/55">
                   No digit lost. No time penalty. Just go again.
                 </p>
-              </div>
+              </motion.div>
             </div>
 
-            <div className="mt-auto flex flex-col gap-3 p-6">
+            <motion.div variants={riseIn} className="flex flex-col gap-3 p-6">
               <PrimaryButton
                 className="h-16 w-full"
                 onClick={() => {
@@ -328,7 +347,7 @@ export function ChallengeScreen() {
               >
                 SHOW ME A NUDGE
               </Pressable>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

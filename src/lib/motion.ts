@@ -82,6 +82,40 @@ export const comboStagger = {
   animate: { transition: { staggerChildren: 0.075, delayChildren: 0.85 } },
 };
 
+/**
+ * SCREEN CHOREOGRAPHY — a whole page arriving in order rather than at once.
+ *
+ * Sequence by stability: the header lands first because it is the most fixed
+ * thing on the page, and the primary button lands last because it is where
+ * attention should end up. The offsets are what create the hierarchy — every
+ * element appearing simultaneously reads as a page load, not a game.
+ */
+export const screenChoreo = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.085, delayChildren: 0.04 } },
+};
+
+/** A header plate arriving from off the top edge. */
+export const dropIn = {
+  initial: { opacity: 0, y: -34 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+  },
+};
+
+/** Anticipation then overshoot — for the one element that should feel alive. */
+export const popIn = {
+  initial: { opacity: 0, scale: 0.55, y: 18 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 420, damping: 15 },
+  },
+};
+
 /** The child of either. Rises and settles; no size change. */
 export const riseIn = {
   initial: { opacity: 0, y: 16, scale: 0.92 },
