@@ -119,6 +119,22 @@ export function Splash() {
       {/* Briefing runs during the sequence, then hands over to the CTA. */}
       {!ready && <BriefingLine />}
 
+      {/* The three numbers that say what this actually is. The screen was a
+          logo, a wordmark, a door and a button — nothing told a first-year
+          what they had just scanned into. */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={ready ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.05 }}
+        className="ink relative z-10 flex w-full max-w-xs items-stretch rounded-plate bg-white shadow-ink"
+      >
+        <Fact value="9" label="Safes" />
+        <span className="my-3 w-0 border-l-2 border-dashed border-ink/15" />
+        <Fact value="1" label="Code" />
+        <span className="my-3 w-0 border-l-2 border-dashed border-ink/15" />
+        <Fact value="20" label="Minutes" />
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={ready ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
@@ -127,7 +143,7 @@ export function Splash() {
         style={{ pointerEvents: ready ? "auto" : "none" }}
       >
         <PrimaryButton
-          className="w-full"
+          className="h-16 w-full"
           onClick={() => navigate(username ? "/home" : "/name", { replace: true })}
         >
           BEGIN MISSION
@@ -136,6 +152,17 @@ export function Splash() {
           Built by CSI ASIET for the next intake.
         </p>
       </motion.div>
+    </div>
+  );
+}
+
+function Fact({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center gap-0.5 py-3">
+      <span className="font-display text-[22px] leading-none text-ink">{value}</span>
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/45">
+        {label}
+      </span>
     </div>
   );
 }

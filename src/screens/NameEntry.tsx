@@ -53,7 +53,7 @@ export function NameEntry() {
             carries `relative z-20`, so it forms a stacking context that paints
             over anything in the body no matter what z-index the mascot has.
             The head was being sliced off by the header's bottom edge. */}
-        <motion.div variants={riseIn} className="relative pt-14">
+        <motion.div variants={riseIn} className="relative pt-24">
           <motion.div
             // The tilt lives in `animate`, not in a class. Framer writes an
             // inline transform, so a Tailwind rotate-* on the same element is
@@ -61,7 +61,7 @@ export function NameEntry() {
             initial={{ opacity: 0, scale: 0.7, y: 12, rotate: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
             transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
-            className="pointer-events-none absolute right-1 top-0 z-0 h-32 w-32"
+            className="pointer-events-none absolute right-0 top-0 z-0 h-36 w-36"
           >
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>

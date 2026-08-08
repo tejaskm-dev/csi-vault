@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { CurvedWord } from "../components/CurvedWord";
 import { Sprinkles } from "../components/Sprinkles";
-import { Trophy } from "../components/Props";
+import { Trophy, Medal } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import type { LeaderboardEntry } from "../data/mockData";
 import { celebrate, screenChoreo, dropIn, popIn, riseIn } from "../lib/motion";
@@ -80,27 +80,29 @@ export function Winner() {
       </motion.div>
 
       {/* ── Podium ─────────────────────────────────────────────── */}
-      <div className="relative mt-9 flex items-start justify-center gap-2">
+      <div className="relative mt-9">
         {/* Crown over first place. Sits above the cards, not inside one.
             Positioning is on the outer plain div and the animation on the
             inner motion.div: popIn animates y, and a Framer transform on the
             same element would discard the -translate-* that places it. */}
-        <div className="pointer-events-none absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-[78%]">
-        <motion.div variants={popIn}>
-          <svg viewBox="0 0 64 44" className="h-11 w-16">
-            <path
-              d="M6 36 L4 12 l14 9 L32 4 l14 17 14-9 -2 24 z"
-              fill="var(--color-brass)"
-              stroke="#1F1F1F"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
-            />
-            <path d="M6 36 h52 v4 H6 z" fill="var(--color-brass-deep)" stroke="#1F1F1F" strokeWidth="3.5" strokeLinejoin="round" />
-            <circle cx="32" cy="16" r="3.4" fill="#E53935" stroke="#1F1F1F" strokeWidth="2.4" />
-          </svg>
-        </motion.div>
+        <div className="pointer-events-none absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-[72%]">
+          <motion.div variants={popIn}>
+            <svg viewBox="0 0 64 44" className="h-12 w-[70px]">
+              <path
+                d="M6 36 L4 12 l14 9 L32 4 l14 17 14-9 -2 24 z"
+                fill="var(--color-brass)"
+                stroke="#1F1F1F"
+                strokeWidth="3.5"
+                strokeLinejoin="round"
+              />
+              <path d="M6 36 h52 v4 H6 z" fill="var(--color-brass-deep)" stroke="#1F1F1F" strokeWidth="3.5" strokeLinejoin="round" />
+              <circle cx="32" cy="16" r="3.4" fill="#E53935" stroke="#1F1F1F" strokeWidth="2.4" />
+              <circle cx="16" cy="21" r="2.4" fill="#FFFFFF" opacity="0.55" />
+            </svg>
+          </motion.div>
         </div>
 
+        <div className="flex items-start justify-center gap-2">
         {SLOTS.map((rank) => {
           const entry: LeaderboardEntry | undefined = leaderboard[rank - 1];
           const c = CARD[rank];
@@ -134,27 +136,25 @@ export function Winner() {
                 {" / 9"}
               </span>
 
-              {/* Winner's rank sits in a burst; the others in a tinted footer.
-                  Same information, but the shape difference is what makes the
-                  first card read as first before you read a number. */}
-              {rank === 1 ? (
-                <span className="relative mt-1 flex h-12 w-12 items-center justify-center">
-                  <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full">
-                    <path
-                      d="M24 1 l4.6 5.9 7-3 .6 7.4 7.2 1.9 -3.7 6.5 5.3 5.3 -5.3 5.3 3.7 6.5 -7.2 1.9 -.6 7.4 -7-3 L24 47 l-4.6-5.9 -7 3 -.6-7.4 -7.2-1.9 3.7-6.5L3 24l5.3-5.3 -3.7-6.5 7.2-1.9 .6-7.4 7 3 z"
-                      fill="#1F1F1F"
-                    />
-                  </svg>
-                  <span className="relative font-display text-[17px] text-brass">1</span>
-                </span>
-              ) : (
-                <span className="-mx-2 -mb-3 mt-1 w-[calc(100%+1rem)] rounded-b-[22px] border-t-3 border-ink bg-ink/10 py-1.5 font-display text-[17px] text-ink/60">
-                  {rank}
-                </span>
-              )}
+              {/* The real medal, not a number in a box. Gold, silver and
+                  bronze are the fastest possible read of a podium, and Props
+                  already carries a properly built one — the cards were showing
+                  a flat digit instead, which is most of why they read cheap. */}
+              <span className={cn("mt-1", rank === 1 ? "h-14 w-14" : "h-11 w-11")}>
+                <Medal rank={rank} />
+              </span>
             </motion.div>
           );
         })}
+        </div>
+
+        {/* A plinth the cards stand on. Without it three cards of different
+            heights just float at different offsets; the base is what makes
+            them read as one podium. */}
+        <motion.div variants={riseIn} className="relative -mt-[3px] px-1">
+          <div className="ink h-4 rounded-b-[14px] rounded-t-[4px] bg-brass-deep shadow-plate-ink" />
+          <div className="ink -mt-[3px] h-3 rounded-b-[12px] bg-ink" />
+        </motion.div>
       </div>
 
       {/* ── The rest of the field ──────────────────────────────

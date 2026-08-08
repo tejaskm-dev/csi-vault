@@ -374,6 +374,11 @@ export interface LeaderboardEntry {
   delta?: number;
 }
 
+/**
+ * Twelve so the board is long enough to actually scroll on a phone — six rows
+ * fit above the fold, which is what the sticky "you" bar is there to handle.
+ * The real event runs ~60, so this is still the small end of realistic.
+ */
 export const mockLeaderboard: LeaderboardEntry[] = [
   { id: 'p1', rank: 1, name: 'CipherKing', initials: 'CK', digits: 7 },
   { id: 'p2', rank: 2, name: 'ByteWitch', initials: 'BW', digits: 6 },
@@ -382,4 +387,9 @@ export const mockLeaderboard: LeaderboardEntry[] = [
   { id: 'p5', rank: 5, name: 'RootZero', initials: 'RZ', digits: 4 },
   { id: 'p6', rank: 6, name: 'NullPointer', initials: 'NP', digits: 3 },
   { id: 'p7', rank: 7, name: 'StackTrace', initials: 'ST', digits: 2 },
+  { id: 'p8', rank: 8, name: 'GhostByte', initials: 'GB', digits: 2 },
+  { id: 'p9', rank: 9, name: 'KernelPanik', initials: 'KP', digits: 2 },
+  { id: 'p10', rank: 10, name: 'HexRunner', initials: 'HR', digits: 1 },
+  { id: 'p11', rank: 11, name: 'LoopHole', initials: 'LH', digits: 1 },
+  { id: 'p12', rank: 12, name: 'SegFaulty', initials: 'SF', digits: 1 },
 ];
