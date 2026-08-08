@@ -5,7 +5,8 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { VaultTile } from "../components/VaultTile";
 import { useGame } from "../context/GameContext";
 import { celebrate, screenChoreo, dropIn, popIn, riseIn } from "../lib/motion";
-import { cn } from "../lib/utils";
+import { Sprinkles } from "../components/Sprinkles";
+import { cn, formatClock } from "../lib/utils";
 import { playUnlock, playComplete } from "../lib/sound";
 import { Art } from "../components/Art";
 import { Starburst } from "../components/Starburst";
@@ -30,7 +31,8 @@ const BEATS = [
 export function Success() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { unlockVault, unlockedVaults, username } = useGame();
+  const { unlockVault, unlockedVaults, username, elapsedSeconds, leaderboard } = useGame();
+  const you = leaderboard.find((e) => e.isYou);
 
   const isBonus = id === "bonus";
   const digit = parseInt(id ?? "1", 10);
@@ -75,8 +77,9 @@ export function Success() {
       variants={screenChoreo}
       initial="initial"
       animate="animate"
-      className="flex flex-1 select-none flex-col p-6 text-center"
+      className="relative flex flex-1 select-none flex-col p-6 text-center"
     >
+      <Sprinkles />
       {/* A coloured plate carries the headline. Before, the title was ink on
           cream sitting directly over the starburst, and the burst's points cut
           straight through the letterforms — the plate gives the type its own
@@ -149,7 +152,7 @@ export function Success() {
           </motion.div>
         </motion.div>
 
-        <motion.div variants={riseIn} className="ink rounded-plate bg-white px-5 py-4 shadow-ink-sm">
+        <motion.div variants={riseIn} className="ink w-full rounded-plate bg-white px-5 py-4 shadow-ink">
           <p className="font-body text-[16px] font-bold text-ink">
             {isBonus
               ? "Off the board, and it cost you nothing."
@@ -157,20 +160,40 @@ export function Success() {
                 ? `Nine of nine, ${username || "recruit"}. Go and open it.`
                 : `Digit ${digit} is on the board.`}
           </p>
-          {!allDone && !isBonus && (
-            <div className="mt-3 flex items-center justify-center gap-1.5">
-              {/* Nine pips: the progress bar of the whole game, at a glance. */}
-              {Array.from({ length: 9 }, (_, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "h-2 w-2 rounded-pill border-2 border-ink",
-                    i < unlockedVaults.length ? "bg-green" : "bg-paper-deep"
-                  )}
-                />
-              ))}
+
+          {!isBonus && (
+            <div className="mt-3.5 flex items-center justify-center gap-1.5">
+              {/* Nine pips: the whole run at a glance, and the reason the card
+                  earns its width. The one just banked pulses once. */}
+              {Array.from({ length: 9 }, (_, i) => {
+                const done = i < unlockedVaults.length;
+                return (
+                  <motion.span
+                    key={i}
+                    initial={false}
+                    animate={i === unlockedVaults.length - 1 ? { scale: [1, 1.45, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.4, delay: 0.7, ease: "easeOut" }}
+                    className={cn(
+                      "h-2.5 w-2.5 rounded-pill border-2 border-ink",
+                      done ? "bg-green" : "bg-paper-deep"
+                    )}
+                  />
+                );
+              })}
             </div>
           )}
+        </motion.div>
+
+        {/* Two readings that were nowhere on this screen: how long the run has
+            taken, and where it currently puts you. Both are why a player keeps
+            going, and both were only visible two taps away on the leaderboard. */}
+        <motion.div variants={riseIn} className="flex w-full items-stretch gap-2.5">
+          <Chip label="Elapsed" value={formatClock(elapsedSeconds)} />
+          <Chip
+            label={allDone ? "Standing" : "Remaining"}
+            value={allDone ? (you ? `#${you.rank}` : "—") : String(remaining)}
+            accent={allDone}
+          />
         </motion.div>
       </div>
 
@@ -185,5 +208,29 @@ export function Success() {
         </PrimaryButton>
       </motion.div>
     </motion.div>
+  );
+}
+
+function Chip({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "ink flex flex-1 flex-col items-center gap-0.5 rounded-btn py-2.5 shadow-chip-ink",
+        accent ? "bg-brass" : "bg-paper-deep"
+      )}
+    >
+      <span className="font-readout text-[17px] font-bold leading-none text-ink">{value}</span>
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/50">
+        {label}
+      </span>
+    </div>
   );
 }

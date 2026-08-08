@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -9,7 +9,8 @@ import { Art } from "../components/Art";
 import { Padlock, Stopwatch, MysteryBox, Medal } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import { formatClock } from "../lib/utils";
-import { playComplete } from "../lib/sound";
+import { playComplete, playUnlock } from "../lib/sound";
+import { CurvedWord } from "../components/CurvedWord";
 import {
   celebrate,
   comboStagger,
@@ -39,9 +40,23 @@ export function VaultComplete() {
 
   const you = leaderboard.find((e) => e.isYou);
 
+  // The door was mounted already open, so the swing it was built to perform
+  // never played — the payoff animation of the whole game was being skipped.
+  // Mount closed, then release it, and time the sound and confetti to the
+  // moment it actually opens rather than to page load.
+  const [doorOpen, setDoorOpen] = useState(false);
+
   useEffect(() => {
-    playComplete();
-    celebrate();
+    playUnlock();
+    const open = setTimeout(() => setDoorOpen(true), 520);
+    const bang = setTimeout(() => {
+      playComplete();
+      celebrate();
+    }, 1150);
+    return () => {
+      clearTimeout(open);
+      clearTimeout(bang);
+    };
   }, []);
 
   return (
@@ -57,37 +72,45 @@ export function VaultComplete() {
           Mission complete
         </span>
 
-        <h1 className="mt-3 font-display text-[clamp(38px,13vw,52px)] uppercase leading-[0.86] tracking-tight">
-          <span
-            className="block text-white"
-            style={{ WebkitTextStroke: "3px var(--color-ink)", paintOrder: "stroke fill" }}
+        {/* Set on an arc. HTML cannot bend a baseline, so this is SVG
+            textPath — see CurvedWord. VAULT sits on a narrower box than
+            UNLOCKED, so the shorter word ends up the larger one, which is
+            what makes the pair read as a lockup rather than two lines. */}
+        <div className="mt-2 w-full">
+          <CurvedWord
+            fill="#FFFFFF"
+            extrude="#D8D2C0"
+            extrudeDeep="#A9A395"
+            depth={7}
+            bow={13}
+            className="mx-auto w-[62%]"
           >
-            Vault
-          </span>
-          <span
-            className="block text-brass"
-            style={{
-              WebkitTextStroke: "3px var(--color-ink)",
-              paintOrder: "stroke fill",
-              textShadow: "0 4px 0 var(--color-brass-deep), 0 7px 0 var(--color-ink)",
-            }}
+            VAULT
+          </CurvedWord>
+          <CurvedWord
+            fill="var(--color-brass)"
+            extrude="var(--color-brass-deep)"
+            extrudeDeep="#8A5A08"
+            depth={10}
+            bow={11}
+            className="mx-auto -mt-[6%] w-full"
           >
-            Unlocked
-          </span>
-        </h1>
+            UNLOCKED
+          </CurvedWord>
+        </div>
 
-        <p className="mt-3 font-body text-[14px] font-bold text-ink/60">
+        <p className="mt-1 font-body text-[14px] font-bold text-ink/60">
           You&rsquo;ve cracked every lock.
         </p>
       </motion.div>
 
       {/* ── Hero ───────────────────────────────────────────────── */}
       <motion.div variants={popIn} className="relative mx-auto mt-3 w-full max-w-[300px]">
-        <VaultDoor state="open" />
+        <VaultDoor state={doorOpen ? "open" : "closed"} />
         <motion.div
           initial={{ opacity: 0, scale: 0.6, y: 20, rotate: -8 }}
           animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
-          transition={{ delay: 1.1, type: "spring", stiffness: 300, damping: 16 }}
+          transition={{ delay: 1.5, type: "spring", stiffness: 300, damping: 16 }}
           className="pointer-events-none absolute -bottom-4 -left-8 z-20 h-40 w-40"
         >
           <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />

@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Medal } from "./Props";
 import { cn } from "../lib/utils";
 
 interface LeaderboardRowProps {
@@ -11,70 +12,32 @@ interface LeaderboardRowProps {
   delta?: number;
 }
 
-function GeometricAvatar({ id, initials }: { id: string; initials: string }) {
-  // Deterministic color index based on id
+/**
+ * Initials on a deterministic colour.
+ *
+ * This used to draw a chevron, a dot cluster or a bar depending on a hash of
+ * the id, and accepted `initials` without ever using it — which is why every
+ * avatar on the board showed a stray ">" or "•••" and no two of them told you
+ * whose row it was.
+ */
+function Avatar({ id, initials }: { id: string; initials: string }) {
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colorIndex = (Math.abs(hash) % 7) + 1; // 7 play colors
-  const shapeType = Math.abs(hash) % 3; // 0 = chevron, 1 = dot cluster, 2 = bar
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
 
-  const colors = [
-    "bg-blue",
-    "bg-yellow",
-    "bg-green",
-    "bg-purple",
-    "bg-orange",
-    "bg-pink",
-    "bg-teal"
-  ];
-  const colorClass = colors[colorIndex - 1];
+  const colors = ["bg-blue", "bg-brass", "bg-green", "bg-purple", "bg-teal", "bg-red", "bg-grass"];
+  const text = ["text-white", "text-ink", "text-ink", "text-white", "text-white", "text-white", "text-white"];
+  const i = Math.abs(hash) % colors.length;
 
   return (
-    <div className={cn("w-10 h-10 rounded-pill ink flex items-center justify-center select-none shrink-0", colorClass)}>
-      {shapeType === 0 && (
-        <svg className="w-5 h-5 text-ink stroke-[3px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
+    <div
+      className={cn(
+        "ink flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-pill font-display text-[13px] leading-none",
+        colors[i],
+        text[i]
       )}
-      {shapeType === 1 && (
-        <div className="flex gap-0.5">
-          <div className="w-1.5 h-1.5 rounded-pill bg-ink" />
-          <div className="w-1.5 h-1.5 rounded-pill bg-ink" />
-          <div className="w-1.5 h-1.5 rounded-pill bg-ink" />
-        </div>
-      )}
-      {shapeType === 2 && (
-        <div className="w-4 h-1.5 bg-ink rounded-pill" />
-      )}
+    >
+      {initials}
     </div>
-  );
-}
-
-function Medal({ rank }: { rank: number }) {
-  const colors = {
-    1: { medal: "#FFD700", ribbon: "#E8332B" }, // Gold
-    2: { medal: "#C0C0C0", ribbon: "#2B6BE4" }, // Silver
-    3: { medal: "#CD7F32", ribbon: "#35C46A" }, // Bronze
-  } as Record<number, { medal: string; ribbon: string }>;
-
-  const config = colors[rank] || colors[1];
-
-  return (
-    <svg className="w-8 h-8 select-none shrink-0" viewBox="0 0 32 32">
-      {/* Ribbon */}
-      <path d="M10 2 L16 16 L22 2 Z" fill={config.ribbon} stroke="#14110F" strokeWidth="2.5" strokeLinejoin="round" />
-      
-      {/* Disc */}
-      <circle cx="16" cy="20" r="9" fill={config.medal} stroke="#14110F" strokeWidth="2.5" />
-      <circle cx="16" cy="20" r="5" fill="none" stroke="#14110F" strokeWidth="1.5" strokeDasharray="1.5,1.5" />
-      
-      {/* Rank number */}
-      <text x="16" y="23.5" fontFamily="var(--font-pixel)" fontSize="8.5" fontWeight="bold" fill="#14110F" textAnchor="middle">
-        {rank}
-      </text>
-    </svg>
   );
 }
 
@@ -90,9 +53,9 @@ export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta 
       whileHover={{ scale: 1.015 }}
       transition={{ type: "spring", stiffness: 350, damping: 30 }}
       className={cn(
-        "relative overflow-visible ink rounded-btn p-3 flex items-center justify-between gap-4 w-full select-none shadow-ink-sm pl-10",
+        "relative ink rounded-btn p-2.5 flex items-center gap-3 w-full select-none shadow-ink-sm",
         isYou
-          ? "bg-yellow"
+          ? "bg-brass"
           : rank === 1
           ? "bg-[#FFF0B3]"
           : rank === 2
@@ -102,43 +65,52 @@ export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta 
           : "bg-white"
       )}
     >
-      {/* Rank Indicator hanging off the left edge */}
-      <div className="absolute -left-4 top-1/2 -translate-y-1/2 z-25 flex items-center justify-center">
+      {/* Rank sits INSIDE the row. It used to hang at -left-4, which put it
+          past the screen padding and clipped the top three medals against the
+          viewport edge. */}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
         {showMedal ? (
-          // The Medal SVG is `h-full w-full`, so it needs a sized box. This
-          // was a bare `scale-110` div with no dimensions — the medal had no
-          // box to fill and never rendered at a usable size.
-          <div className="h-12 w-12">
-            <Medal rank={rank} />
-          </div>
+          // The polished Medal from Props. This file used to define its own
+          // second Medal — a 32-unit sketch with a triangle ribbon — and that
+          // was the one rendering on the board.
+          <Medal rank={rank as 1 | 2 | 3} className="h-9 w-9" />
         ) : (
-          <div className="w-9 h-9 rounded-pill bg-paper-deep ink flex items-center justify-center pixel text-[12px] font-bold text-ink/75 shadow-ink-sm">
+          <span className="ink flex h-8 w-8 items-center justify-center rounded-pill bg-paper-deep font-readout text-[12px] font-bold text-ink/70">
             {rank}
-          </div>
+          </span>
         )}
       </div>
 
-      {/* Avatar & Player Info */}
-      <div className="flex items-center gap-3 grow overflow-hidden">
-        <GeometricAvatar id={id} initials={initials} />
-        <span className={cn(
-          "font-bold text-base truncate",
-          isYou ? "text-ink font-extrabold" : "text-ink/80"
-        )}>
-          {name}
-        </span>
-      </div>
+      <Avatar id={id} initials={initials} />
 
-      {/* Stats (Delta and Unlocks) */}
-      <div className="flex items-center gap-3 shrink-0">
+      <span
+        className={cn(
+          "grow truncate text-base font-bold",
+          isYou ? "font-extrabold text-ink" : "text-ink/80"
+        )}
+      >
+        {name}
+      </span>
+
+      <div className="flex shrink-0 items-center gap-2">
         {delta ? (
-          <span className="ink rounded-pill bg-green text-white text-[10px] font-extrabold px-2 py-0.5">
+          <span className="ink rounded-pill bg-green px-2 py-0.5 text-[10px] font-extrabold text-white">
             +{delta}
           </span>
         ) : null}
-        <span className="pixel text-[11px] text-ink font-bold bg-paper-deep px-3 py-1.5 rounded-pill ink">
-          {digits}/9
-        </span>
+        {/* The bar is the fastest read on the row — you can rank the screen
+            without parsing nine separate fractions. */}
+        <div className="flex flex-col items-end gap-1">
+          <span className="font-readout text-[11px] font-bold leading-none text-ink/70">
+            {digits}/9
+          </span>
+          <span className="ink h-2 w-12 overflow-hidden rounded-pill bg-paper-deep p-0">
+            <span
+              className="block h-full bg-green"
+              style={{ width: `${(digits / 9) * 100}%` }}
+            />
+          </span>
+        </div>
       </div>
     </motion.div>
   );

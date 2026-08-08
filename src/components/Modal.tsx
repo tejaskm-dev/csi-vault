@@ -45,7 +45,11 @@ export function Modal({ isOpen, onClose, children, variant = "centeredCard" }: M
             className={cn(
               "z-50 bg-paper ink text-ink shadow-ink-lg flex flex-col gap-5 p-6 relative w-full max-w-[90%] md:max-w-md",
               isSheet
-                ? "absolute bottom-0 left-1/2 -translate-x-1/2 rounded-t-card border-b-0 pb-10"
+                // Centred with margins, not -translate-x-1/2: the sheet
+                // animates `y`, so Framer writes an inline transform and the
+                // translate would be discarded, leaving it half a width right
+                // of centre.
+                ? "absolute bottom-0 inset-x-0 mx-auto rounded-t-card border-b-0 pb-10"
                 : "rounded-card"
             )}
           >
