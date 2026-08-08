@@ -59,8 +59,11 @@ export function Home() {
         }
       />
 
-      {/* Collapses to zero height when nobody has done anything. */}
-      <CrewFeed className="relative z-20 shrink-0" />
+      {/* Zero-height anchor: the feed pill floats on the header's bottom edge
+          and never moves the page when someone scores. */}
+      <div className="relative z-30 h-0">
+        <CrewFeed />
+      </div>
 
       {/* ── Body ───────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col px-5 pb-3 pt-2">

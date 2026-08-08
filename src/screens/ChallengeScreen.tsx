@@ -5,6 +5,7 @@ import { ProgressDots } from "../components/ProgressDots";
 import { CountdownPill } from "../components/CountdownPill";
 import { AnswerOptionCard } from "../components/AnswerOptionCard";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { Pressable } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Toast } from "../components/Toast";
 import { Modal } from "../components/Modal";
@@ -147,10 +148,13 @@ export function ChallengeScreen() {
           <div className="pointer-events-none absolute -right-4 -top-8 z-10 h-32 w-32 rotate-[5deg]">
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
+          {/* pr-24 keeps the title out from under the mascot. The art used to
+              occupy half its frame, so a 128px box only looked ~60px wide and
+              long titles cleared it by accident. */}
+          <span className="block pr-24 text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
             CHALLENGE PUZZLE
           </span>
-          <h1 className="text-[28px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink mt-1">
+          <h1 className="mt-1 pr-24 text-[28px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink">
             {challenge.title}
           </h1>
           <p className="font-body text-base font-bold text-ink/75 leading-relaxed mt-3 bg-white ink rounded-card p-4 shadow-ink-sm rotate-[-1deg]">
@@ -246,44 +250,78 @@ export function ChallengeScreen() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-paper p-8 text-center"
+            className="absolute inset-0 z-50 flex flex-col bg-paper"
           >
+            {/* A coloured plate, not a bare page. The screen was a small column
+                of text floating in cream — the emptiness was the problem, not
+                the wording. The plate also lets the mascot overlap something,
+                which is what stops the layout reading as a stack of blocks. */}
+            <div className="relative shrink-0 overflow-hidden rounded-b-[28px] bg-red px-6 pb-20 pt-9 text-center shadow-[0_4px_0_0_var(--color-ink)]">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(115deg, rgba(255,255,255,0.14) 0 7px, transparent 7px 18px)",
+                }}
+              />
+              <motion.h2
+                initial={{ scale: 0.85, y: -8 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 420, damping: 16 }}
+                className="relative font-display text-[46px] uppercase leading-none tracking-tight text-white"
+                style={{ textShadow: "0 4px 0 var(--color-ink)" }}
+              >
+                Not quite
+              </motion.h2>
+              <span className="relative mt-3 inline-block rounded-pill border-2 border-white/40 bg-red-deep px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+                Attempt {misses + 1}
+              </span>
+            </div>
+
+            {/* Mascot straddling the plate edge, large. */}
             <motion.div
               initial={{ scale: 0.7, y: 14 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 360, damping: 18 }}
-              className="h-56 w-56"
+              className="pointer-events-none z-10 -mt-16 flex shrink-0 justify-center"
             >
-              <Art name="mascot-sad" alt="" className="h-full w-full object-contain" />
+              <Art name="mascot-sad" alt="" className="h-44 w-44 object-contain" />
             </motion.div>
 
-            <div>
-              <h2 className="font-display text-[34px] uppercase leading-none tracking-tighter text-red">
-                Not quite
-              </h2>
-              <p className="mt-2 font-body text-[15px] font-bold text-ink/65">
-                {MISS_LINES[Math.min(misses - 1, MISS_LINES.length - 1)] ?? MISS_LINES[0]}
-              </p>
+            <div className="px-6">
+              <div className="ink rotate-[-1deg] rounded-plate bg-white p-5 text-center shadow-ink">
+                <p className="font-body text-[16px] font-bold leading-snug text-ink">
+                  {MISS_LINES[Math.min(misses - 1, MISS_LINES.length - 1)] ?? MISS_LINES[0]}
+                </p>
+                {/* Redirect rather than punish — the miss costs nothing, and
+                    saying so is what keeps a first-year tapping instead of
+                    putting the phone down. */}
+                <p className="mt-2 font-body text-[13px] font-semibold text-ink/55">
+                  No digit lost. No time penalty. Just go again.
+                </p>
+              </div>
             </div>
 
-            <PrimaryButton
-              className="w-full max-w-xs"
-              onClick={() => {
-                setShowMiss(false);
-                setStatus("idle");
-                setWrongId(null);
-              }}
-            >
-              TRY AGAIN
-            </PrimaryButton>
+            <div className="mt-auto flex flex-col gap-3 p-6">
+              <PrimaryButton
+                className="h-16 w-full"
+                onClick={() => {
+                  setShowMiss(false);
+                  setStatus("idle");
+                  setWrongId(null);
+                }}
+              >
+                TRY AGAIN
+              </PrimaryButton>
 
-            <button
-              type="button"
-              onClick={() => { setShowMiss(false); setStatus("idle"); setWrongId(null); setHintOpen(true); }}
-              className="font-body text-[14px] font-bold text-ink/50 underline underline-offset-4"
-            >
-              Show me a nudge
-            </button>
+              <Pressable
+                className="h-14 w-full"
+                onClick={() => { setShowMiss(false); setStatus("idle"); setWrongId(null); setHintOpen(true); }}
+              >
+                SHOW ME A NUDGE
+              </Pressable>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

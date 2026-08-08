@@ -46,11 +46,14 @@ export function CrewFeed({ className }: { className?: string }) {
     return () => clearTimeout(t);
   }, [event]);
 
+  // A floating pill straddling the header's bottom edge, not a full-bleed slab
+  // welded under it. The slab butted a flat black bar against the header's
+  // curve — two different shapes fighting — and it pushed the whole page down
+  // whenever someone scored. Absolute positioning means zero layout shift.
   return (
     <div
       className={cn(
-        "overflow-hidden border-ink bg-ink transition-[height,border] duration-300",
-        event ? "h-8 border-b-3" : "h-0 border-b-0",
+        "pointer-events-none absolute inset-x-0 top-0 z-30 flex -translate-y-1/2 justify-center px-4",
         className
       )}
     >
@@ -58,13 +61,13 @@ export function CrewFeed({ className }: { className?: string }) {
         {event && (
           <motion.div
             key={event.key}
-            initial={{ y: 14, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -14, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex h-8 items-center gap-2 px-4"
+            initial={{ y: -18, opacity: 0, scale: 0.88 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -12, opacity: 0, scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            className="flex max-w-full items-center gap-2 rounded-pill border-3 border-white bg-ink px-3.5 py-1.5 shadow-[0_3px_0_0_var(--color-ink)]"
           >
-            <span className="block h-1.5 w-1.5 shrink-0 rounded-pill bg-green" />
+            <span className="block h-1.5 w-1.5 shrink-0 animate-[pulseGlow_1.6s_ease-in-out_infinite] rounded-pill bg-green" />
             <span className="truncate font-body text-[11px] font-semibold text-white/85">
               <span className="text-brass">{event.name}</span> is on{" "}
               <span className="font-readout text-brass">{event.digits}</span>
