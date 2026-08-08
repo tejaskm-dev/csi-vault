@@ -85,8 +85,13 @@ export function Home() {
             >
               <TumblerRing />
               <motion.div
-                className="h-full w-full transition-transform duration-300 group-hover:scale-[1.03]"
+                // whileHover, not group-hover:scale — the y-loop below writes
+                // an inline transform every frame, which a CSS transform class
+                // on the same element can never win against.
+                className="spin-layer h-full w-full"
                 animate={{ y: [0, -6, 0] }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
               >
                 <VaultDoor

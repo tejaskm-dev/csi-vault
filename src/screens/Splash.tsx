@@ -72,10 +72,10 @@ export function Splash() {
 
         {/* CSI ASIET chip fades up at 700ms */}
         <motion.span
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 8, rotate: -2.5 }}
+          animate={{ opacity: 1, y: 0, rotate: -2.5 }}
           transition={{ duration: 0.45, ease: "easeOut", delay: 0.7 }}
-          className="text-[12px] font-extrabold uppercase tracking-[0.25em] text-red-deep mb-2 bg-red/10 px-3 py-1 rounded-pill ink rotate-[-2.5deg] inline-block"
+          className="text-[12px] font-extrabold uppercase tracking-[0.25em] text-red-deep mb-2 bg-red/10 px-3 py-1 rounded-pill ink inline-block"
         >
           CSI ASIET
         </motion.span>

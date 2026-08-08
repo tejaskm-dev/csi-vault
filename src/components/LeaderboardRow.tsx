@@ -84,9 +84,13 @@ export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta 
   return (
     <motion.div
       layout
+      // `layout` makes Framer write an inline transform every frame, so the
+      // CSS `hover:scale-[1.01]` this used to carry could never take effect.
+      // Same property, same element — the inline style always wins.
+      whileHover={{ scale: 1.015 }}
       transition={{ type: "spring", stiffness: 350, damping: 30 }}
       className={cn(
-        "relative overflow-visible ink rounded-btn p-3 flex items-center justify-between gap-4 w-full select-none transition-transform hover:scale-[1.01] shadow-ink-sm pl-10",
+        "relative overflow-visible ink rounded-btn p-3 flex items-center justify-between gap-4 w-full select-none shadow-ink-sm pl-10",
         isYou
           ? "bg-yellow"
           : rank === 1

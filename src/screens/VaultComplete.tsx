@@ -9,7 +9,7 @@ import { Art } from "../components/Art";
 import { useGame } from "../context/GameContext";
 import { formatClock } from "../lib/utils";
 import { playComplete } from "../lib/sound";
-import { celebrate } from "../lib/motion";
+import { celebrate, comboStagger, digitLandVariants } from "../lib/motion";
 import { Starburst } from "../components/Starburst";
 import { WavyDivider } from "../components/WavyDivider";
 
@@ -44,10 +44,10 @@ export function VaultComplete() {
             {/* Mascot celebrating in front of the open vault — the climax is
                 the one place it should be unmissable. */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.6, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.6, y: 20, rotate: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0, rotate: 8 }}
               transition={{ delay: 1.4, type: "spring", stiffness: 300, damping: 16 }}
-              className="pointer-events-none absolute -bottom-6 -right-6 z-20 h-52 w-52 rotate-[8deg]"
+              className="pointer-events-none absolute -bottom-6 -right-6 z-20 h-52 w-52"
             >
               <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
             </motion.div>
@@ -55,16 +55,28 @@ export function VaultComplete() {
         </div>
 
         {/* Compact Solved Digits Strip */}
-        <div className="flex justify-center items-center gap-1.5 bg-ink border-2 border-white p-2.5 rounded-card w-full rotate-[-1deg]">
+        {/* The combination reads itself out left to right rather than all
+            appearing at once — this is the payoff the whole game builds to. */}
+        <motion.div
+          variants={comboStagger}
+          initial="initial"
+          animate="animate"
+          // The tilt is a style, not a variant: comboStagger only carries
+          // timing, so nothing here would fight it — but keeping transform in
+          // one place per element is what stops these going dead again.
+          style={{ rotate: "-1deg" }}
+          className="flex justify-center items-center gap-1.5 bg-ink border-2 border-white p-2.5 rounded-card w-full"
+        >
           {Array.from({ length: 9 }, (_, i) => (
-            <VaultTile
-              key={i}
-              digit={i + 1}
-              state={unlockedVaults.includes(String(i + 1)) ? "solved" : "locked"}
-              size="compact"
-            />
+            <motion.div key={i} variants={digitLandVariants}>
+              <VaultTile
+                digit={i + 1}
+                state={unlockedVaults.includes(String(i + 1)) ? "solved" : "locked"}
+                size="compact"
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Stats Row with Starburst on the Time block and Pill styling */}
         <div className="grid grid-cols-3 gap-2 w-full">

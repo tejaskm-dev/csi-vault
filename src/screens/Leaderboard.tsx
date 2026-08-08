@@ -1,12 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, RefreshCw } from "lucide-react";
 import { motion } from "motion/react";
 import { LeaderboardRow } from "../components/LeaderboardRow";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { Pressable } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
-import { listContainerVariants } from "../lib/motion";
+import { listStagger, riseIn } from "../lib/motion";
 
 const VISIBLE = 6; // Compact view fits beautifully on phone screens
 
@@ -44,19 +42,26 @@ export function Leaderboard() {
 
         {/* Scrollable Leaderboard Rows */}
         <motion.div
-          variants={listContainerVariants}
+          variants={listStagger}
           initial="initial"
           animate="animate"
           className="flex flex-col gap-3"
         >
+          {/* The wrapper carries the entrance. LeaderboardRow itself uses
+              `layout` for reordering, and Framer writes an inline transform
+              for that — an entrance variant on the same element fights it. */}
           {top.map((entry) => (
-            <LeaderboardRow key={entry.id} {...entry} />
+            <motion.div key={entry.id} variants={riseIn}>
+              <LeaderboardRow {...entry} />
+            </motion.div>
           ))}
 
           {youIsBelow && you && (
             <>
               <div className="text-center font-bold text-ink/30 py-0.5 pixel text-[10px]">•••</div>
-              <LeaderboardRow key={you.id} {...you} />
+              <motion.div key={you.id} variants={riseIn}>
+                <LeaderboardRow {...you} />
+              </motion.div>
             </>
           )}
         </motion.div>

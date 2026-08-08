@@ -37,10 +37,13 @@ export function NameEntry() {
             row — overlap is what stops a stack of blocks reading as a form. */}
         <div className="relative">
           <motion.div
-            initial={{ opacity: 0, scale: 0.7, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            // The tilt lives in `animate`, not in a class. Framer writes an
+            // inline transform, so a Tailwind rotate-* on the same element is
+            // silently discarded.
+            initial={{ opacity: 0, scale: 0.7, y: 12, rotate: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
             transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
-            className="pointer-events-none absolute -right-4 -top-16 z-20 h-32 w-32 rotate-[6deg]"
+            className="pointer-events-none absolute -right-4 -top-16 z-20 h-32 w-32"
           >
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>

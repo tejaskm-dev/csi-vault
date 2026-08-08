@@ -72,6 +72,16 @@ export const listStagger = {
   animate: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 };
 
+/**
+ * The nine-digit combination reading itself out. Slower than the board and
+ * held back until the vault has finished opening — this is the last thing the
+ * game shows, so it gets to take its time.
+ */
+export const comboStagger = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.075, delayChildren: 0.85 } },
+};
+
 /** The child of either. Rises and settles; no size change. */
 export const riseIn = {
   initial: { opacity: 0, y: 16, scale: 0.92 },

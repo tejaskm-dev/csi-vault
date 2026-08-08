@@ -102,10 +102,10 @@ export function Success() {
           {/* Mascot celebrating alongside the unlocked digit, overlapping the
               tile so it breaks its container rather than sitting in a row. */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.7, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.7, y: 10, rotate: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
             transition={{ delay: 0.4, type: "spring", stiffness: 380, damping: 18 }}
-            className="pointer-events-none absolute -bottom-6 -right-10 z-20 h-40 w-40 rotate-[6deg]"
+            className="pointer-events-none absolute -bottom-6 -right-10 z-20 h-40 w-40"
           >
             <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
           </motion.div>
