@@ -56,13 +56,24 @@ export function LayeredWord({
       }
     : undefined;
 
+  // text-stroke paints OUTWARD from the glyph but does not grow the layout
+  // box, so a 12px stroke bleeds ~6px past the element on every side and gets
+  // clipped. The wrapper is padded by half the stroke to make room, and the
+  // stacked layers are offset to match.
+  const pad = weight / 2;
+
   return (
-    <span className={cn("relative inline-block whitespace-nowrap", className)}>
+    <span
+      className={cn("relative inline-block whitespace-nowrap", className)}
+      style={{ padding: `${pad}px` }}
+    >
       {/* 1 — ink silhouette, carrying the extrusion */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 select-none"
+        className="absolute select-none"
         style={{
+          left: pad,
+          top: pad,
           WebkitTextStroke: `${weight}px ${INK}`,
           paintOrder: "stroke fill",
           color: INK,
@@ -75,8 +86,10 @@ export function LayeredWord({
       {/* 2 — light ring, the separation layer */}
       <span
         aria-hidden
-        className="absolute left-0 top-0 select-none"
+        className="absolute select-none"
         style={{
+          left: pad,
+          top: pad,
           WebkitTextStroke: `${weight * 0.5}px ${ring}`,
           paintOrder: "stroke fill",
           color: ring,
@@ -85,7 +98,7 @@ export function LayeredWord({
         {children}
       </span>
 
-      {/* 3 — the fill, and the layer that actually occupies layout */}
+      {/* 3 — the fill, and the layer that occupies layout */}
       <span className="relative select-none" style={{ color: fill }}>
         {children}
       </span>
@@ -103,7 +116,7 @@ export function Wordmark({ size = "hero", className }: WordmarkProps) {
   const hero = size === "hero";
 
   return (
-    <div className={cn("flex flex-col items-start", className)}>
+    <div className={cn("flex flex-col items-start leading-none", className)}>
       {/* OPERATION — ink on a white ring. The inverse of VAULT, so the two
           words read as a pair rather than one long red block. */}
       <LayeredWord
@@ -112,7 +125,9 @@ export function Wordmark({ size = "hero", className }: WordmarkProps) {
         weight={hero ? 7 : 5}
         className={cn(
           "font-display uppercase leading-none",
-          hero ? "text-[26px] tracking-[0.18em]" : "text-[15px] tracking-[0.2em]"
+          hero
+            ? "text-[clamp(18px,6vw,26px)] tracking-[0.16em]"
+            : "text-[15px] tracking-[0.18em]"
         )}
       >
         OPERATION
@@ -127,7 +142,9 @@ export function Wordmark({ size = "hero", className }: WordmarkProps) {
         weight={hero ? 12 : 8}
         className={cn(
           "font-display uppercase leading-[0.85]",
-          hero ? "mt-2 text-[68px] tracking-[0.02em]" : "mt-1 text-[34px] tracking-[0.03em]"
+          hero
+            ? "-mt-1 text-[clamp(44px,16vw,68px)] tracking-[0.01em]"
+            : "-mt-0.5 text-[clamp(26px,9vw,34px)] tracking-[0.02em]"
         )}
       >
         VAULT
