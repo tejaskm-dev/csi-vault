@@ -33,7 +33,7 @@ export function NameEntry() {
   const handleStart = () => {
     if (!valid) return;
     setUsername(name.trim());
-    navigate("/home");
+    navigate("/booting", { replace: true });
   };
 
   return (

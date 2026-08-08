@@ -12,6 +12,7 @@ import { Leaderboard } from "./screens/Leaderboard";
 import { Winner } from "./screens/Winner";
 import { BonusFound } from "./screens/BonusFound";
 import { Waiting } from "./screens/Waiting";
+import { Booting } from "./screens/Booting";
 // Dev-only reference pages. Lazily loaded so their weight — and the props,
 // safes and art tables they pull in to render every variant at once — never
 // lands in the bundle a player downloads at the door.
@@ -102,6 +103,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><Splash /></PageWrapper>} />
         <Route path="/name" element={<PageWrapper><NameEntry /></PageWrapper>} />
+        <Route path="/booting" element={<Booting />} />
         <Route path="/home" element={<PageWrapper><Home /></PageWrapper>} />
         <Route path="/vault" element={<PageWrapper><VaultGrid /></PageWrapper>} />
         <Route path="/challenge/:id" element={<PageWrapper><ChallengeScreen /></PageWrapper>} />
