@@ -1,103 +1,168 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users } from "lucide-react";
+import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { Starburst } from "../components/Starburst";
 import { useGame } from "../context/GameContext";
 import type { LeaderboardEntry } from "../data/mockData";
-import { Art } from "../components/Art";
+import { celebrate } from "../lib/motion";
+import { playComplete } from "../lib/sound";
 import { cn } from "../lib/utils";
 import { Trophy } from "../components/Props";
 
-const SLOTS = [2, 1, 3];
+/** Left to right on screen. The podium is read by height, not by order. */
+const SLOTS = [2, 1, 3] as const;
+
+/**
+ * Columns are sized so their CONTENTS fit. The previous heights (176/128/104)
+ * held an avatar badge, a name, a score and a rank chip inside p-3, which
+ * overflowed the third column and clipped its rank numeral clean off.
+ * The avatar now overhangs the top edge, so the interior only carries text.
+ */
+const COLUMN = {
+  1: { h: "h-40", fill: "bg-brass", shadow: "shadow-plate-brass", delay: 0.42 },
+  2: { h: "h-32", fill: "bg-white", shadow: "shadow-plate-ink", delay: 0.26 },
+  3: { h: "h-26", fill: "bg-paper-deep", shadow: "shadow-plate-ink", delay: 0.1 },
+} as const;
 
 export function Winner() {
   const navigate = useNavigate();
   const { leaderboard } = useGame();
 
+  useEffect(() => {
+    const t = setTimeout(() => {
+      celebrate();
+      playComplete();
+    }, 620);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 select-none text-center">
-      <div className="flex-1 flex flex-col justify-center gap-5 mt-4">
-        {/* Header Block */}
-        <div className="flex flex-col items-center">
-          <div className="flex items-center gap-1 bg-yellow/10 text-yellow font-display font-extrabold text-[11px] px-3 py-1 rounded-pill ink border-yellow">
-            <Users className="w-3.5 h-3.5 text-yellow" />
-            <span>FINAL STANDINGS</span>
+    <div className="flex flex-1 select-none flex-col p-6 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28 }}
+          className="ink flex items-center gap-1.5 rounded-pill bg-ink px-3.5 py-1.5 font-display text-[11px] uppercase tracking-[0.16em] text-brass"
+        >
+          Final standings
+        </motion.div>
+
+        <motion.h1
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 320, damping: 15, delay: 0.08 }}
+          className="font-display text-[40px] uppercase leading-[0.88] tracking-tight text-ink"
+        >
+          We have a
+          <br />
+          <span className="text-red" style={{ textShadow: "0 4px 0 var(--color-ink)" }}>
+            Winner!
+          </span>
+        </motion.h1>
+
+        {/* Trophy on ink. On the old pale bg-yellow/10 plate a gold trophy had
+            nothing to sit against and the whole block read as beige on beige. */}
+        <motion.div
+          initial={{ scale: 0.6, rotate: -12, opacity: 0 }}
+          animate={{ scale: 1, rotate: -2, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 14, delay: 0.16 }}
+          className="relative my-1 flex items-center justify-center"
+        >
+          <div className="spin-layer absolute inset-0 -m-6 animate-[tumble_16s_linear_infinite] opacity-70">
+            <Starburst fillColor="var(--color-brass)" />
           </div>
-          <h1 className="text-[36px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink text-sticker-thin text-extrude-ink mt-3">
-            WE HAVE A<br />
-            <span className="text-red">WINNER!</span>
-          </h1>
-        </div>
-
-        {/* Hero Illustration (Trophy) */}
-        <div className="my-1 flex justify-center">
-          {/* 160px plate, p-3, so 136 of interior for a 128px trophy. */}
-          <div className="bg-yellow/10 rounded-card p-3 ink shadow-ink flex items-center justify-center w-40 h-40 rotate-[-2deg]">
-            <Trophy className="w-32 h-32" />
+          <div className="ink relative flex h-36 w-36 items-center justify-center rounded-plate bg-ink shadow-plate-brass">
+            <Trophy className="h-28 w-28" />
           </div>
-        </div>
+        </motion.div>
 
-        {/* Podium Layout */}
-        <div className="flex items-end justify-center h-[240px] mt-6 px-1 overflow-visible relative">
-          {SLOTS.map((rank) => {
-            const entry: LeaderboardEntry | undefined = leaderboard[rank - 1];
+        {/* ── Podium ─────────────────────────────────────────── */}
+        <div className="mt-4 w-full">
+          <div className="flex items-end justify-center gap-1.5 px-1">
+            {SLOTS.map((rank) => {
+              const entry: LeaderboardEntry | undefined = leaderboard[rank - 1];
+              const col = COLUMN[rank];
 
-            // Render columns based on rank height and width
-            const columnStyles = {
-              1: "h-44 flex-[1.3] bg-yellow shadow-ink z-20 -mx-2 rounded-t-[32px] border-b-0",
-              2: "h-32 flex-1 bg-white shadow-ink-sm z-10 rounded-t-[24px] border-b-0",
-              3: "h-26 flex-1 bg-paper-deep shadow-ink-sm z-10 rounded-t-[24px] border-b-0",
-            }[rank as 1 | 2 | 3];
-
-            return (
-              <div
-                key={rank}
-                className={cn(
-                  "relative flex flex-col justify-between items-center p-3 ink transition-transform hover:scale-102",
-                  columnStyles
-                )}
-              >
-                {/* 1st place overhanging star badge */}
-                {rank === 1 && (
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-30 w-8 h-8 rounded-pill bg-red text-white ink shadow-ink-sm flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Player Initials Badge at Top */}
-                <div
+              return (
+                <motion.div
+                  key={rank}
+                  // Rises from behind the ground line. Transform + opacity only,
+                  // so this composites without touching layout.
+                  initial={{ y: 56, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20,
+                    delay: col.delay,
+                  }}
                   className={cn(
-                    "w-9 h-9 rounded-pill ink flex items-center justify-center font-display font-extrabold text-[13px] text-ink",
-                    rank === 1 ? "bg-white" : "bg-paper"
+                    "ink relative flex flex-col items-center justify-end rounded-t-[22px] px-2 pb-3",
+                    col.h,
+                    col.fill,
+                    col.shadow,
+                    rank === 1 ? "z-20 flex-[1.25]" : "z-10 flex-1"
                   )}
                 >
-                  {entry?.initials ?? "–"}
-                </div>
+                  {/* Crown star, winner only */}
+                  {rank === 1 && (
+                    <motion.div
+                      initial={{ scale: 0, y: 8 }}
+                      animate={{ scale: 1, y: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.72 }}
+                      className="ink absolute -top-[4.25rem] flex h-9 w-9 items-center justify-center rounded-pill bg-red text-white shadow-chip-ink"
+                    >
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                    </motion.div>
+                  )}
 
-                {/* Name Label */}
-                <div className="flex flex-col items-center w-full min-h-[36px] justify-center mt-1">
-                  <span className="font-display font-extrabold text-[12px] text-ink leading-tight truncate w-full px-0.5">
+                  {/* Avatar overhangs the top edge — this is what freed up the
+                      interior space that used to clip the rank numeral. */}
+                  <div
+                    className={cn(
+                      "ink absolute -top-5 flex h-10 w-10 items-center justify-center rounded-pill font-display text-[13px] text-ink shadow-chip-ink",
+                      rank === 1 ? "bg-white" : "bg-paper"
+                    )}
+                  >
+                    {entry?.initials ?? "–"}
+                  </div>
+
+                  <span
+                    className={cn(
+                      "w-full truncate font-display uppercase leading-tight text-ink",
+                      rank === 1 ? "text-[13px]" : "text-[11px]"
+                    )}
+                  >
                     {entry?.name.split(" ")[0] ?? "OPEN"}
                   </span>
-                  <span className="text-[9px] font-bold text-ink/40 uppercase tracking-widest mt-0.5">
+                  <span className="mt-0.5 font-readout text-[10px] font-bold text-ink/45">
                     {entry ? `${entry.digits}/9` : "–"}
                   </span>
-                </div>
+                  <span
+                    className={cn(
+                      "mt-1.5 flex h-6 w-6 items-center justify-center rounded-pill font-readout text-[12px] font-bold",
+                      rank === 1 ? "bg-ink text-brass" : "bg-ink/10 text-ink/70"
+                    )}
+                  >
+                    {rank}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
 
-                {/* Rank indicator at very bottom */}
-                <div className="pixel text-[11px] font-extrabold text-ink bg-ink/5 rounded-pill px-2 py-0.5 mt-2">
-                  {rank}
-                </div>
-              </div>
-            );
-          })}
+          {/* Ground line. Without it the columns float and their differing
+              shadow depths read as three misaligned blocks. */}
+          <div className="ink -mt-[3px] h-3 rounded-b-[10px] bg-ink shadow-plate-ink" />
         </div>
       </div>
 
-      {/* Leaderboard CTA */}
-      <div className="mb-6 mt-4">
-        <PrimaryButton onClick={() => navigate("/leaderboard")} className="w-full">
+      <div className="mt-6">
+        <PrimaryButton onClick={() => navigate("/leaderboard")} className="h-16 w-full">
           FULL LEADERBOARD
         </PrimaryButton>
       </div>

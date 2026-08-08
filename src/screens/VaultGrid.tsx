@@ -38,7 +38,10 @@ export function VaultGrid() {
           <span className="font-bold text-sm text-ink/60 uppercase tracking-wider">CRACKING PROGRESS</span>
           <div className="w-full h-6 rounded-pill ink bg-paper-deep overflow-hidden relative">
             <div
-              className="h-full bg-green transition-all duration-500 border-r-3 border-ink"
+              // `transition-all` here animated width, which forces layout on
+              // every frame of the fill. Naming the property keeps the browser
+              // from watching everything else too.
+              className="h-full bg-green transition-[width] duration-500 ease-out border-r-3 border-ink"
               style={{ width: `${(progress / 9) * 100}%` }}
             />
           </div>

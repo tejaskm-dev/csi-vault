@@ -24,7 +24,9 @@ export function ProgressDots({ total, current, solved = [], className }: Progres
           <span
             key={step}
             className={cn(
-              "w-4 h-4 rounded-pill ink transition-all duration-300 inline-block",
+              // transform + colour only. `transition-all` also watched the
+              // box-shadow that the current dot toggles, which repaints.
+              "w-4 h-4 rounded-pill ink inline-block transition-[transform,background-color] duration-300",
               isSolved
                 ? "bg-green"
                 : isCurrent

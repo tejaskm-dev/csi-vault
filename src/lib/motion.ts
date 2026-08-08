@@ -46,6 +46,43 @@ export const bounceInVariants = {
   },
 };
 
+/* ------------------------------------------------------------------ *
+ * STAGGER
+ *
+ * Transform and opacity ONLY. They are the sole properties that animate on
+ * the compositor thread, so they keep 60fps even while the main thread is
+ * busy; width, height, margin, top/left and box-shadow all force layout or
+ * paint and drop a low-end Android to 30fps or worse. Everything below moves
+ * things — it never resizes them.
+ *
+ * Keep the child count modest. A stagger over ~12 elements is where jank
+ * starts on cheap hardware, which is why the board (9) staggers and the
+ * leaderboard caps its visible rows.
+ * ------------------------------------------------------------------ */
+
+/** Grid entrance — fast, because 9 tiles at a slow stagger feels like waiting. */
+export const boardStagger = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } },
+};
+
+/** List entrance — slightly slower, fewer items, each one worth reading. */
+export const listStagger = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+
+/** The child of either. Rises and settles; no size change. */
+export const riseIn = {
+  initial: { opacity: 0, y: 16, scale: 0.92 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 460, damping: 22, mass: 0.7 },
+  },
+};
+
 // POP — scale: [0.8, 1.12, 1], 400ms. Overshoot, always.
 export const popVariants = {
   initial: { scale: 0.8, opacity: 0 },

@@ -1,4 +1,6 @@
+import { motion } from "motion/react";
 import { VaultTile, type VaultState } from "./VaultTile";
+import { boardStagger, riseIn } from "../lib/motion";
 import { cn } from "../lib/utils";
 
 /**
@@ -29,7 +31,10 @@ export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardPr
   const states = vaultStates(unlockedVaults);
 
   return (
-    <div
+    <motion.div
+      variants={boardStagger}
+      initial="initial"
+      animate="animate"
       className={cn(
         "ink grid w-full select-none grid-cols-3 gap-3 rounded-plate bg-paper-deep p-3.5",
         className
@@ -37,14 +42,17 @@ export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardPr
       style={{ boxShadow: "var(--shadow-plate-ink)" }}
     >
       {states.map((state, i) => (
-        <VaultTile
-          key={i + 1}
-          digit={i + 1}
-          state={state}
-          onClick={() => onSelect(i + 1, state)}
-          tilt={TILTS[i]}
-        />
+        // The wrapper carries the entrance so the tile keeps its own tilt —
+        // two transforms on one element and Framer's inline style wins.
+        <motion.div key={i + 1} variants={riseIn}>
+          <VaultTile
+            digit={i + 1}
+            state={state}
+            onClick={() => onSelect(i + 1, state)}
+            tilt={TILTS[i]}
+          />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

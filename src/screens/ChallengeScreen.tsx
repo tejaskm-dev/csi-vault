@@ -13,7 +13,7 @@ import { Art } from "../components/Art";
 import { HintBulb } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import { playCorrect, playWrong } from "../lib/sound";
-import { shakeVariants } from "../lib/motion";
+import { shakeVariants, listStagger, riseIn } from "../lib/motion";
 import { cn } from "../lib/utils";
 
 const CHECKING_MS = 400;
@@ -199,7 +199,13 @@ export function ChallengeScreen() {
               )}
             />
           ) : (
-            <div
+            <motion.div
+              // Re-keyed on the question so the options deal themselves in
+              // again on every challenge, not just the first one.
+              key={challenge.id}
+              variants={listStagger}
+              initial="initial"
+              animate="animate"
               className={cn(
                 challenge.type === "image_grid"
                   ? "grid grid-cols-2 gap-4"
@@ -207,22 +213,23 @@ export function ChallengeScreen() {
               )}
             >
               {challenge.options?.map((opt) => (
-                <AnswerOptionCard
-                  key={opt.id}
-                  label={opt.label}
-                  isSelected={selectedId === opt.id}
-                  isWrong={wrongId === opt.id}
-                  disabled={busy}
-                  onClick={() => {
-                    setWrongId(null);
-                    setToast(null);
-                    setSelectedId(opt.id);
-                  }}
-                  variant={challenge.type === "image_grid" ? "image" : "text"}
-                  icon={<span>{opt.glyph ?? challenge.glyph}</span>}
-                />
+                <motion.div key={opt.id} variants={riseIn}>
+                  <AnswerOptionCard
+                    label={opt.label}
+                    isSelected={selectedId === opt.id}
+                    isWrong={wrongId === opt.id}
+                    disabled={busy}
+                    onClick={() => {
+                      setWrongId(null);
+                      setToast(null);
+                      setSelectedId(opt.id);
+                    }}
+                    variant={challenge.type === "image_grid" ? "image" : "text"}
+                    icon={<span>{opt.glyph ?? challenge.glyph}</span>}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
