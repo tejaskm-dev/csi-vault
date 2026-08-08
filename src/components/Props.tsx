@@ -41,14 +41,26 @@ interface PropProps {
   className?: string;
 }
 
+/**
+ * `box` is each prop's TIGHT bounding box, not the 0 0 100 100 grid it was
+ * drawn on. Drawing on a common grid is convenient, but the art never fills it
+ * evenly: the gift box occupied 64% of its frame and sat 13 units below centre,
+ * so at 36px the actual gift rendered ~23px and hung low against its label.
+ * A tight square viewBox re-centres the art and lets it fill the space it is
+ * given — `preserveAspectRatio` (xMidYMid meet, the default) does the work.
+ *
+ * Measured by flattening every curve, not by eyeballing coordinates: several
+ * of these shapes are arcs whose extremes lie nowhere near their endpoints.
+ */
 function Frame({
   children,
   className,
   label,
-}: PropProps & { children: React.ReactNode; label: string }) {
+  box = "0 0 100 100",
+}: PropProps & { children: React.ReactNode; label: string; box?: string }) {
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox={box}
       className={cn("h-full w-full", className)}
       role="img"
       aria-label={label}
@@ -63,7 +75,7 @@ function Frame({
    ================================================================ */
 export function Trophy({ className }: PropProps) {
   return (
-    <Frame className={className} label="Trophy">
+    <Frame className={className} label="Trophy" box="0.5 4.5 99 99">
       {/* handles — ink core then gold, with an inner hollow */}
       <path d="M29 27 q-17 2 -17 16 q0 14 17 15" fill="none" stroke={INK} strokeWidth="11" strokeLinecap="round" />
       <path d="M71 27 q17 2 17 16 q0 14 -17 15" fill="none" stroke={INK} strokeWidth="11" strokeLinecap="round" />
@@ -107,7 +119,7 @@ export function Trophy({ className }: PropProps) {
    ================================================================ */
 export function GiftBox({ className }: PropProps) {
   return (
-    <Frame className={className} label="Gift box">
+    <Frame className={className} label="Gift box" box="17 28 70 70">
       {/* ---- box: three faces. Sits low so the bow has room to be big. ---- */}
       <path d="M64 56 L82 47 L82 82 L64 91 Z" fill={PURPLE_DEEP} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
       <path d="M22 56 H64 V91 H22 Z" fill={PURPLE} stroke={INK} strokeWidth="4" strokeLinejoin="round" />
@@ -158,7 +170,7 @@ export function GiftBox({ className }: PropProps) {
    ================================================================ */
 export function Key({ className }: PropProps) {
   return (
-    <Frame className={className} label="Key">
+    <Frame className={className} label="Key" box="2.3 -1.2 95.4 95.4">
       {/* bow: outer ring, bevel, hole */}
       <circle cx="50" cy="26" r="19" fill={GOLD} stroke={INK} strokeWidth="4.5" />
       <circle cx="50" cy="26" r="13.5" fill={GOLD_MID} stroke={INK} strokeWidth="2.4" />
@@ -204,7 +216,7 @@ export function Stopwatch({ className }: PropProps) {
   });
 
   return (
-    <Frame className={className} label="Stopwatch">
+    <Frame className={className} label="Stopwatch" box="-0.8 -1.2 101.5 101.5">
       {/* crown with ribs */}
       <rect x="42" y="4" width="16" height="12" rx="3" fill={GREY_DARK} stroke={INK} strokeWidth="3.5" />
       <g stroke={INK} strokeWidth="1.5" opacity="0.7">
@@ -262,7 +274,7 @@ export function HintBulb({ className }: PropProps) {
     [8, 38, 17, 38], [92, 38, 83, 38], [12, 62, 20, 58], [88, 62, 80, 58],
   ];
   return (
-    <Frame className={className} label="Hint">
+    <Frame className={className} label="Hint" box="3.5 6.5 93 93">
       {/* glow */}
       <circle cx="50" cy="42" r="30" fill={GOLD} opacity="0.16" />
       {/* rays */}
@@ -300,7 +312,7 @@ export function HintBulb({ className }: PropProps) {
    ================================================================ */
 export function Padlock({ className, open = false }: PropProps & { open?: boolean }) {
   return (
-    <Frame className={className} label={open ? "Unlocked" : "Locked"}>
+    <Frame className={className} label={open ? "Unlocked" : "Locked"} box="1 2 98 98">
       <path
         d={open ? "M31 47 V29 a18 18 0 0 1 33 -7" : "M31 47 V29 a19 19 0 0 1 38 0 v18"}
         fill="none" stroke={INK} strokeWidth="10" strokeLinecap="round"
@@ -334,7 +346,7 @@ export function Medal({ rank, className }: PropProps & { rank: 1 | 2 | 3 }) {
   const deep = rank === 1 ? GOLD_DEEP : rank === 2 ? "#8E9296" : "#8A5228";
   const light = rank === 1 ? GOLD_LIGHT : rank === 2 ? "#E8EAEC" : "#E0A575";
   return (
-    <Frame className={className} label={`Rank ${rank}`}>
+    <Frame className={className} label={`Rank ${rank}`} box="0.8 0.8 98.5 98.5">
       {/* ribbons */}
       <path d="M31 6 h17 l-6 32 -17 -7 z" fill={RED} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
       <path d="M69 6 h-17 l6 32 17 -7 z" fill={RED_DEEP} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
@@ -372,7 +384,7 @@ export function Medal({ rank, className }: PropProps & { rank: 1 | 2 | 3 }) {
    ================================================================ */
 export function Flag({ className }: PropProps) {
   return (
-    <Frame className={className} label="Flag">
+    <Frame className={className} label="Flag" box="15.5 -5 63.5 63.5">
       <circle cx="28" cy="12" r="5.5" fill={GOLD} stroke={INK} strokeWidth="3.5" />
       <circle cx="26.4" cy="10.4" r="1.8" fill={WHITE} opacity="0.5" />
       <line x1="28" y1="17" x2="28" y2="93" stroke={INK} strokeWidth="8" strokeLinecap="round" />
@@ -394,7 +406,7 @@ export function Flag({ className }: PropProps) {
  */
 export function MysteryBox({ className }: PropProps) {
   return (
-    <Frame className={className} label="Bonus">
+    <Frame className={className} label="Bonus" box="9.1 17.5 80.9 80.9">
       <circle cx="50" cy="58" r="35" fill={GOLD} opacity="0.13" />
 
       {/* ---- three faces ---- */}
