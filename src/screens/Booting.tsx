@@ -122,19 +122,19 @@ export function Booting() {
       initial={{ y: 0 }}
       animate={{ y: 0 }}
       exit={{ y: "-105%", transition: { duration: 0.85, ease: EXPO } }}
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-ink px-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-red px-8"
     >
       {/* The curved shoulder that trails the curtain on its way out. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-full h-24 rounded-b-[50%] bg-ink"
+        className="pointer-events-none absolute inset-x-0 top-full h-24 rounded-b-[50%] bg-red"
       />
 
-      {/* Hatching, same device as the headers, so the loader belongs to the
-          same app rather than being a generic black screen. */}
+      {/* Hatching, same device and same angle as the headers, so the loader
+          reads as this app's screen rather than a generic loading page. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.13]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(115deg, #FFFFFF 0 8px, transparent 8px 22px)",
@@ -142,27 +142,35 @@ export function Booting() {
       />
 
       <Reveal delay={0.05}>
-        <span className="font-body text-[10px] font-bold uppercase tracking-[0.32em] text-white/40">
+        <span className="rounded-pill border-2 border-white/35 bg-red-deep px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.28em] text-white/85">
           Operation Vault
         </span>
       </Reveal>
 
-      {/* The counter. Tabular so the digits do not jitter as they change. */}
+      {/* The counter. Tabular so the digits do not jitter as they change, and
+          carrying the same ink depth step the headers use — white on red with
+          a hard ink shadow is this app's established way of setting type on a
+          coloured panel. */}
       <Reveal delay={0.12}>
-        <div className="mt-4 flex items-start">
+        <div className="mt-5 flex items-start">
           <span
             ref={numberRef}
             className="font-display text-[84px] leading-none tracking-tight text-white"
-            style={{ fontVariantNumeric: "tabular-nums" }}
+            style={{ fontVariantNumeric: "tabular-nums", textShadow: "0 5px 0 var(--color-ink)" }}
           >
             000
           </span>
-          <span className="mt-3 ml-2 font-display text-[24px] leading-none text-brass">%</span>
+          <span
+            className="mt-3 ml-2 font-display text-[24px] leading-none text-brass"
+            style={{ textShadow: "0 3px 0 var(--color-ink)" }}
+          >
+            %
+          </span>
         </div>
       </Reveal>
 
       <Reveal delay={0.2}>
-        <span className="mt-2 font-body text-[13px] font-bold text-white/55">
+        <span className="mt-3 font-body text-[13px] font-bold text-white/70">
           Building the board for{" "}
           <span className="text-brass">{username || "recruit"}</span>
         </span>
@@ -174,11 +182,11 @@ export function Booting() {
         {Array.from({ length: 9 }, (_, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0.12, scale: 0.8 }}
+            // 0.3, not 0.12: a grey locked safe at 12% disappears entirely
+            // against red, so the row read as empty until it filled.
+            initial={{ opacity: 0.3, scale: 0.8 }}
             animate={
-              i < filled
-                ? { opacity: 1, scale: 1 }
-                : { opacity: 0.12, scale: 0.8 }
+              i < filled ? { opacity: 1, scale: 1 } : { opacity: 0.3, scale: 0.8 }
             }
             transition={{ type: "spring", stiffness: 520, damping: 20 }}
             className="aspect-square w-full"
@@ -197,7 +205,7 @@ export function Booting() {
           {LINES.map((l) => (
             <div
               key={l}
-              className="flex h-5 items-center justify-center font-readout text-[11px] font-bold tracking-[0.18em] text-white/45"
+              className="flex h-5 items-center justify-center font-readout text-[11px] font-bold tracking-[0.18em] text-white/60"
             >
               {l.toUpperCase()}
             </div>
@@ -206,7 +214,9 @@ export function Booting() {
       </div>
 
       {/* Progress rule. scaleX, not width — width forces layout every frame. */}
-      <div className="mt-4 h-1 w-full max-w-[300px] overflow-hidden rounded-pill bg-white/12">
+      {/* Track in the band's own deep tone rather than translucent white —
+          on red, white/12 is nearly invisible. */}
+      <div className="mt-4 h-1.5 w-full max-w-[300px] overflow-hidden rounded-pill bg-red-deep">
         <motion.div
           className="h-full origin-left rounded-pill bg-brass"
           initial={{ scaleX: 0 }}
