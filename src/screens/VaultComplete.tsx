@@ -1,120 +1,202 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PrimaryButton } from "../components/PrimaryButton";
-import { StatBlock } from "../components/StatBlock";
-import { VaultTile } from "../components/VaultTile";
 import { motion } from "motion/react";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Pressable } from "../components/Pressable";
+import { VaultTile } from "../components/VaultTile";
 import { VaultDoor } from "../components/VaultDoor";
 import { Art } from "../components/Art";
+import { Padlock, Stopwatch, MysteryBox, Medal } from "../components/Props";
 import { useGame } from "../context/GameContext";
 import { formatClock } from "../lib/utils";
 import { playComplete } from "../lib/sound";
-import { celebrate, comboStagger, digitLandVariants } from "../lib/motion";
-import { Starburst } from "../components/Starburst";
-import { WavyDivider } from "../components/WavyDivider";
+import {
+  celebrate,
+  comboStagger,
+  digitLandVariants,
+  screenChoreo,
+  dropIn,
+  popIn,
+  riseIn,
+} from "../lib/motion";
 
+/**
+ * The climax. Everything the player did for twenty minutes resolves here, so
+ * it is the one screen allowed to be dense.
+ *
+ * Two things were structurally wrong before:
+ *
+ *   - The nine-digit strip was nine 48px tiles at gap-1.5 inside a 432px
+ *     content width. That is 500px of tile, so the first and last digits were
+ *     clipped off the edges of the phone. It is a 9-column grid now, and the
+ *     tiles size themselves from the column rather than being fixed.
+ *   - The whole screen ran on the dark Blueprint variant, which made the
+ *     payoff look like a different app from the nine screens leading to it.
+ */
 export function VaultComplete() {
   const navigate = useNavigate();
-  const { unlockedVaults, elapsedSeconds, bonusSolved } = useGame();
+  const { unlockedVaults, elapsedSeconds, bonusSolved, leaderboard } = useGame();
+
+  const you = leaderboard.find((e) => e.isYou);
 
   useEffect(() => {
-    // Play full completion chiptune arpeggio and burst confetti on entrance!
     playComplete();
     celebrate();
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 text-center text-white select-none">
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 mt-6">
-        {/* Header Title */}
-        <div className="flex flex-col items-center">
-          <div className="flex items-center gap-1.5 bg-yellow/10 text-yellow text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-pill ink border-yellow rotate-[2deg]">
-            <span>MISSION ACCOMPLISHED</span>
-          </div>
-          <h1 className="text-[44px] font-extrabold uppercase leading-[0.9] tracking-tighter text-white text-sticker text-extrude-red mt-3">
-            VAULT<br />
-            <span className="text-yellow">UNLOCKED</span>
-          </h1>
-        </div>
+    <motion.div
+      variants={screenChoreo}
+      initial="initial"
+      animate="animate"
+      className="flex flex-1 select-none flex-col px-5 pb-5 pt-6 text-center"
+    >
+      {/* ── Title ──────────────────────────────────────────────── */}
+      <motion.div variants={dropIn} className="flex flex-col items-center">
+        <span className="ink rotate-[-1.5deg] rounded-pill bg-brass px-4 py-1.5 font-display text-[11px] uppercase tracking-[0.18em] text-ink shadow-chip-ink">
+          Mission complete
+        </span>
 
-        {/* Vault Door (Opening / Open) */}
-        <div className="my-2">
-          <div className="relative">
-            <VaultDoor state="open" />
-            {/* Mascot celebrating in front of the open vault — the climax is
-                the one place it should be unmissable. */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.6, y: 20, rotate: -8 }}
-              animate={{ opacity: 1, scale: 1, y: 0, rotate: 8 }}
-              transition={{ delay: 1.4, type: "spring", stiffness: 300, damping: 16 }}
-              className="pointer-events-none absolute -bottom-6 -right-6 z-20 h-52 w-52"
-            >
-              <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
-            </motion.div>
-          </div>
-        </div>
+        <h1 className="mt-3 font-display text-[clamp(38px,13vw,52px)] uppercase leading-[0.86] tracking-tight">
+          <span
+            className="block text-white"
+            style={{ WebkitTextStroke: "3px var(--color-ink)", paintOrder: "stroke fill" }}
+          >
+            Vault
+          </span>
+          <span
+            className="block text-brass"
+            style={{
+              WebkitTextStroke: "3px var(--color-ink)",
+              paintOrder: "stroke fill",
+              textShadow: "0 4px 0 var(--color-brass-deep), 0 7px 0 var(--color-ink)",
+            }}
+          >
+            Unlocked
+          </span>
+        </h1>
 
-        {/* Compact Solved Digits Strip */}
-        {/* The combination reads itself out left to right rather than all
-            appearing at once — this is the payoff the whole game builds to. */}
+        <p className="mt-3 font-body text-[14px] font-bold text-ink/60">
+          You&rsquo;ve cracked every lock.
+        </p>
+      </motion.div>
+
+      {/* ── Hero ───────────────────────────────────────────────── */}
+      <motion.div variants={popIn} className="relative mx-auto mt-3 w-full max-w-[300px]">
+        <VaultDoor state="open" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.6, y: 20, rotate: -8 }}
+          animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
+          transition={{ delay: 1.1, type: "spring", stiffness: 300, damping: 16 }}
+          className="pointer-events-none absolute -bottom-4 -left-8 z-20 h-40 w-40"
+        >
+          <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
+        </motion.div>
+      </motion.div>
+
+      {/* ── Recovered combination ──────────────────────────────── */}
+      <motion.div
+        variants={riseIn}
+        className="ink mt-4 rounded-plate bg-white p-3 shadow-ink"
+      >
+        <span className="font-display text-[10px] uppercase tracking-[0.2em] text-ink/50">
+          Recovered combination
+        </span>
+        {/* grid-cols-9, so the tiles divide the width instead of overflowing it */}
         <motion.div
           variants={comboStagger}
           initial="initial"
           animate="animate"
-          // The tilt is a style, not a variant: comboStagger only carries
-          // timing, so nothing here would fight it — but keeping transform in
-          // one place per element is what stops these going dead again.
-          style={{ rotate: "-1deg" }}
-          className="flex justify-center items-center gap-1.5 bg-ink border-2 border-white p-2.5 rounded-card w-full"
+          className="mt-2 grid grid-cols-9 gap-1"
         >
           {Array.from({ length: 9 }, (_, i) => (
-            <motion.div key={i} variants={digitLandVariants}>
+            <motion.div key={i} variants={digitLandVariants} className="w-full">
               <VaultTile
                 digit={i + 1}
                 state={unlockedVaults.includes(String(i + 1)) ? "solved" : "locked"}
+                // h-auto is required: twMerge only drops the `h-12` if a
+                // conflicting height is supplied, and aspect-square then
+                // gives the Safe a box to fill.
                 size="compact"
+                className="h-auto w-full aspect-square"
               />
             </motion.div>
           ))}
         </motion.div>
+      </motion.div>
 
-        {/* Stats Row with Starburst on the Time block and Pill styling */}
-        <div className="grid grid-cols-3 gap-2 w-full">
-          <StatBlock
-            tone="dark"
-            number={`${unlockedVaults.length}/9`}
-            label="DIGITS"
-            className="border-white rounded-pill py-3"
-          />
-          
-          <div className="relative flex justify-center items-center h-full">
-            <div className="absolute w-24 h-24 z-0 animate-[tumble_16s_linear_infinite] spin-layer scale-120 opacity-30">
-              <Starburst fillColor="var(--color-yellow)" />
-            </div>
-            <StatBlock
-              tone="dark"
-              number={formatClock(elapsedSeconds)}
-              label="TIME"
-              className="border-0 bg-transparent shadow-none py-3 relative z-10"
-            />
-          </div>
+      {/* ── Stats ──────────────────────────────────────────────── */}
+      <motion.div
+        variants={riseIn}
+        className="ink mt-3 flex items-stretch rounded-plate bg-white shadow-ink"
+      >
+        <Stat icon={<Padlock open className="h-full w-full" />} value={`${unlockedVaults.length}/9`} label="Digits" />
+        <Divider />
+        <Stat icon={<Stopwatch className="h-full w-full" />} value={formatClock(elapsedSeconds)} label="Time" />
+        <Divider />
+        <Stat
+          icon={<MysteryBox className="h-full w-full" />}
+          value={bonusSolved ? "+1" : "0"}
+          label="Bonus"
+        />
+      </motion.div>
 
-          <StatBlock
-            tone="dark"
-            number={bonusSolved ? "1" : "0"}
-            label="BONUS"
-            className="border-white rounded-pill py-3"
-          />
-        </div>
-      </div>
+      {/* ── Standing ───────────────────────────────────────────── */}
+      {you && (
+        <motion.div
+          variants={riseIn}
+          className="ink mt-3 flex items-center justify-center gap-2.5 rounded-pill bg-brass px-4 py-2 shadow-chip-ink"
+        >
+          <span className="h-7 w-7 shrink-0">
+            <Medal rank={(Math.min(you.rank, 3) || 1) as 1 | 2 | 3} />
+          </span>
+          <span className="font-body text-[12px] font-bold uppercase tracking-[0.14em] text-ink/70">
+            You&rsquo;re currently
+          </span>
+          <span className="font-readout text-[20px] font-bold leading-none text-ink">
+            #{you.rank}
+          </span>
+        </motion.div>
+      )}
 
-      {/* Leaderboard CTA */}
-      <div className="mb-6 mt-4 flex flex-col gap-4">
-        <WavyDivider className="opacity-40" />
-        <PrimaryButton variant="reward" onClick={() => navigate("/leaderboard")} className="w-full">
+      {/* ── Actions ────────────────────────────────────────────── */}
+      <motion.div variants={riseIn} className="mt-auto flex flex-col gap-2.5 pt-5">
+        <PrimaryButton
+          variant="reward"
+          onClick={() => navigate("/leaderboard")}
+          className="h-16 w-full"
+        >
           VIEW LEADERBOARD
         </PrimaryButton>
-      </div>
+        <Pressable onClick={() => navigate("/home")} className="h-13 w-full">
+          Back to base
+        </Pressable>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Stat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-1 flex-col items-center gap-1 py-3">
+      <span className="h-7 w-7">{icon}</span>
+      <span className="font-readout text-[19px] font-bold leading-none text-ink">{value}</span>
+      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/45">
+        {label}
+      </span>
     </div>
   );
+}
+
+/** Dotted, so it separates without drawing a third hard line on the plate. */
+function Divider() {
+  return <span className="my-3 w-0 border-l-2 border-dashed border-ink/15" />;
 }

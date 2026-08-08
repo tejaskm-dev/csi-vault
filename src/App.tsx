@@ -20,7 +20,9 @@ import { Blueprint } from "./components/Blueprint";
 function GameShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const variant = pathname.startsWith("/challenge") ? "challenge"
-                : pathname === "/vault-complete"    ? "dark"
+                // Warm, not dark. The climax screen on an ink background read
+                // as a different app from every other screen in the game.
+                : pathname === "/vault-complete"    ? "yellow"
                 : pathname === "/success/bonus"     ? "yellow"
                 : pathname.startsWith("/success")   ? "green"
                 : pathname === "/bonus-found"       ? "yellow"

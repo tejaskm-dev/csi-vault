@@ -4,7 +4,8 @@ import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { VaultTile } from "../components/VaultTile";
 import { useGame } from "../context/GameContext";
-import { celebrate } from "../lib/motion";
+import { celebrate, screenChoreo, dropIn, popIn, riseIn } from "../lib/motion";
+import { cn } from "../lib/utils";
 import { playUnlock, playComplete } from "../lib/sound";
 import { Art } from "../components/Art";
 import { Starburst } from "../components/Starburst";
@@ -70,54 +71,86 @@ export function Success() {
       : BEATS[Math.min(unlockedVaults.length, BEATS.length) - 1] ?? "That's one.";
 
   return (
-    <div className="flex flex-1 select-none flex-col justify-between p-6 text-center">
-      <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-6">
-        <div className="relative z-10 flex flex-col items-center">
-          <span className="ink mb-2 rounded-pill bg-red/10 px-3 py-1 font-body text-[12px] font-bold uppercase tracking-[0.2em] text-red-deep">
-            {allDone ? "Vault ready" : "Lock released"}
-          </span>
-          <h1 className="mt-2 font-display text-[42px] uppercase leading-[0.9] tracking-tighter text-ink text-sticker-thin text-extrude-ink">
-            {headline}
-          </h1>
-        </div>
+    <motion.div
+      variants={screenChoreo}
+      initial="initial"
+      animate="animate"
+      className="flex flex-1 select-none flex-col p-6 text-center"
+    >
+      {/* A coloured plate carries the headline. Before, the title was ink on
+          cream sitting directly over the starburst, and the burst's points cut
+          straight through the letterforms — the plate gives the type its own
+          ground and pushes the burst behind the hero where it belongs. */}
+      <motion.div
+        variants={dropIn}
+        className={cn(
+          "relative -mx-6 -mt-6 shrink-0 overflow-hidden rounded-b-[28px] px-6 pb-9 pt-8 shadow-[0_4px_0_0_var(--color-ink)]",
+          allDone ? "bg-brass" : isBonus ? "bg-purple" : "bg-green"
+        )}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(115deg, rgba(255,255,255,0.15) 0 7px, transparent 7px 18px)",
+          }}
+        />
+        <span className="relative inline-block rounded-pill border-2 border-ink/25 bg-white/25 px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/75">
+          {allDone ? "Vault ready" : isBonus ? "Bonus cleared" : "Lock released"}
+        </span>
+        <h1
+          className={cn(
+            "relative mt-2.5 font-display uppercase leading-[0.9] tracking-tight",
+            headline.length > 16 ? "text-[30px]" : "text-[38px]",
+            allDone || isBonus ? "text-ink" : "text-white"
+          )}
+          style={{
+            textShadow:
+              allDone || isBonus ? "0 3px 0 rgba(255,255,255,0.4)" : "0 3px 0 var(--color-ink)",
+          }}
+        >
+          {headline}
+        </h1>
+      </motion.div>
 
-        <div className="relative z-20 -mt-6 flex h-52 w-52 items-center justify-center overflow-visible">
-          {/* Starburst only when it means something — the last one. */}
+      {/* Hero. Centres in whatever space is left rather than leaving a
+          phone-height gap above the button. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+        <motion.div
+          variants={popIn}
+          className="relative flex h-44 w-44 items-center justify-center"
+        >
           {allDone && !isBonus && (
-            <div className="absolute inset-0 z-0 scale-125 animate-[tumble_12s_linear_infinite] spin-layer">
+            <div className="spin-layer absolute inset-0 z-0 scale-[1.35] animate-[tumble_12s_linear_infinite] opacity-80">
               <Starburst fillColor="var(--color-brass)" />
             </div>
           )}
 
-          <div className="relative z-10 h-36 w-36">
+          <div className="relative z-10 h-32 w-32">
             {isBonus ? (
-              <div className="ink flex h-36 w-36 rotate-[3deg] items-center justify-center rounded-plate bg-pink/10 shadow-plate-steel">
-                <MysteryBox className="h-28 w-28" />
+              <div className="ink flex h-32 w-32 items-center justify-center rounded-plate bg-purple/10 shadow-plate-steel">
+                <MysteryBox className="h-24 w-24" />
               </div>
             ) : (
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />
             )}
           </div>
 
-          {/* Mascot celebrating alongside the unlocked digit, overlapping the
-              tile so it breaks its container rather than sitting in a row. */}
+          {/* Offset far enough that it frames the tile instead of sitting on
+              the digit — the number is the whole point of the screen. */}
           <motion.div
             initial={{ opacity: 0, scale: 0.7, y: 10, rotate: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
-            transition={{ delay: 0.4, type: "spring", stiffness: 380, damping: 18 }}
-            className="pointer-events-none absolute -bottom-6 -right-10 z-20 h-40 w-40"
+            animate={{ opacity: 1, scale: 1, y: 0, rotate: 7 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 380, damping: 18 }}
+            className="pointer-events-none absolute -bottom-8 -right-14 z-20 h-36 w-36"
           >
             <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
           </motion.div>
-        </div>
+        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.2 }}
-          className="relative z-10 flex flex-col gap-1.5"
-        >
-          <p className="font-body text-[15px] font-bold text-ink/70">
+        <motion.div variants={riseIn} className="ink rounded-plate bg-white px-5 py-4 shadow-ink-sm">
+          <p className="font-body text-[16px] font-bold text-ink">
             {isBonus
               ? "Off the board, and it cost you nothing."
               : allDone
@@ -125,23 +158,32 @@ export function Success() {
                 : `Digit ${digit} is on the board.`}
           </p>
           {!allDone && !isBonus && (
-            <p className="font-readout text-[12px] font-bold text-ink/40">
-              {remaining} {remaining === 1 ? "LOCK" : "LOCKS"} REMAINING
-            </p>
+            <div className="mt-3 flex items-center justify-center gap-1.5">
+              {/* Nine pips: the progress bar of the whole game, at a glance. */}
+              {Array.from({ length: 9 }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-2 w-2 rounded-pill border-2 border-ink",
+                    i < unlockedVaults.length ? "bg-green" : "bg-paper-deep"
+                  )}
+                />
+              ))}
+            </div>
           )}
         </motion.div>
       </div>
 
-      <div className="mb-6 flex flex-col gap-4">
-        <WavyDivider className="opacity-75" />
+      <motion.div variants={riseIn} className="flex flex-col gap-3">
+        <WavyDivider className="opacity-60" />
         <PrimaryButton
           onClick={() => navigate(allDone ? "/vault-complete" : "/vault")}
           variant={allDone ? "reward" : "primary"}
-          className="w-full"
+          className="h-16 w-full"
         >
           {allDone ? "OPEN THE VAULT" : "KEEP GOING"}
         </PrimaryButton>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
