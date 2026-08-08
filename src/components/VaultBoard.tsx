@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { VaultTile, type VaultState } from "./VaultTile";
 import { boardStagger, riseIn } from "../lib/motion";
@@ -27,7 +28,7 @@ interface VaultBoardProps {
 /** Slight per-position tilt so the grid never reads as machine-set. */
 const TILTS = [-2, 1.5, -1, 2, -1.5, 1, -2, 1.5, -1];
 
-export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardProps) {
+function VaultBoardBase({ unlockedVaults, onSelect, className }: VaultBoardProps) {
   const states = vaultStates(unlockedVaults);
 
   return (
@@ -45,14 +46,12 @@ export function VaultBoard({ unlockedVaults, onSelect, className }: VaultBoardPr
         // The wrapper carries the entrance so the tile keeps its own tilt —
         // two transforms on one element and Framer's inline style wins.
         <motion.div key={i + 1} variants={riseIn}>
-          <VaultTile
-            digit={i + 1}
-            state={state}
-            onClick={() => onSelect(i + 1, state)}
-            tilt={TILTS[i]}
-          />
+          <VaultTile digit={i + 1} state={state} onSelect={onSelect} tilt={TILTS[i]} />
         </motion.div>
       ))}
     </motion.div>
   );
 }
+
+/** Memoised — Wraps the nine tiles. */
+export const VaultBoard = memo(VaultBoardBase);

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "../lib/utils";
 
 interface ProgressDotsProps {
@@ -7,7 +8,7 @@ interface ProgressDotsProps {
   className?: string;
 }
 
-export function ProgressDots({ total, current, solved = [], className }: ProgressDotsProps) {
+function ProgressDotsBase({ total, current, solved = [], className }: ProgressDotsProps) {
   return (
     <div
       className={cn(
@@ -40,3 +41,6 @@ export function ProgressDots({ total, current, solved = [], className }: Progres
     </div>
   );
 }
+
+/** Memoised — Nine dots. */
+export const ProgressDots = memo(ProgressDotsBase);

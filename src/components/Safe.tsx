@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
@@ -52,7 +53,7 @@ interface SafeProps {
   className?: string;
 }
 
-export function Safe({ digit, state = "available", replayKey, className }: SafeProps) {
+function SafeBase({ digit, state = "available", replayKey, className }: SafeProps) {
   const open = state === "solved";
   const locked = state === "locked";
   const s = locked ? LOCKED : SAFE_SHADES[(digit - 1) % 9];
@@ -249,3 +250,6 @@ export function Safe({ digit, state = "available", replayKey, className }: SafeP
     </svg>
   );
 }
+
+/** Memoised — 27 SVG nodes, nine on the board at once. */
+export const Safe = memo(SafeBase);

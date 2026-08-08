@@ -6,6 +6,20 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      // Split the two big dependencies out of the app chunk. They change far
+      // less often than the game code, so a phone that has loaded the app once
+      // re-uses them from cache when anything ships. It also stops one 540KB
+      // file from being a single parse-and-compile block on a low-end device.
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            motion: ['motion', 'motion/react'],
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

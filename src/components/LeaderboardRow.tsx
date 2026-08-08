@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Medal } from "./Props";
 import { cn } from "../lib/utils";
@@ -41,7 +42,7 @@ function Avatar({ id, initials }: { id: string; initials: string }) {
   );
 }
 
-export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta }: LeaderboardRowProps) {
+function LeaderboardRowBase({ id, rank, name, initials, digits, isYou, delta }: LeaderboardRowProps) {
   const showMedal = rank <= 3;
 
   return (
@@ -115,3 +116,6 @@ export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta 
     </motion.div>
   );
 }
+
+/** Memoised — Twelve rows, each with a medal and an avatar. */
+export const LeaderboardRow = memo(LeaderboardRowBase);

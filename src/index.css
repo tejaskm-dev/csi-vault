@@ -243,6 +243,10 @@
 }
 
 /* Bungee's sibling faces. Shade carries its own 3D extrusion in the
-   glyph outlines; Outline is hollow, for a ghost layer behind a solid. */
+   glyph outlines; Outline is hollow, for a ghost layer behind a solid.
+   NOTE: neither family is fetched any more — nothing used them, and two
+   unused families is two network round-trips per phone on event wifi. If
+   you reach for one of these, add it back to the <link> in index.html or
+   it will silently fall back to plain Bungee. */
 @utility font-shade   { font-family: 'Bungee Shade', var(--font-display); }
 @utility font-outline { font-family: 'Bungee Outline', var(--font-display); }

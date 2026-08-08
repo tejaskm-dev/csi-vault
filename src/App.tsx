@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { Splash } from "./screens/Splash";
@@ -12,8 +12,15 @@ import { Leaderboard } from "./screens/Leaderboard";
 import { Winner } from "./screens/Winner";
 import { BonusFound } from "./screens/BonusFound";
 import { Waiting } from "./screens/Waiting";
-import { SafePreview } from "./screens/SafePreview";
-import { AssetsPreview } from "./screens/AssetsPreview";
+// Dev-only reference pages. Lazily loaded so their weight — and the props,
+// safes and art tables they pull in to render every variant at once — never
+// lands in the bundle a player downloads at the door.
+const SafePreview = lazy(() =>
+  import("./screens/SafePreview").then((m) => ({ default: m.SafePreview }))
+);
+const AssetsPreview = lazy(() =>
+  import("./screens/AssetsPreview").then((m) => ({ default: m.AssetsPreview }))
+);
 import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
@@ -103,9 +110,15 @@ function AnimatedRoutes() {
         <Route path="/leaderboard" element={<PageWrapper><Leaderboard /></PageWrapper>} />
         <Route path="/winner" element={<PageWrapper><Winner /></PageWrapper>} />
         <Route path="/bonus-found" element={<PageWrapper><BonusFound /></PageWrapper>} />
-        <Route path="/safes" element={<SafePreview />} />
-            <Route path="/assets" element={<AssetsPreview />} />
-            <Route path="/waiting" element={<PageWrapper><Waiting /></PageWrapper>} />
+        <Route
+          path="/safes"
+          element={<Suspense fallback={null}><SafePreview /></Suspense>}
+        />
+        <Route
+          path="/assets"
+          element={<Suspense fallback={null}><AssetsPreview /></Suspense>}
+        />
+        <Route path="/waiting" element={<PageWrapper><Waiting /></PageWrapper>} />
         <Route path="*" element={<PageWrapper><Splash /></PageWrapper>} />
       </Routes>
     </AnimatePresence>

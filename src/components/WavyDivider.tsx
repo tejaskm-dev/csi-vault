@@ -5,7 +5,7 @@ interface WavyDividerProps {
   className?: string;
 }
 
-export function WavyDivider({ className }: WavyDividerProps) {
+function WavyDividerBase({ className }: WavyDividerProps) {
   return (
     <svg
       className={cn("w-full h-4 overflow-visible select-none pointer-events-none", className)}
@@ -23,3 +23,6 @@ export function WavyDivider({ className }: WavyDividerProps) {
     </svg>
   );
 }
+
+/** Memoised — Decorative, never changes. */
+export const WavyDivider = React.memo(WavyDividerBase);

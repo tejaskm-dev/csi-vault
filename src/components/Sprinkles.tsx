@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "../lib/utils";
 
 /**
@@ -30,7 +31,7 @@ const MARKS = [
   { d: RING, x: "7%", y: "58%", s: 20, r: 0 },
 ];
 
-export function Sprinkles({ className }: { className?: string }) {
+function SprinklesBase({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
@@ -51,3 +52,6 @@ export function Sprinkles({ className }: { className?: string }) {
     </div>
   );
 }
+
+/** Memoised — Ten static SVGs, purely decorative. */
+export const Sprinkles = memo(SprinklesBase);

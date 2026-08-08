@@ -28,12 +28,23 @@ interface GameState {
   unlockVault: (id: string) => void;
   bonusSolved: boolean;
   solveBonus: () => void;
-  elapsedSeconds: number;
   leaderboard: LeaderboardEntry[];
   reset: () => void;
 }
 
 const GameContext = createContext<GameState | undefined>(undefined);
+
+/**
+ * The run clock lives in its own context, and that is a performance decision.
+ *
+ * It ticks every second. While it sat on the main game value, the value object
+ * changed identity every second, so all ten components calling useGame()
+ * re-rendered once per second — including the board, which is nine Safes of 27
+ * SVG nodes each. Only three screens display a timer at all.
+ *
+ * Split out, the tick reaches those three and nothing else.
+ */
+const ClockContext = createContext<number>(0);
 
 function readJSON<T>(key: string, fallback: T): T {
   try {
@@ -170,6 +181,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bots, unlockedVaults.length, username]);
 
+  // Deliberately excludes elapsedSeconds — see the note on ClockContext.
   const value = useMemo(
     () => ({
       username,
@@ -181,7 +193,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       unlockVault,
       bonusSolved,
       solveBonus,
-      elapsedSeconds,
       leaderboard,
       reset,
     }),
@@ -194,13 +205,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       unlockVault,
       bonusSolved,
       solveBonus,
-      elapsedSeconds,
       leaderboard,
       reset,
     ]
   );
 
-  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+  return (
+    <GameContext.Provider value={value}>
+      <ClockContext.Provider value={elapsedSeconds}>{children}</ClockContext.Provider>
+    </GameContext.Provider>
+  );
 }
 
 export function useGame() {
@@ -209,4 +223,9 @@ export function useGame() {
     throw new Error('useGame must be used within a GameProvider');
   }
   return context;
+}
+
+/** Seconds since this player started. Re-renders the caller every second. */
+export function useElapsed() {
+  return useContext(ClockContext);
 }

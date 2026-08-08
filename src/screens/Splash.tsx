@@ -70,7 +70,7 @@ export function Splash() {
           transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.55 }}
           className="mb-2 h-28 w-28"
         >
-          <Art name="csi-logo" alt="CSI ASIET" className="h-full w-full object-contain" />
+          <Art priority name="csi-logo" alt="CSI ASIET" className="h-full w-full object-contain" />
         </motion.div>
 
         {/* CSI ASIET chip fades up at 700ms */}

@@ -1,9 +1,16 @@
+import { memo } from "react";
 import { GLYPH_ART } from "../art";
 
 interface ArtProps {
   name: string;
   alt: string;
   className?: string;
+  /**
+   * Set on art that is visible the moment its screen mounts — the splash
+   * logo, the mascot on a result. Those decode eagerly at high priority;
+   * everything else waits until it is near the viewport.
+   */
+  priority?: boolean;
 }
 
 export function ArtPlaceholder({ name, className }: { name: string; className?: string }) {
@@ -27,7 +34,7 @@ export function ArtPlaceholder({ name, className }: { name: string; className?: 
   );
 }
 
-export function Art({ name, alt, className }: ArtProps) {
+function ArtBase({ name, alt, className, priority }: ArtProps) {
   const src = GLYPH_ART[name];
   if (!src) {
     return <ArtPlaceholder name={name} className={className} />;
@@ -38,6 +45,15 @@ export function Art({ name, alt, className }: ArtProps) {
       alt={alt}
       className={className}
       draggable={false}
+      // `async` keeps decoding off the main thread, so a 576px mascot cannot
+      // stall a frame while it paints. Answer glyphs are lazy because a
+      // question shows at most four of twenty-two.
+      decoding="async"
+      loading={priority ? "eager" : "lazy"}
+      {...(priority ? { fetchPriority: "high" as const } : null)}
     />
   );
 }
+
+/** Memoised — An <img>; re-rendering it re-runs nothing useful. */
+export const Art = memo(ArtBase);

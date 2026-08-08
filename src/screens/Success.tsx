@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { VaultTile } from "../components/VaultTile";
-import { useGame } from "../context/GameContext";
+import { useGame, useElapsed } from "../context/GameContext";
 import { celebrate, screenChoreo, dropIn, popIn, riseIn } from "../lib/motion";
 import { Sprinkles } from "../components/Sprinkles";
 import { cn, formatClock } from "../lib/utils";
@@ -31,7 +31,8 @@ const BEATS = [
 export function Success() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { unlockVault, unlockedVaults, username, elapsedSeconds, leaderboard } = useGame();
+  const { unlockVault, unlockedVaults, username, leaderboard } = useGame();
+  const elapsedSeconds = useElapsed();
   const you = leaderboard.find((e) => e.isYou);
 
   const isBonus = id === "bonus";
@@ -150,7 +151,7 @@ export function Success() {
             transition={{ delay: 0.5, type: "spring", stiffness: 380, damping: 18 }}
             className="pointer-events-none absolute -bottom-8 -right-14 z-20 h-36 w-36"
           >
-            <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
+            <Art priority name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
           </motion.div>
         </motion.div>
 

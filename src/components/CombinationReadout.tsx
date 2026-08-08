@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import { digitLandVariants } from "../lib/motion";
@@ -16,7 +17,7 @@ interface CombinationReadoutProps {
  * Recovered slots show their digit stamped in brass on green; the rest are
  * blanked steel shutters.
  */
-export function CombinationReadout({ unlocked, className }: CombinationReadoutProps) {
+function CombinationReadoutBase({ unlocked, className }: CombinationReadoutProps) {
   return (
     <div className={cn("w-full", className)}>
       <div className="mb-1.5 flex items-baseline justify-between">
@@ -65,3 +66,6 @@ export function CombinationReadout({ unlocked, className }: CombinationReadoutPr
     </div>
   );
 }
+
+/** Memoised — Nine digit cells. */
+export const CombinationReadout = memo(CombinationReadoutBase);

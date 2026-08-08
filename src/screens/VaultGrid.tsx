@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { VaultBoard } from "../components/VaultBoard";
 import { Modal } from "../components/Modal";
@@ -16,13 +16,18 @@ export function VaultGrid() {
   const progress = unlockedVaults.length;
   const complete = progress === 9;
 
-  const handleSelect = (digit: number, state: VaultState) => {
-    if (state === "locked") {
-      setLockedDigit(digit);
-      return;
-    }
-    navigate(`/challenge/${digit}`);
-  };
+  // useCallback so VaultBoard's memo can bail. A fresh handler each render
+  // would fail the shallow compare and re-render all nine Safes anyway.
+  const handleSelect = useCallback(
+    (digit: number, state: VaultState) => {
+      if (state === "locked") {
+        setLockedDigit(digit);
+        return;
+      }
+      navigate(`/challenge/${digit}`);
+    },
+    [navigate]
+  );
 
   return (
     <div className="flex flex-1 select-none flex-col">

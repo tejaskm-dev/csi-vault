@@ -5,7 +5,7 @@ interface BlueprintProps {
   variant?: "default" | "challenge" | "dark" | "yellow" | "green";
 }
 
-export function Blueprint({ variant = "default" }: BlueprintProps) {
+function BlueprintBase({ variant = "default" }: BlueprintProps) {
   // The hand-drawn wobble (feTurbulence + feDisplacementMap) used to run on
   // this full-viewport layer on every screen. It is the most expensive thing a
   // low-end GPU can be asked to composite, and the approved mockups show a
@@ -52,3 +52,6 @@ export function Blueprint({ variant = "default" }: BlueprintProps) {
     </div>
   );
 }
+
+/** Memoised — A full-viewport decorative layer behind every screen. */
+export const Blueprint = React.memo(BlueprintBase);

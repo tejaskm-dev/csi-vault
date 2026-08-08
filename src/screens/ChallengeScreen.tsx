@@ -165,7 +165,7 @@ export function ChallengeScreen() {
             transition={{ type: "spring", stiffness: 300, damping: 17, delay: 0.1 }}
             className="pointer-events-none absolute -right-3 -top-10 z-0 h-32 w-32"
           >
-            <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
+            <Art priority name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
 
           {/* pr-32, not pr-24. The mascot is 128px wide sitting at -right-3,

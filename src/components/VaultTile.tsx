@@ -11,7 +11,14 @@ interface VaultTileProps {
   state: VaultState;
   /** Kept for call-site compatibility; the board shows safes, not glyphs. */
   icon?: React.ReactNode;
-  onClick?: () => void;
+  /**
+   * Takes the digit and state rather than a pre-bound closure. The board used
+   * to pass `() => onSelect(i + 1, state)`, a fresh function per tile per
+   * render, which defeats React.memo — the tile can never be seen as
+   * unchanged. Passing the stable handler and letting the tile supply its own
+   * arguments is what makes memoisation actually bite here.
+   */
+  onSelect?: (digit: number, state: VaultState) => void;
   size?: "grid" | "compact";
   tilt?: number;
   className?: string;
@@ -27,10 +34,10 @@ const TO_SAFE: Record<VaultState, SafeState> = {
  * A board position. Thin wrapper: the Safe owns every visual state and the
  * whole unlock sequence, so this only handles press, sound and the idle bob.
  */
-export function VaultTile({
+function VaultTileBase({
   digit,
   state,
-  onClick,
+  onSelect,
   size = "grid",
   tilt,
   className,
@@ -40,9 +47,9 @@ export function VaultTile({
   const isActive = state === "active";
 
   const handlePress = () => {
-    if (isLocked || !onClick) return;
+    if (isLocked || !onSelect) return;
     playTap();
-    onClick();
+    onSelect(digit, state);
   };
 
   if (isCompact) {
@@ -57,7 +64,7 @@ export function VaultTile({
     <motion.button
       type="button"
       onClick={handlePress}
-      disabled={isLocked || !onClick}
+      disabled={isLocked || !onSelect}
       aria-label={`Vault ${digit}, ${state}`}
       // Playable tiles breathe on a stagger so the board ripples rather than
       // pulsing in unison. Locked and solved sit still.
@@ -78,3 +85,11 @@ export function VaultTile({
     </motion.button>
   );
 }
+
+/**
+ * Memoised. Nine of these sit on the board, each rendering a Safe of 27 SVG
+ * nodes, and every unrelated state change upstream used to re-render all of
+ * them. Props are primitives plus one stable handler, so the compare is cheap
+ * and almost always bails out.
+ */
+export const VaultTile = React.memo(VaultTileBase);

@@ -6,7 +6,7 @@ interface StarburstProps {
   fillColor?: string;
 }
 
-export function Starburst({ className, fillColor = "var(--color-yellow)" }: StarburstProps) {
+function StarburstBase({ className, fillColor = "var(--color-yellow)" }: StarburstProps) {
   return (
     <svg
       className={cn("w-full h-full select-none pointer-events-none overflow-visible", className)}
@@ -25,3 +25,6 @@ export function Starburst({ className, fillColor = "var(--color-yellow)" }: Star
     </svg>
   );
 }
+
+/** Memoised — Sits under looping transforms. */
+export const Starburst = React.memo(StarburstBase);

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "../lib/utils";
 
 /**
@@ -10,7 +11,7 @@ import { cn } from "../lib/utils";
  * Never render more than one per screen. It points at the single most
  * important thing; two of them points at nothing.
  */
-export function TumblerRing({ className }: { className?: string }) {
+function TumblerRingBase({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
@@ -55,3 +56,6 @@ export function TumblerRing({ className }: { className?: string }) {
     </div>
   );
 }
+
+/** Memoised — Decorative, never changes. */
+export const TumblerRing = memo(TumblerRingBase);

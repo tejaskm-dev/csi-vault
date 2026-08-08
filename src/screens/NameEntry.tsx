@@ -63,7 +63,7 @@ export function NameEntry() {
             transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
             className="pointer-events-none absolute right-0 top-0 z-0 h-36 w-36"
           >
-            <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
+            <Art priority name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
 
           {/* Input plate. The label is a chip riding the top edge, so the

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Volume2, VolumeX, Users } from "lucide-react";
 import { motion } from "motion/react";
@@ -11,23 +11,29 @@ import { CombinationReadout } from "../components/CombinationReadout";
 import { CrewFeed } from "../components/CrewFeed";
 import { Wordmark } from "../components/Wordmark";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { useGame } from "../context/GameContext";
+import { useGame, useElapsed } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
 import { getMuted, setMuted, playTap } from "../lib/sound";
 import { formatClock } from "../lib/utils";
 
 export function Home() {
   const navigate = useNavigate();
-  const { unlockedVaults, bonusSolved, leaderboard, elapsedSeconds } = useGame();
+  const { unlockedVaults, bonusSolved, leaderboard } = useGame();
+  const elapsedSeconds = useElapsed();
   const [muted, setMutedState] = useState(getMuted());
   const [wheelRotate, setWheelRotate] = useState(0);
 
   const progress = unlockedVaults.length;
   const showHero = progress === 0 || progress === 9;
 
-  const handleSelect = (digit: number, state: VaultState) => {
-    navigate(state === "locked" ? "/vault" : `/challenge/${digit}`);
-  };
+  // useCallback so VaultBoard's memo can bail. A fresh handler each render
+  // would fail the shallow compare and re-render all nine Safes anyway.
+  const handleSelect = useCallback(
+    (digit: number, state: VaultState) => {
+      navigate(state === "locked" ? "/vault" : `/challenge/${digit}`);
+    },
+    [navigate]
+  );
 
   const toggleMute = () => {
     const next = !muted;

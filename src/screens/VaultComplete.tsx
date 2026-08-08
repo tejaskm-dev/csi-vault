@@ -7,7 +7,7 @@ import { VaultTile } from "../components/VaultTile";
 import { VaultDoor } from "../components/VaultDoor";
 import { Art } from "../components/Art";
 import { Padlock, Stopwatch, MysteryBox, Medal } from "../components/Props";
-import { useGame } from "../context/GameContext";
+import { useGame, useElapsed } from "../context/GameContext";
 import { formatClock } from "../lib/utils";
 import { playComplete, playUnlock } from "../lib/sound";
 import { CurvedWord } from "../components/CurvedWord";
@@ -36,7 +36,8 @@ import {
  */
 export function VaultComplete() {
   const navigate = useNavigate();
-  const { unlockedVaults, elapsedSeconds, bonusSolved, leaderboard } = useGame();
+  const { unlockedVaults, bonusSolved, leaderboard } = useGame();
+  const elapsedSeconds = useElapsed();
 
   const you = leaderboard.find((e) => e.isYou);
 
@@ -113,7 +114,7 @@ export function VaultComplete() {
           transition={{ delay: 1.5, type: "spring", stiffness: 300, damping: 16 }}
           className="pointer-events-none absolute -bottom-4 -left-8 z-20 h-40 w-40"
         >
-          <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
+          <Art priority name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
         </motion.div>
       </motion.div>
 
