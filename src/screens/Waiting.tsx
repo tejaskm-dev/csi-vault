@@ -16,7 +16,7 @@ export function Waiting() {
           <span className="text-[12px] font-bold uppercase tracking-[0.2em] text-red-deep mb-2 bg-red/10 px-3 py-1 rounded-pill ink rotate-[2deg]">
             {isPost ? "MISSION COMPLETED" : "EVENT QUEUE"}
           </span>
-          <h1 className="text-[36px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink mt-2">
+          <h1 className="text-[36px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink text-sticker-thin text-extrude-ink mt-2">
             {isPost ? "YOU CRACKED IT!" : "VAULT OPENS SOON"}
           </h1>
         </div>

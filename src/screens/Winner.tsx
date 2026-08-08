@@ -22,7 +22,7 @@ export function Winner() {
             <Users className="w-3.5 h-3.5 text-yellow" />
             <span>FINAL STANDINGS</span>
           </div>
-          <h1 className="text-[36px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink mt-3">
+          <h1 className="text-[36px] font-extrabold uppercase leading-[0.95] tracking-tighter text-ink text-sticker-thin text-extrude-ink mt-3">
             WE HAVE A<br />
             <span className="text-red">WINNER!</span>
           </h1>

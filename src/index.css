@@ -176,3 +176,64 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ================================================================
+   TYPOGRAPHY EFFECTS
+
+   The app had zero text effects — every headline was flat coloured
+   type, which is most of why it did not read as a game. Three
+   composable pieces, applied together on hero words:
+
+     sticker   ink outline around the glyph
+     extrude   solid downward depth, hard steps, zero blur
+     ghost     an offset duplicate behind, in an accent
+
+   Extrusion steps are hard and 2px apart. A blurred shadow reads as
+   drop-shadow; only zero-blur increments read as moulded plastic.
+   ================================================================ */
+
+@utility text-sticker {
+  -webkit-text-stroke: 3px var(--color-ink);
+  /* Without this the stroke is painted over the glyph and eats the
+     letterform from the inside. */
+  paint-order: stroke fill;
+}
+
+@utility text-sticker-thin {
+  -webkit-text-stroke: 2px var(--color-ink);
+  paint-order: stroke fill;
+}
+
+@utility text-extrude-red {
+  text-shadow:
+    0 2px 0 var(--color-red-deep),
+    0 4px 0 var(--color-red-deep),
+    0 6px 0 var(--color-red-deep),
+    0 8px 0 #7C1F1C;
+}
+
+@utility text-extrude-ink {
+  text-shadow:
+    0 2px 0 #4A4A4A,
+    0 4px 0 #3A3A3A,
+    0 6px 0 var(--color-ink);
+}
+
+@utility text-extrude-brass {
+  text-shadow:
+    0 2px 0 var(--color-brass-deep),
+    0 4px 0 var(--color-brass-deep),
+    0 6px 0 #8A5A08;
+}
+
+@utility text-extrude-green {
+  text-shadow:
+    0 2px 0 var(--color-green-deep),
+    0 4px 0 var(--color-green-deep),
+    0 6px 0 #16643A;
+}
+
+/* Bungee's sibling faces. Shade carries its own 3D extrusion in the
+   glyph outlines; Outline is hollow, for a ghost layer behind a solid. */
+@utility font-shade   { font-family: 'Bungee Shade', var(--font-display); }
+@utility font-outline { font-family: 'Bungee Outline', var(--font-display); }

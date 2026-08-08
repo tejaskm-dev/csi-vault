@@ -1,10 +1,26 @@
 import confetti from "canvas-confetti";
 
-// SETTLE — screen entry: y: 16 → 0, opacity: 0 → 1, 220ms ease-out.
+/**
+ * SETTLE — screen entry.
+ *
+ * A plain fade-and-slide reads as a website. Games push the incoming screen in
+ * with a little scale so it arrives with weight, and overshoot slightly on the
+ * spring so it settles rather than stops. The outgoing screen shrinks away
+ * instead of sliding, which stops the two reading as one long drift.
+ */
 export const settleVariants = {
-  initial: { y: 16, opacity: 0 },
-  animate: { y: 0, opacity: 1, transition: { duration: 0.22, ease: "easeOut" as any } },
-  exit: { y: -16, opacity: 0, transition: { duration: 0.15, ease: "easeIn" as any } },
+  initial: { y: 22, scale: 0.96, opacity: 0 },
+  animate: {
+    y: 0,
+    scale: 1,
+    opacity: 1,
+    transition: { type: "spring" as const, stiffness: 380, damping: 26, mass: 0.8 },
+  },
+  exit: {
+    scale: 0.97,
+    opacity: 0,
+    transition: { duration: 0.14, ease: "easeIn" as any },
+  },
 };
 
 // BOUNCE_IN — list/grid entrance, spring stiffness 480 damping 18, stagger 0.05s.

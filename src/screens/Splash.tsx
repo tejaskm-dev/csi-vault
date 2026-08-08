@@ -80,22 +80,33 @@ export function Splash() {
         </motion.span>
 
         {/* Wordmark scales up from 0.8 with overshoot, one letter-group at a time (350ms & 500ms) */}
-        <h1 className="text-[52px] font-extrabold uppercase leading-[0.9] tracking-tighter text-ink mt-2">
+        <h1 className="mt-2 uppercase leading-[0.86]">
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 140, damping: 10, delay: 0.35 }}
-            className="block"
+            className="block text-[24px] tracking-[0.26em] text-ink text-extrude-ink"
           >
             OPERATION
           </motion.span>
+
+          {/* VAULT carries all three effects: a hollow Outline ghost sitting
+              behind, an ink sticker stroke, and a solid red extrusion. */}
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 140, damping: 10, delay: 0.5 }}
-            className="text-red block"
+            className="relative block text-[64px]"
           >
-            VAULT
+            <span
+              aria-hidden
+              className="font-outline absolute left-[5px] top-[5px] block w-full text-brass opacity-60"
+            >
+              VAULT
+            </span>
+            <span className="relative block text-red text-sticker text-extrude-red">
+              VAULT
+            </span>
           </motion.span>
         </h1>
       </div>

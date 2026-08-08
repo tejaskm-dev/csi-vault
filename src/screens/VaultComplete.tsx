@@ -31,7 +31,7 @@ export function VaultComplete() {
           <div className="flex items-center gap-1.5 bg-yellow/10 text-yellow text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-pill ink border-yellow rotate-[2deg]">
             <span>MISSION ACCOMPLISHED</span>
           </div>
-          <h1 className="text-[44px] font-extrabold uppercase leading-[0.9] tracking-tighter text-white mt-3">
+          <h1 className="text-[44px] font-extrabold uppercase leading-[0.9] tracking-tighter text-white text-sticker text-extrude-red mt-3">
             VAULT<br />
             <span className="text-yellow">UNLOCKED</span>
           </h1>

@@ -98,11 +98,14 @@ export function Home() {
 
         {/* ── Title + the one line that says what this actually is ── */}
         <div className="mt-3 flex flex-col items-start">
-          <span className="font-display text-[21px] leading-none tracking-[0.26em] text-ink">
+          <span className="font-display text-[21px] leading-none tracking-[0.26em] text-ink text-extrude-ink">
             OPERATION
           </span>
-          <h1 className="relative z-10 -mt-1 font-display text-[62px] leading-[0.82] tracking-tight text-red">
-            VAULT
+          <h1 className="relative z-10 -mt-1 font-display text-[62px] leading-[0.82] tracking-tight">
+            <span aria-hidden className="font-outline absolute left-[4px] top-[4px] text-brass opacity-55">
+              VAULT
+            </span>
+            <span className="relative text-red text-sticker text-extrude-red">VAULT</span>
           </h1>
           <p className="mt-2.5 max-w-[19rem] font-body text-[13px] font-semibold leading-snug text-ink/65">
             Nine locks, twenty minutes, and a room full of first-years.{" "}

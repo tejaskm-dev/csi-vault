@@ -76,7 +76,7 @@ export function Success() {
           <span className="ink mb-2 rounded-pill bg-red/10 px-3 py-1 font-body text-[12px] font-bold uppercase tracking-[0.2em] text-red-deep">
             {allDone ? "Vault ready" : "Lock released"}
           </span>
-          <h1 className="mt-2 font-display text-[42px] uppercase leading-[0.9] tracking-tighter text-ink">
+          <h1 className="mt-2 font-display text-[42px] uppercase leading-[0.9] tracking-tighter text-ink text-sticker-thin text-extrude-ink">
             {headline}
           </h1>
         </div>
