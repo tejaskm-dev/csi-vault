@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { LeaderboardRow } from "../components/LeaderboardRow";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Pressable } from "../components/Pressable";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
 import { listContainerVariants } from "../lib/motion";
 
@@ -24,25 +25,17 @@ export function Leaderboard() {
     <div className="flex-1 flex flex-col justify-between p-6 select-none">
       <div className="flex flex-col gap-5">
         {/* Header Block */}
-        <header className="flex items-center gap-4">
-          <Pressable onClick={() => navigate("/home")} aria-label="Back" icon>
-            <ArrowLeft className="w-5 h-5" />
-          </Pressable>
-          <div className="flex flex-col grow">
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
-              RANKINGS
-            </span>
-            <h1 className="text-[32px] font-extrabold uppercase leading-[0.9] tracking-tighter text-ink mt-0.5">
-              LEADERBOARD
-            </h1>
-          </div>
-          
-          {/* Pulse Live indicator */}
-          <div className="flex items-center gap-1.5 bg-green/10 text-green font-display font-extrabold text-[11px] px-2.5 py-1 rounded-pill ink border-green rotate-[3deg]">
-            <RefreshCw className="w-3 h-3 animate-[tumble_3s_linear_infinite] spin-layer" />
-            <span>LIVE</span>
-          </div>
-        </header>
+<ScreenHeader
+        eyebrow="Rankings"
+        title="Who's Ahead"
+        back="/home"
+        right={
+          <span className="flex items-center gap-1.5 rounded-pill border-2 border-white bg-red-deep px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider">
+            <span className="h-1.5 w-1.5 animate-[pulseGlow_1.6s_ease-in-out_infinite] rounded-pill bg-green" />
+            Live
+          </span>
+        }
+      />
 
         {/* Live status label */}
         <p className="font-body text-[14px] font-semibold text-ink/50 -mt-2">
