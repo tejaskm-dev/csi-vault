@@ -40,10 +40,18 @@ const TONES: Record<HeaderTone, string> = {
 };
 
 /** A hard step under the title. Ink on every tone — see note 2 above. */
+/**
+ * The step has to contrast with the TEXT, not just the band.
+ *
+ * red and ink carry white titles, so an ink step reads as depth. brass and
+ * green carry INK titles — an ink step there is the same colour as the glyph,
+ * so it does not read as depth at all, it just fattens the letterform into a
+ * blob. Those two get a light step instead, which reads as an emboss.
+ */
 const TITLE_DEPTH: Record<HeaderTone, string> = {
   red: "0 3px 0 var(--color-ink)",
-  brass: "0 3px 0 var(--color-ink)",
-  green: "0 3px 0 var(--color-ink)",
+  brass: "0 3px 0 rgba(255,255,255,0.6)",
+  green: "0 3px 0 rgba(255,255,255,0.55)",
   ink: "0 3px 0 #000000",
 };
 

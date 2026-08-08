@@ -7,6 +7,8 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
 import { listStagger, riseIn } from "../lib/motion";
+import { revealElement } from "../lib/scroll";
+import { playTap } from "../lib/sound";
 
 export function Leaderboard() {
   const navigate = useNavigate();
@@ -123,12 +125,21 @@ export function Leaderboard() {
         <div className="pointer-events-auto flex flex-col gap-2">
           <AnimatePresence>
             {you && !youVisible && (
-              <motion.div
+              <motion.button
+                type="button"
+                // Tapping it takes you to your actual row. The bar tells you
+                // where you stand; this is how you get to it without thumbing
+                // through the whole board.
+                onClick={() => {
+                  playTap();
+                  revealElement(youRowRef.current, 96);
+                }}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 14 }}
                 transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                className="ink flex items-center gap-2.5 rounded-btn bg-brass px-3 py-2 shadow-ink-sm"
+                whileTap={{ scale: 0.98 }}
+                className="ink flex w-full cursor-pointer items-center gap-2.5 rounded-btn bg-brass px-3 py-2 text-left shadow-ink-sm"
               >
                 <span className="ink flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-white font-readout text-[11px] font-bold text-ink">
                   {you.rank}
@@ -139,7 +150,7 @@ export function Leaderboard() {
                 <span className="shrink-0 font-readout text-[12px] font-bold text-ink">
                   {you.digits}/9
                 </span>
-              </motion.div>
+              </motion.button>
             )}
           </AnimatePresence>
 

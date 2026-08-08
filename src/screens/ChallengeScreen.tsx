@@ -22,6 +22,7 @@ import {
   popIn,
 } from "../lib/motion";
 import { cn } from "../lib/utils";
+import { revealElement } from "../lib/scroll";
 
 const CHECKING_MS = 400;
 const WRONG_HOLD_MS = 360;
@@ -60,6 +61,7 @@ export function ChallengeScreen() {
   const [misses, setMisses] = useState(0);
   const [showMiss, setShowMiss] = useState(false);
   const timers = useRef<number[]>([]);
+  const ctaRef = useRef<HTMLDivElement | null>(null);
 
   const isBonus = Boolean(challenge?.isBonus);
   const digit = isBonus ? 0 : parseInt(id ?? "1", 10);
@@ -241,6 +243,11 @@ export function ChallengeScreen() {
                       setWrongId(null);
                       setToast(null);
                       setSelectedId(opt.id);
+                      // Four image options push CRACK IT below the fold, so
+                      // picking one used to leave the player looking at a
+                      // selected card and no visible way to commit it.
+                      // revealElement no-ops when it is already on screen.
+                      requestAnimationFrame(() => revealElement(ctaRef.current, 12));
                     }}
                     variant={challenge.type === "image_grid" ? "image" : "text"}
                     icon={<span>{opt.glyph ?? challenge.glyph}</span>}
@@ -253,7 +260,7 @@ export function ChallengeScreen() {
       </div>
 
       {/* Submit CTA Block */}
-      <div className="p-6 bg-white border-t-3 border-ink shrink-0">
+      <div ref={ctaRef} className="p-6 bg-white border-t-3 border-ink shrink-0">
         <PrimaryButton
           onClick={handleSubmit}
           disabled={!canSubmit || busy}

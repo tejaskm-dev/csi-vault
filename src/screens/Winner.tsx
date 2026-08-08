@@ -78,8 +78,12 @@ export function Winner() {
   const navigate = useNavigate();
   const { leaderboard } = useGame();
 
-  /** Everyone off the podium, capped so the page stays a result and not a list. */
-  const rest = leaderboard.slice(3, 8);
+  /**
+   * Two. Three on the podium plus two listed is the whole top five, and it is
+   * what lets the page fit a phone without scrolling — a results screen you
+   * have to scroll through stops being a result and becomes a table.
+   */
+  const rest = leaderboard.slice(3, 5);
 
   useEffect(() => {
     const t = setTimeout(() => {

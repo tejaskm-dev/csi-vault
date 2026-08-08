@@ -17,6 +17,7 @@ import { AssetsPreview } from "./screens/AssetsPreview";
 import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
+import { scrollToTop } from "./lib/scroll";
 
 /**
  * What the browser paints ABOVE the page when you overscroll.
@@ -59,6 +60,12 @@ function GameShell({ children }: { children: React.ReactNode }) {
   // and it costs one style write per navigation.
   useEffect(() => {
     document.documentElement.style.backgroundColor = topColorFor(pathname);
+
+    // The browser keeps the scroll offset across a route change. That never
+    // mattered while every screen fit the viewport, but the leaderboard and
+    // the results now scroll — so leaving one of them halfway down dropped
+    // you into the middle of the next screen.
+    scrollToTop();
   }, [pathname]);
 
   return (
