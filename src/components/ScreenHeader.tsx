@@ -64,14 +64,23 @@ export function ScreenHeader({
       )}
     >
       <div className="flex items-center gap-3 px-4 pb-3.5 pt-3">
+        {/* The hit area stays 56px for a phone in hand, but the visible chip is
+            40px. Passing `icon` here forced Pressable's own 56px white pill on
+            top, which is why the button dominated the band. */}
         {back && (
           <Pressable
-            icon
             aria-label="Back"
             onClick={() => (typeof back === "string" ? navigate(back) : navigate(-1))}
-            className={cn("h-11 w-11 shrink-0 rounded-btn border-2", CHIP[tone])}
+            className="-ml-2 h-14 w-14 shrink-0 bg-transparent shadow-none"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <span
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-btn border-2",
+                CHIP[tone]
+              )}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </span>
           </Pressable>
         )}
 

@@ -22,10 +22,8 @@ export function Leaderboard() {
   const resultsAvailable = leaderboard.some((e) => e.digits === 9);
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 select-none">
-      <div className="flex flex-col gap-5">
-        {/* Header Block */}
-<ScreenHeader
+    <div className="flex flex-1 select-none flex-col">
+      <ScreenHeader
         eyebrow="Rankings"
         title="Who's Ahead"
         back="/home"
@@ -37,6 +35,8 @@ export function Leaderboard() {
         }
       />
 
+      <div className="flex flex-1 flex-col justify-between p-6 pt-5">
+        <div className="flex flex-col gap-5">
         {/* Live status label */}
         <p className="font-body text-[14px] font-semibold text-ink/50 -mt-2">
           Ranked by digits unlocked, then by completion time.
@@ -73,6 +73,7 @@ export function Leaderboard() {
             LOCKED: Results open once a player cracks all 9!
           </div>
         )}
+      </div>
       </div>
     </div>
   );

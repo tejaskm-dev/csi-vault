@@ -28,15 +28,11 @@ export function VaultGrid() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 select-none">
-      <div className="flex flex-col gap-6">
-        {/* Header Block */}
-<ScreenHeader
-        eyebrow="Mission map"
-        title="Your Vault"
-        back="/home"
-      />
+    <div className="flex flex-1 select-none flex-col">
+      <ScreenHeader eyebrow="Mission map" title="Your Vault" back="/home" />
 
+      <div className="flex flex-1 flex-col justify-between p-6 pt-5">
+      <div className="flex flex-col gap-6">
         {/* Status Badge Progress Card with Overhanging Digit Badge */}
         <div className="relative ink rounded-card bg-white p-5 shadow-ink-sm flex flex-col gap-3 mt-2">
           <span className="font-bold text-sm text-ink/60 uppercase tracking-wider">CRACKING PROGRESS</span>
@@ -75,6 +71,8 @@ export function VaultGrid() {
       </div>
 
       {/* Locked Digit Modal */}
+      </div>
+
       <Modal isOpen={lockedDigit !== null} onClose={() => setLockedDigit(null)}>
         <Padlock className="w-12 h-12 mx-auto mb-2" />
         <h2 className="text-[28px] font-extrabold uppercase text-ink leading-tight mt-2">NOT YET, RECRUIT</h2>
