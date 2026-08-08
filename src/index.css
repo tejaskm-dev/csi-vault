@@ -140,6 +140,15 @@
 }
 
 @layer base {
+  /* Kill the rubber-band. Flicking up past the top of a phone page bounces and
+     reveals whatever sits behind the document — which showed a band of cream
+     above a red header. `none` stops the bounce outright wherever it is
+     supported; App.tsx also tints the document to the current header colour so
+     anything that still overscrolls shows the right thing. */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+
   body {
     background-color: var(--color-paper);
     color: var(--color-ink);

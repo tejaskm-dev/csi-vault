@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
 
@@ -12,7 +13,13 @@ interface ModalProps {
 export function Modal({ isOpen, onClose, children, variant = "centeredCard" }: ModalProps) {
   const isSheet = variant === "bottomSheet";
 
-  return (
+  // Portalled to body. Every screen sits inside PageWrapper, a motion.div that
+  // animates y and scale — and a transformed ancestor becomes the containing
+  // block for `position: fixed`. In place, `fixed inset-0` would resolve
+  // against PageWrapper rather than the viewport, so on a page tall enough to
+  // scroll the modal would centre itself in the DOCUMENT and could open
+  // completely off screen.
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
@@ -64,6 +71,7 @@ export function Modal({ isOpen, onClose, children, variant = "centeredCard" }: M
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { LeaderboardRow } from "../components/LeaderboardRow";
@@ -106,11 +107,19 @@ export function Leaderboard() {
       </div>
 
       {/* ── Pinned footer ───────────────────────────────────────
-          `fixed`, not `sticky`: the shell sets overflow-x-hidden, which makes
-          overflow-y compute to auto and turns it into a scroll container that
-          never scrolls — sticky bottom resolves against that and does nothing.
-          Fixed is matched to the shell's own max-width and centring. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] px-6 pb-5">
+          Two things force this shape.
+
+          `fixed` rather than `sticky`: the shell sets overflow-x-hidden, which
+          makes overflow-y compute to auto and turns the shell into a scroll
+          container that never actually scrolls (min-height, not height, so it
+          grows). A sticky bottom offset resolves against that and does nothing.
+
+          And a PORTAL rather than rendering in place: PageWrapper is a
+          motion.div animating y and scale, and a transformed ancestor becomes
+          the containing block for fixed descendants — so in place, "fixed"
+          would anchor to the page wrapper instead of the viewport. */}
+      {createPortal(
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] px-6 pb-5">
         <div className="pointer-events-auto flex flex-col gap-2">
           <AnimatePresence>
             {you && !youVisible && (
@@ -148,7 +157,9 @@ export function Leaderboard() {
             </div>
           )}
         </div>
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

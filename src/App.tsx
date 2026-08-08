@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { Splash } from "./screens/Splash";
@@ -17,6 +18,31 @@ import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
 
+/**
+ * What the browser paints ABOVE the page when you overscroll.
+ *
+ * On a phone, flicking up past the top rubber-bands and reveals whatever is
+ * behind the document — which was the cream page colour, so a band of cream
+ * appeared over a red header. Matching it to the header tone means the gap is
+ * invisible: the header simply looks like it continues off the top.
+ *
+ * Keyed by the same routes that pick the header's tone, so the two cannot
+ * drift apart.
+ */
+function topColorFor(pathname: string) {
+  if (pathname === "/leaderboard") return "#E53935";        // red
+  if (pathname === "/vault") return "#E53935";
+  if (pathname === "/home") return "#E53935";
+  if (pathname === "/name") return "#E53935";
+  if (pathname === "/challenge/bonus") return "#FFB02E";    // brass
+  if (pathname.startsWith("/challenge")) return "#E53935";
+  if (pathname === "/bonus-found") return "#FFB02E";
+  if (pathname === "/success/bonus") return "#6C5CE7";      // purple plate
+  if (pathname.startsWith("/success")) return "#2ECC71";    // green plate
+  if (pathname === "/waiting") return "#1F1F1F";            // ink
+  return "#F5F2E8";                                          // paper
+}
+
 function GameShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const variant = pathname.startsWith("/challenge") ? "challenge"
@@ -27,6 +53,13 @@ function GameShell({ children }: { children: React.ReactNode }) {
                 : pathname.startsWith("/success")   ? "green"
                 : pathname === "/bonus-found"       ? "yellow"
                 : "default";
+
+  // `overscroll-behavior` (set in index.css) stops the bounce outright on
+  // modern browsers; this is the fallback for anything that still rubber-bands,
+  // and it costs one style write per navigation.
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = topColorFor(pathname);
+  }, [pathname]);
 
   return (
     <div className="min-h-dvh w-full bg-paper md:bg-paper-deep md:py-8">
