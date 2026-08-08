@@ -158,7 +158,7 @@ export function ChallengeScreen() {
         {/* Question Title & Description */}
         <div className="relative">
           {/* Mascot thinking alongside the question, overlapping the card edge */}
-          <div className="pointer-events-none absolute -right-3 -top-4 z-10 h-20 w-20 rotate-[5deg]">
+          <div className="pointer-events-none absolute -right-4 -top-8 z-10 h-32 w-32 rotate-[5deg]">
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </div>
           <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-deep">
@@ -266,7 +266,7 @@ export function ChallengeScreen() {
               initial={{ scale: 0.7, y: 14 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 360, damping: 18 }}
-              className="h-40 w-40"
+              className="h-56 w-56"
             >
               <Art name="mascot-sad" alt="" className="h-full w-full object-contain" />
             </motion.div>
@@ -304,7 +304,7 @@ export function ChallengeScreen() {
 
       {/* Hint Modal */}
       <Modal isOpen={hintOpen} onClose={() => setHintOpen(false)}>
-        <HintBulb className="mx-auto mb-2 h-16 w-16" />
+        <HintBulb className="mx-auto mb-2 h-24 w-24" />
         <h2 className="text-[26px] font-extrabold uppercase text-ink leading-tight">NEED A NUDGE?</h2>
         <p className="font-body text-base font-bold text-ink/70 leading-relaxed px-2">
           {challenge.hint}

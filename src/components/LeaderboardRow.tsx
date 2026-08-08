@@ -101,11 +101,14 @@ export function LeaderboardRow({ id, rank, name, initials, digits, isYou, delta 
       {/* Rank Indicator hanging off the left edge */}
       <div className="absolute -left-4 top-1/2 -translate-y-1/2 z-25 flex items-center justify-center">
         {showMedal ? (
-          <div className="scale-110">
+          // The Medal SVG is `h-full w-full`, so it needs a sized box. This
+          // was a bare `scale-110` div with no dimensions — the medal had no
+          // box to fill and never rendered at a usable size.
+          <div className="h-12 w-12">
             <Medal rank={rank} />
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-pill bg-paper-deep ink flex items-center justify-center pixel text-[11px] font-bold text-ink/75 shadow-ink-sm">
+          <div className="w-9 h-9 rounded-pill bg-paper-deep ink flex items-center justify-center pixel text-[12px] font-bold text-ink/75 shadow-ink-sm">
             {rank}
           </div>
         )}

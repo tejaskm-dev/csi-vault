@@ -26,11 +26,11 @@ export function Waiting() {
           <div className="bg-paper-deep/60 rounded-pill p-4 ink shadow-ink flex items-center justify-center w-36 h-36 relative overflow-visible">
             {isPost ? (
               <div className="scale-115">
-                <Padlock className="w-20 h-20" />
+                <Padlock className="w-32 h-32" />
               </div>
             ) : (
               <div className="animate-[tumble_3s_linear_infinite] spin-layer scale-115">
-                <Stopwatch className="w-20 h-20" />
+                <Stopwatch className="w-32 h-32" />
               </div>
             )}
           </div>

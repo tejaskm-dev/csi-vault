@@ -24,7 +24,7 @@ export function BonusFound() {
         {/* Hero Art Asset (gift) */}
         <div className="my-2">
           <div className="bg-pink/5 rounded-card p-4 ink shadow-ink-lg flex items-center justify-center w-40 h-40 rotate-[2.2deg]">
-            <MysteryBox className="w-28 h-28" />
+            <MysteryBox className="w-44 h-44" />
           </div>
         </div>
 

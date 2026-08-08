@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Pressable } from "./Pressable";
+import { playTap } from "../lib/sound";
 import { cn } from "../lib/utils";
 
 /**
@@ -24,11 +24,13 @@ const TONES: Record<HeaderTone, string> = {
   ink: "bg-ink text-white",
 };
 
-const CHIP: Record<HeaderTone, string> = {
-  red: "bg-red-deep text-white border-white",
-  brass: "bg-paper-deep text-ink border-ink",
-  green: "bg-green-deep text-white border-white",
-  ink: "bg-white/15 text-white border-white",
+/** A hard downward step under the title, in the band's own dark tone, so the
+ *  words sit ON the panel instead of being painted onto it. */
+const TITLE_DEPTH: Record<HeaderTone, string> = {
+  red: "0 3px 0 var(--color-red-deep)",
+  brass: "0 3px 0 var(--color-brass-deep)",
+  green: "0 3px 0 var(--color-green-deep)",
+  ink: "0 3px 0 #000000",
 };
 
 interface ScreenHeaderProps {
@@ -64,24 +66,26 @@ export function ScreenHeader({
       )}
     >
       <div className="flex items-center gap-3 px-4 pb-3.5 pt-3">
-        {/* The hit area stays 56px for a phone in hand, but the visible chip is
-            40px. Passing `icon` here forced Pressable's own 56px white pill on
-            top, which is why the button dominated the band. */}
+        {/* Deliberately NOT a Pressable. Pressable carries `ink` (a 3px border)
+            and `tap` (a 56px minimum) on the button itself, so wrapping a chip
+            inside one produced a ring around a ring — two nested buttons.
+            Here the <button> is a bare 56px hit area and the chip is the only
+            thing with a shape. The press is CSS, not Framer: Framer writes an
+            inline transform that would silently beat `active:translate-y`. */}
         {back && (
-          <Pressable
+          <button
+            type="button"
             aria-label="Back"
-            onClick={() => (typeof back === "string" ? navigate(back) : navigate(-1))}
-            className="-ml-2 h-14 w-14 shrink-0 bg-transparent shadow-none"
+            onClick={() => {
+              playTap();
+              typeof back === "string" ? navigate(back) : navigate(-1);
+            }}
+            className="group -ml-1.5 flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center bg-transparent"
           >
-            <span
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-btn border-2",
-                CHIP[tone]
-              )}
-            >
-              <ArrowLeft className="h-5 w-5" />
+            <span className="ink flex h-12 w-12 items-center justify-center rounded-btn bg-white text-ink shadow-[0_4px_0_0_var(--color-ink)] transition-[transform,box-shadow] duration-75 group-active:translate-y-1 group-active:shadow-none">
+              <ArrowLeft className="h-6 w-6" strokeWidth={3.25} />
             </span>
-          </Pressable>
+          </button>
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -91,7 +95,10 @@ export function ScreenHeader({
             </span>
           )}
           {title && (
-            <span className="truncate font-display text-[19px] uppercase leading-none tracking-wide">
+            <span
+              className="truncate font-display text-[19px] uppercase leading-none tracking-wide"
+              style={{ textShadow: TITLE_DEPTH[tone] }}
+            >
               {title}
             </span>
           )}

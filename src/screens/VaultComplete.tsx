@@ -47,7 +47,7 @@ export function VaultComplete() {
               initial={{ opacity: 0, scale: 0.6, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ delay: 1.4, type: "spring", stiffness: 300, damping: 16 }}
-              className="pointer-events-none absolute -bottom-4 -right-2 z-20 h-36 w-36 rotate-[8deg]"
+              className="pointer-events-none absolute -bottom-6 -right-6 z-20 h-52 w-52 rotate-[8deg]"
             >
               <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
             </motion.div>

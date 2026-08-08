@@ -74,7 +74,7 @@ export function AnswerOptionCard({
           "flex items-center justify-center rounded-btn p-2",
           isSelected || isWrong ? "bg-white/20" : "bg-paper-deep"
         )}>
-          <Art name={glyphName} alt={label} className="w-12 h-12 object-contain" />
+          <Art name={glyphName} alt={label} className="w-16 h-16 object-contain" />
         </div>
       ) : (
         icon && (

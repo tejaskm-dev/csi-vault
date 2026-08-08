@@ -92,7 +92,7 @@ export function Success() {
           <div className="relative z-10 h-36 w-36">
             {isBonus ? (
               <div className="ink flex h-36 w-36 rotate-[3deg] items-center justify-center rounded-plate bg-pink/10 shadow-plate-steel">
-                <MysteryBox className="h-22 w-22" />
+                <MysteryBox className="h-28 w-28" />
               </div>
             ) : (
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />
@@ -105,7 +105,7 @@ export function Success() {
             initial={{ opacity: 0, scale: 0.7, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.4, type: "spring", stiffness: 380, damping: 18 }}
-            className="pointer-events-none absolute -bottom-3 -right-5 z-20 h-28 w-28 rotate-[6deg]"
+            className="pointer-events-none absolute -bottom-6 -right-10 z-20 h-40 w-40 rotate-[6deg]"
           >
             <Art name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
           </motion.div>

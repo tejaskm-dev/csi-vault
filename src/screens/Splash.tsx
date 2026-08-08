@@ -65,7 +65,7 @@ export function Splash() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.55 }}
-          className="mb-2 h-16 w-16"
+          className="mb-2 h-28 w-28"
         >
           <Art name="csi-logo" alt="CSI ASIET" className="h-full w-full object-contain" />
         </motion.div>

@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { VaultBoard } from "../components/VaultBoard";
 import { Modal } from "../components/Modal";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { Pressable } from "../components/Pressable";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
-import { Art } from "../components/Art";
 import { GiftBox, Padlock } from "../components/Props";
 
 export function VaultGrid() {
@@ -31,10 +28,13 @@ export function VaultGrid() {
     <div className="flex flex-1 select-none flex-col">
       <ScreenHeader eyebrow="Mission map" title="Your Vault" back="/home" />
 
-      <div className="flex flex-1 flex-col justify-between p-6 pt-5">
-      <div className="flex flex-col gap-6">
-        {/* Status Badge Progress Card with Overhanging Digit Badge */}
-        <div className="relative ink rounded-card bg-white p-5 shadow-ink-sm flex flex-col gap-3 mt-2">
+      {/* The board is the screen. It sits directly under the progress card
+          instead of being pushed apart from the CTA by `justify-between`,
+          which left a phone-height gap in the middle of the page. */}
+      <div className="flex flex-1 flex-col gap-5 p-6 pt-6">
+        {/* Progress card. The badge overhangs the TOP edge only — overhanging
+            right as well pushed it into the shell's edge. */}
+        <div className="relative ink rounded-card bg-white p-5 pt-6 shadow-ink flex flex-col gap-3 shrink-0">
           <span className="font-bold text-sm text-ink/60 uppercase tracking-wider">CRACKING PROGRESS</span>
           <div className="w-full h-6 rounded-pill ink bg-paper-deep overflow-hidden relative">
             <div
@@ -42,39 +42,37 @@ export function VaultGrid() {
               style={{ width: `${(progress / 9) * 100}%` }}
             />
           </div>
-          <div className="absolute -top-4 -right-3.5 z-10 pixel text-[11px] text-ink font-extrabold bg-yellow px-3.5 py-1.5 rounded-pill ink shadow-ink-sm rotate-[3deg]">
+          <div className="absolute -top-4 right-4 z-10 pixel text-[11px] text-ink font-extrabold bg-yellow px-3.5 py-1.5 rounded-pill ink shadow-ink-sm rotate-[3deg]">
             {complete ? "READY" : `${progress}/9 DIGITS`}
           </div>
         </div>
 
         {/* Board component */}
         <VaultBoard unlockedVaults={unlockedVaults} onSelect={handleSelect} />
-      </div>
 
-      {/* Footer CTA Section */}
-      <div className="mt-6 mb-2">
-        {complete ? (
-          <PrimaryButton variant="reward" onClick={() => navigate("/vault-complete")} className="w-full">
-            OPEN THE VAULT
-          </PrimaryButton>
-        ) : (
-          <PrimaryButton
-            variant="secondary"
-            onClick={() => navigate("/bonus-found")}
-            disabled={bonusSolved}
-            className="w-full text-center flex items-center justify-center gap-2"
-          >
-            <GiftBox className="w-5 h-5 shrink-0" />
-            <span>{bonusSolved ? "BONUS COMPLETE" : "SPOT THE BONUS ROUND"}</span>
-          </PrimaryButton>
-        )}
-      </div>
-
-      {/* Locked Digit Modal */}
+        {/* Footer CTA. `mt-auto` pins it to the bottom on a tall phone without
+            stretching the gap above it on a short one. */}
+        <div className="mt-auto pt-1 pb-1 shrink-0">
+          {complete ? (
+            <PrimaryButton variant="reward" onClick={() => navigate("/vault-complete")} className="h-16 w-full">
+              OPEN THE VAULT
+            </PrimaryButton>
+          ) : (
+            <PrimaryButton
+              variant="secondary"
+              onClick={() => navigate("/bonus-found")}
+              disabled={bonusSolved}
+              className="h-16 w-full text-center flex items-center justify-center gap-2.5"
+            >
+              <GiftBox className="h-9 w-9 shrink-0" />
+              <span>{bonusSolved ? "BONUS COMPLETE" : "SPOT THE BONUS ROUND"}</span>
+            </PrimaryButton>
+          )}
+        </div>
       </div>
 
       <Modal isOpen={lockedDigit !== null} onClose={() => setLockedDigit(null)}>
-        <Padlock className="w-12 h-12 mx-auto mb-2" />
+        <Padlock className="w-24 h-24 mx-auto mb-1" />
         <h2 className="text-[28px] font-extrabold uppercase text-ink leading-tight mt-2">NOT YET, RECRUIT</h2>
         <p className="font-body text-base font-bold text-ink/70 leading-relaxed px-2 mt-1">
           Digit {lockedDigit} opens as you clear the tiles ahead of it. A rolling window of three is always open — try another active tile!
