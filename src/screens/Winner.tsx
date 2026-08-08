@@ -30,7 +30,8 @@ export function Winner() {
 
         {/* Hero Illustration (Trophy) */}
         <div className="my-1 flex justify-center">
-          <div className="bg-yellow/10 rounded-card p-3 ink shadow-ink-sm flex items-center justify-center w-28 h-28 rotate-[-2deg]">
+          {/* 160px plate, p-3, so 136 of interior for a 128px trophy. */}
+          <div className="bg-yellow/10 rounded-card p-3 ink shadow-ink flex items-center justify-center w-40 h-40 rotate-[-2deg]">
             <Trophy className="w-32 h-32" />
           </div>
         </div>

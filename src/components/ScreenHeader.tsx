@@ -10,19 +10,22 @@ import { cn } from "../lib/utils";
  * A coloured plate with rounded BOTTOM corners, not a flat bar welded to the
  * top edge — that curve is the mockup's signature.
  *
- * Three things make it read as an object rather than a coloured rectangle:
+ * The bottom edge is a BOX-SHADOW, not a border, and this is the whole trick.
+ * A border cannot follow a rounded corner cleanly when only some edges have
+ * width: `border-b-3` mitres to nothing across the curve and tapers into a
+ * wedge. Adding side borders fixes the mitre but then two vertical ink lines
+ * run up the screen edges and stop dead at the top, which looks worse. A
+ * box-shadow traces the border-radius exactly — one continuous ink edge round
+ * the curve, no mitre, no side lines, nothing hanging off the top.
  *
- *   1. The outline runs all the way around. `border-b-3` alone mitres to
- *      nothing at a rounded corner, so the stroke tapered into a wedge and the
- *      curve never resolved. The sides are stroked too; only the top is bare,
- *      because it is off-screen.
- *   2. The depth step under the title is INK, not the band's own -deep. A dark
- *      red step on red is too low-contrast to read as depth — it just looks
- *      like the text is blurred.
- *   3. Diagonal hatching fills the right side. A title sitting alone in the
- *      left third of a tall coloured slab is the thing that reads as unfinished;
- *      the hatch is the cheapest way to make the plate feel occupied without
- *      inventing content for it.
+ * Two other things keep it from reading as a plain coloured rectangle:
+ *
+ *   - The depth step under the title is INK, not the band's own -deep. A dark
+ *     red step on red is too low-contrast to read as depth — it just looks
+ *     like the text is blurred.
+ *   - Diagonal hatching fills the right side. A title sitting alone in the
+ *     left third of a wide coloured slab is what reads as unfinished; the
+ *     hatch occupies the plate without inventing content for it.
  *
  * `tone` is the only thing that varies: red is the default, brass marks the
  * bonus round, and that difference is how the two are told apart at a glance.
@@ -84,10 +87,11 @@ export function ScreenHeader({
   return (
     <header
       className={cn(
+        // overflow-hidden clips the hatch to the curve; it does not clip the
+        // element's own box-shadow, so the edge survives.
         "relative z-20 shrink-0 overflow-hidden",
-        // the outline, on every edge that is actually visible
-        "border-x-3 border-b-3 border-ink",
-        "rounded-b-[28px]",
+        // the edge — see the note above on why this is a shadow, not a border
+        "rounded-b-[28px] shadow-[0_4px_0_0_var(--color-ink)]",
         TONES[tone],
         className
       )}
@@ -115,7 +119,7 @@ export function ScreenHeader({
         className="pointer-events-none absolute bottom-2.5 right-3.5 h-1.5 w-1.5 rounded-pill bg-ink opacity-30"
       />
 
-      <div className="relative flex items-center gap-3 px-4 pb-5 pt-3">
+      <div className="relative flex items-center gap-1.5 px-4 pb-5 pt-3">
         {/* Deliberately NOT a Pressable. Pressable carries `ink` (a 3px border)
             and `tap` (a 56px minimum) on the button element itself, so putting
             a chip inside one produced a ring around a ring — two nested

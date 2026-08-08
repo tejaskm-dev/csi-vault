@@ -10,6 +10,7 @@ import { TumblerRing } from "../components/TumblerRing";
 import { CombinationReadout } from "../components/CombinationReadout";
 import { CrewFeed } from "../components/CrewFeed";
 import { Wordmark } from "../components/Wordmark";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
 import { getMuted, setMuted, playTap } from "../lib/sound";
@@ -37,24 +38,26 @@ export function Home() {
   return (
     <div className="flex flex-1 select-none flex-col">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="riveted relative z-20 flex h-14 shrink-0 items-center justify-between border-b-3 border-ink bg-red px-4 text-white">
-        <span className="font-display text-[15px] tracking-wide">CSI ASIET</span>
-
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-pill border-2 border-white bg-ink px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider">
-            <Users className="h-3 w-3" />
-            {leaderboard.length}
-          </span>
-          <button
-            type="button"
-            onClick={toggleMute}
-            aria-label={muted ? "Unmute" : "Mute"}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-btn border-2 border-white bg-ink transition-colors hover:bg-red-deep"
-          >
-            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </button>
-        </div>
-      </header>
+      <ScreenHeader
+        eyebrow="CSI ASIET"
+        title="Operation Vault"
+        right={
+          <>
+            <span className="flex items-center gap-1 rounded-pill border-2 border-white bg-ink px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider">
+              <Users className="h-3 w-3" />
+              {leaderboard.length}
+            </span>
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={muted ? "Unmute" : "Mute"}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-btn border-2 border-white bg-ink transition-colors hover:bg-red-deep"
+            >
+              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          </>
+        }
+      />
 
       {/* Collapses to zero height when nobody has done anything. */}
       <CrewFeed className="relative z-20 shrink-0" />

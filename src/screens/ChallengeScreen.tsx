@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ProgressDots } from "../components/ProgressDots";
 import { CountdownPill } from "../components/CountdownPill";
 import { AnswerOptionCard } from "../components/AnswerOptionCard";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { Pressable } from "../components/Pressable";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { Toast } from "../components/Toast";
 import { Modal } from "../components/Modal";
 import { Art } from "../components/Art";
@@ -125,26 +124,13 @@ export function ChallengeScreen() {
 
   return (
     <div className="relative flex-1 flex flex-col justify-between select-none">
-      {/* Header Bar */}
-      <header
-        className={cn(
-          "flex justify-between items-center p-4 border-b-3 border-ink shrink-0",
-          isBonus ? "bg-yellow text-ink" : "bg-red text-white"
-        )}
-      >
-        <Pressable
-          onClick={() => navigate(-1)}
-          aria-label="Back"
-          icon
-          className={isBonus ? "bg-paper-deep text-ink" : "bg-red-deep text-white"}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Pressable>
-        <span className="font-display font-extrabold text-[18px] uppercase tracking-wide">
-          {isBonus ? "Bonus Round" : `Digit ${digit}`}
-        </span>
-        <CountdownPill time={time} className="shadow-none" />
-      </header>
+      <ScreenHeader
+        tone={isBonus ? "brass" : "red"}
+        eyebrow={isBonus ? "Off the board" : "Cracking"}
+        title={isBonus ? "Bonus Round" : `Digit ${digit}`}
+        back
+        right={<CountdownPill time={time} className="shadow-none" />}
+      />
 
       {/* Main Body */}
       <div className="flex-1 flex flex-col p-6 gap-5">
