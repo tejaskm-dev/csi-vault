@@ -36,6 +36,9 @@ export function Winner() {
   const navigate = useNavigate();
   const { leaderboard } = useGame();
 
+  /** Everyone off the podium, capped so the page stays a result and not a list. */
+  const rest = leaderboard.slice(3, 8);
+
   useEffect(() => {
     const t = setTimeout(() => {
       celebrate();
@@ -69,7 +72,7 @@ export function Winner() {
           extrude="var(--color-red-deep)"
           extrudeDeep="#7C1F1C"
           depth={10}
-          bow={9}
+          bow={2.2}
           className="mt-1 w-full"
         >
           WINNER!
@@ -154,7 +157,46 @@ export function Winner() {
         })}
       </div>
 
-      <motion.div variants={riseIn} className="relative mt-auto pt-8">
+      {/* ── The rest of the field ──────────────────────────────
+          The page scrolls, so the answer to a half-empty screen is more of
+          the actual result, not more spacing. Everyone who is not on the
+          podium still wants to find their own line. */}
+      {rest.length > 0 && (
+        <motion.div variants={riseIn} className="relative mt-7">
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/40">
+            The rest of the field
+          </span>
+          <div className="mt-2.5 flex flex-col gap-2">
+            {rest.map((e) => (
+              <div
+                key={e.id}
+                className={cn(
+                  "ink flex items-center gap-3 rounded-btn px-3 py-2 shadow-chip-ink",
+                  e.isYou ? "bg-brass" : "bg-white"
+                )}
+              >
+                <span className="ink flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-paper-deep font-readout text-[11px] font-bold text-ink/70">
+                  {e.rank}
+                </span>
+                <span
+                  className={cn(
+                    "grow truncate text-left text-[14px] font-bold",
+                    e.isYou ? "text-ink" : "text-ink/75"
+                  )}
+                >
+                  {e.name}
+                  {e.isYou && <span className="ml-1.5 text-ink/50">(You)</span>}
+                </span>
+                <span className="shrink-0 font-readout text-[12px] font-bold text-ink/55">
+                  {e.digits}/9
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      <motion.div variants={riseIn} className="relative mt-8">
         <PrimaryButton onClick={() => navigate("/leaderboard")} className="h-16 w-full gap-3">
           <Trophy className="h-7 w-7 shrink-0" />
           FULL LEADERBOARD

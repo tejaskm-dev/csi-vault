@@ -82,7 +82,7 @@ export function VaultComplete() {
             extrude="#D8D2C0"
             extrudeDeep="#A9A395"
             depth={7}
-            bow={13}
+            bow={2.2}
             className="mx-auto w-[62%]"
           >
             VAULT
@@ -92,7 +92,7 @@ export function VaultComplete() {
             extrude="var(--color-brass-deep)"
             extrudeDeep="#8A5A08"
             depth={10}
-            bow={11}
+            bow={2.2}
             className="mx-auto -mt-[6%] w-full"
           >
             UNLOCKED

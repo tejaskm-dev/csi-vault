@@ -6,7 +6,12 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { useGame } from "../context/GameContext";
 import { listStagger, riseIn } from "../lib/motion";
 
-const VISIBLE = 6; // Compact view fits beautifully on phone screens
+/**
+ * The page scrolls, so there is no reason to truncate at six and leave the
+ * bottom third of the screen empty. Ten covers the whole room at this event
+ * with the "..." break still doing its job if someone is further down.
+ */
+const VISIBLE = 10;
 
 export function Leaderboard() {
   const navigate = useNavigate();
@@ -15,6 +20,9 @@ export function Leaderboard() {
   const top = leaderboard.slice(0, VISIBLE);
   const you = leaderboard.find((e) => e.isYou);
   const youIsBelow = you && !top.some((e) => e.isYou);
+
+  const field = leaderboard.length;
+  const leader = leaderboard[0];
 
   // If anyone has unlocked all 9 digits, the results are in!
   const resultsAvailable = leaderboard.some((e) => e.digits === 9);
@@ -33,11 +41,56 @@ export function Leaderboard() {
         }
       />
 
-      <div className="flex flex-1 flex-col justify-between p-6 pt-5">
-        <div className="flex flex-col gap-5">
-        {/* Live status label */}
-        <p className="font-body text-[14px] font-semibold text-ink/50 -mt-2">
-          Ranked by digits unlocked, then by completion time.
+      <div className="flex flex-1 flex-col p-6 pt-5">
+        <div className="flex flex-col gap-4">
+        {/* Where you actually stand, before the list. Scrolling to find your
+            own row was the first thing anyone did on this screen. */}
+        {you && (
+          <motion.div
+            variants={riseIn}
+            initial="initial"
+            animate="animate"
+            className="ink flex items-stretch overflow-hidden rounded-plate bg-white shadow-ink"
+          >
+            <div className="flex flex-1 flex-col items-center gap-0.5 py-3">
+              <span className="font-readout text-[22px] font-bold leading-none text-ink">
+                #{you.rank}
+              </span>
+              <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/45">
+                Your rank
+              </span>
+            </div>
+            <span className="my-3 w-0 border-l-2 border-dashed border-ink/15" />
+            <div className="flex flex-1 flex-col items-center gap-0.5 py-3">
+              <span className="font-readout text-[22px] font-bold leading-none text-ink">
+                {you.digits}/9
+              </span>
+              <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/45">
+                Your digits
+              </span>
+            </div>
+            <span className="my-3 w-0 border-l-2 border-dashed border-ink/15" />
+            <div className="flex flex-1 flex-col items-center gap-0.5 py-3">
+              <span className="font-readout text-[22px] font-bold leading-none text-ink">
+                {field}
+              </span>
+              <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-ink/45">
+                In play
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+        <p className="font-body text-[13px] font-semibold text-ink/50">
+          {leader ? (
+            <>
+              <span className="font-bold text-ink">{leader.name}</span> leads on{" "}
+              <span className="font-readout font-bold text-ink">{leader.digits}/9</span>. Ranked
+              by digits, then completion time.
+            </>
+          ) : (
+            "Ranked by digits unlocked, then by completion time."
+          )}
         </p>
 
         {/* Scrollable Leaderboard Rows */}
@@ -68,7 +121,7 @@ export function Leaderboard() {
       </div>
 
       {/* Results CTA or bottom label */}
-      <div className="mt-4 mb-2 flex flex-col gap-2">
+      <div className="mt-6 flex flex-col gap-2">
         {resultsAvailable ? (
           <PrimaryButton variant="reward" onClick={() => navigate("/winner")} className="w-full">
             RESULTS ARE IN!

@@ -24,7 +24,16 @@ import { cn } from "../lib/utils";
  */
 interface CurvedWordProps {
   children: string;
-  /** How far the centre of the baseline lifts, in viewBox units. 0 is flat. */
+  /**
+   * Arc depth as a PERCENTAGE OF THE WORD'S WIDTH, not absolute units.
+   *
+   * This matters because the viewBox width scales with character count, so a
+   * fixed unit value bends a five-letter word almost twice as hard as an
+   * eight-letter one — which is exactly why VAULT looked warped above a much
+   * flatter UNLOCKED. As a fraction of width, both get the same curvature and
+   * read as one lockup. Keep it small: past ~4% the end letters rotate far
+   * enough off the tangent to look wobbly rather than arched.
+   */
   bow?: number;
   fill: string;
   stroke?: string;
@@ -44,7 +53,7 @@ const ADVANCE = 0.74;
 
 export function CurvedWord({
   children,
-  bow = 16,
+  bow = 2.5,
   fill,
   stroke = "#1F1F1F",
   strokeWidth = 14,
@@ -59,12 +68,17 @@ export function CurvedWord({
   const pad = strokeWidth + 6;
   const w = inner + pad * 2;
 
+  // Arc depth relative to width, so every word bends by the same amount.
+  const rise = (w * bow) / 100;
+
   // Baseline sits low enough that ascenders plus the stroke clear the top,
   // and the box is tall enough for the bow and the extrusion.
   const baseY = FONT_SIZE + pad;
   const h = baseY + depth + pad;
 
-  const d = `M ${pad} ${baseY} Q ${w / 2} ${baseY - bow * 2} ${w - pad} ${baseY}`;
+  // A quadratic's midpoint reaches only half its control offset, so the
+  // control point is lifted 2x to make `rise` the actual arc height.
+  const d = `M ${pad} ${baseY} Q ${w / 2} ${baseY - rise * 2} ${w - pad} ${baseY}`;
 
   const text = (extra: Record<string, unknown>, key?: string | number) => (
     <text

@@ -117,9 +117,11 @@ export function Success() {
         </h1>
       </motion.div>
 
-      {/* Hero. Centres in whatever space is left rather than leaving a
-          phone-height gap above the button. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+      {/* Content flows from the top with even gaps. `flex-1 justify-center`
+          was what produced the void: it pinned a short column to the middle
+          and dumped every spare pixel above and below it. The page scrolls,
+          so the fix is to give the screen enough to say and let it run. */}
+      <div className="flex flex-col items-center gap-5 pt-7">
         <motion.div
           variants={popIn}
           className="relative flex h-44 w-44 items-center justify-center"
@@ -161,28 +163,41 @@ export function Success() {
                 : `Digit ${digit} is on the board.`}
           </p>
 
-          {!isBonus && (
-            <div className="mt-3.5 flex items-center justify-center gap-1.5">
-              {/* Nine pips: the whole run at a glance, and the reason the card
-                  earns its width. The one just banked pulses once. */}
+        </motion.div>
+
+        {/* The board so far — the same nine safes from the vault screen, so
+            the player sees their actual progress rather than an abstraction.
+            Pips said "two of nine"; this says WHICH two, and it is the one
+            thing that ties this screen to the one they came from. */}
+        {!isBonus && (
+          <motion.div variants={riseIn} className="ink w-full rounded-plate bg-white p-3 shadow-ink">
+            <span className="font-display text-[10px] uppercase tracking-[0.2em] text-ink/45">
+              Your board
+            </span>
+            <div className="mt-2 grid grid-cols-9 gap-1">
               {Array.from({ length: 9 }, (_, i) => {
-                const done = i < unlockedVaults.length;
+                const d = i + 1;
+                const solved = unlockedVaults.includes(String(d));
                 return (
-                  <motion.span
-                    key={i}
+                  <motion.div
+                    key={d}
                     initial={false}
-                    animate={i === unlockedVaults.length - 1 ? { scale: [1, 1.45, 1] } : { scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.7, ease: "easeOut" }}
-                    className={cn(
-                      "h-2.5 w-2.5 rounded-pill border-2 border-ink",
-                      done ? "bg-green" : "bg-paper-deep"
-                    )}
-                  />
+                    animate={d === digit ? { scale: [1, 1.22, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.42, delay: 0.75, ease: "easeOut" }}
+                    className="w-full"
+                  >
+                    <VaultTile
+                      digit={d}
+                      state={solved ? "solved" : "locked"}
+                      size="compact"
+                      className="h-auto w-full aspect-square"
+                    />
+                  </motion.div>
                 );
               })}
             </div>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Two readings that were nowhere on this screen: how long the run has
             taken, and where it currently puts you. Both are why a player keeps
@@ -197,7 +212,7 @@ export function Success() {
         </motion.div>
       </div>
 
-      <motion.div variants={riseIn} className="flex flex-col gap-3">
+      <motion.div variants={riseIn} className="mt-auto flex flex-col gap-3 pt-7">
         <WavyDivider className="opacity-60" />
         <PrimaryButton
           onClick={() => navigate(allDone ? "/vault-complete" : "/vault")}

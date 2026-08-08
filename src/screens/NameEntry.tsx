@@ -15,6 +15,13 @@ import { screenChoreo, riseIn } from "../lib/motion";
  * input is the only thing on the page that matters, so it gets the weight —
  * a labelled plate rather than a lone bordered box.
  */
+/** The whole game in three lines, before anyone taps anything. */
+const BRIEFING = [
+  { title: "Nine locked safes", body: "Each one holds a digit of the vault code." },
+  { title: "One question each", body: "No coding needed — just think it through." },
+  { title: "Fastest crew wins", body: "Ranked by digits, then by how long you took." },
+];
+
 export function NameEntry() {
   const [name, setName] = useState("");
   const [focused, setFocused] = useState(false);
@@ -41,7 +48,12 @@ export function NameEntry() {
       >
         {/* The mascot leans on the input plate rather than sitting in its own
             row — overlap is what stops a stack of blocks reading as a form. */}
-        <motion.div variants={riseIn} className="relative">
+        {/* pt-14 reserves room ABOVE the plate for the mascot. It used to sit
+            at -top-16, which put it inside the header's box — and the header
+            carries `relative z-20`, so it forms a stacking context that paints
+            over anything in the body no matter what z-index the mascot has.
+            The head was being sliced off by the header's bottom edge. */}
+        <motion.div variants={riseIn} className="relative pt-14">
           <motion.div
             // The tilt lives in `animate`, not in a class. Framer writes an
             // inline transform, so a Tailwind rotate-* on the same element is
@@ -49,14 +61,15 @@ export function NameEntry() {
             initial={{ opacity: 0, scale: 0.7, y: 12, rotate: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
             transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
-            className="pointer-events-none absolute -right-4 -top-16 z-20 h-32 w-32"
+            className="pointer-events-none absolute right-1 top-0 z-0 h-32 w-32"
           >
             <Art name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
 
           {/* Input plate. The label is a chip riding the top edge, so the
-              field reads as a piece of equipment with a nameplate. */}
-          <div className="ink relative rounded-plate bg-white p-5 pt-7 shadow-ink">
+              field reads as a piece of equipment with a nameplate. The plate
+              is z-10 over the mascot's z-0, so it peeks rather than covers. */}
+          <div className="ink relative z-10 rounded-plate bg-white p-5 pt-7 shadow-ink">
             <span className="ink absolute -top-3.5 left-5 rounded-pill bg-brass px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-ink shadow-chip-ink">
               Your codename
             </span>
@@ -112,9 +125,38 @@ export function NameEntry() {
           </p>
         </motion.div>
 
+        {/* What they are walking into. Three lines of setup is the difference
+            between a form and a briefing, and it fills the two-thirds of this
+            page that were bare cream. */}
+        <motion.div variants={riseIn} className="mt-5">
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/40">
+            The mission
+          </span>
+          <div className="mt-2.5 flex flex-col gap-2.5">
+            {BRIEFING.map((b, i) => (
+              <div
+                key={b.title}
+                className="ink flex items-center gap-3 rounded-btn bg-white px-3 py-2.5 shadow-chip-ink"
+              >
+                <span className="ink flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-red font-display text-[13px] text-white">
+                  {i + 1}
+                </span>
+                <span className="text-left">
+                  <span className="block font-display text-[12px] uppercase leading-none tracking-wide text-ink">
+                    {b.title}
+                  </span>
+                  <span className="mt-1 block font-body text-[12px] font-semibold leading-snug text-ink/55">
+                    {b.body}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Last in the sequence — the research point that attention should end
             on the primary action. */}
-        <motion.div variants={riseIn} className="mt-auto pt-6">
+        <motion.div variants={riseIn} className="mt-auto pt-7">
           <PrimaryButton disabled={!valid} onClick={handleStart} className="h-16 w-full">
             START MISSION
           </PrimaryButton>

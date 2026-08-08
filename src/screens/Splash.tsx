@@ -6,6 +6,7 @@ import { Art } from "../components/Art";
 import { Wordmark } from "../components/Wordmark";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Starburst } from "../components/Starburst";
+import { Sprinkles } from "../components/Sprinkles";
 import { playUnlock } from "../lib/sound";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -57,7 +58,9 @@ export function Splash() {
   }, [navigate, username]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-7 select-none overflow-hidden relative">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6 select-none overflow-hidden relative">
+      <Sprinkles />
+
       {/* Title Group */}
       <div className="flex flex-col items-center relative z-10">
         {/* Society logo — the real mark, not a text chip */}
