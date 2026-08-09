@@ -22,6 +22,12 @@ const SafePreview = lazy(() =>
 const AssetsPreview = lazy(() =>
   import("./screens/AssetsPreview").then((m) => ({ default: m.AssetsPreview }))
 );
+
+// The operator surfaces. Sixty phones download the game; exactly one laptop
+// ever loads this, so it has no business being in the players' bundle.
+const AdminApp = lazy(() =>
+  import("./admin/AdminApp").then((m) => ({ default: m.AdminApp }))
+);
 import { GameProvider } from "./context/GameContext";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
@@ -131,9 +137,27 @@ export default function App() {
   return (
     <GameProvider>
       <Router>
-        <GameShell>
-          <AnimatedRoutes />
-        </GameShell>
+        <Routes>
+          {/* Admin renders outside GameShell — a laptop and a projector, not a
+              phone, so no 480px column and no device frame. Lazily loaded so
+              none of it reaches a player's download. */}
+          <Route
+            path="/admin/*"
+            element={
+              <Suspense fallback={null}>
+                <AdminApp />
+              </Suspense>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <GameShell>
+                <AnimatedRoutes />
+              </GameShell>
+            }
+          />
+        </Routes>
       </Router>
     </GameProvider>
   );
