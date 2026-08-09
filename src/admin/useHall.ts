@@ -75,5 +75,32 @@ export function useHall(live = true) {
   const ranked = useMemo(() => rankHall(players), [players]);
   const stats = useMemo(() => hallStats(players), [players]);
 
-  return { players, ranked, stats, events };
+  /**
+   * How far each player moved since the last reshuffle.
+   *
+   * A live board that shows position but not MOVEMENT is a table. The arrow
+   * is the thing that tells a room something just happened, and it is the one
+   * read the first version had no way to express.
+   */
+  const prevRanks = useRef<Record<string, number>>({});
+  const deltas = useMemo(() => {
+    const next: Record<string, number> = {};
+    const out: Record<string, number> = {};
+    ranked.forEach((p, i) => {
+      const rank = i + 1;
+      const before = prevRanks.current[p.id];
+      out[p.id] = before === undefined ? 0 : before - rank; // + = climbed
+      next[p.id] = rank;
+    });
+    prevRanks.current = next;
+    return out;
+  }, [ranked]);
+
+  /** Room progress over the event — the "what happened when" a percentage cannot give. */
+  const [history, setHistory] = useState<number[]>([]);
+  useEffect(() => {
+    setHistory((h) => [...h, stats.cracked].slice(-40));
+  }, [stats.cracked]);
+
+  return { players, ranked, stats, events, deltas, history };
 }
