@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Dashboard } from "./Dashboard";
 import { Display } from "./Display";
 import { Login } from "./Login";
@@ -33,6 +33,12 @@ export function AdminApp() {
   return (
     <Routes>
       <Route path="display" element={<Display />} />
+      {/* `*` already covers the empty path, which is what /admin resolves to
+          inside this nested router. There used to be a `path=""` route here
+          redirecting to /admin — and React Router ranks an exact "" ABOVE a
+          splat, so it won every time, redirected to the URL it was already on,
+          matched again, and looped until React tore the tree down. That is
+          what rendered as a blank cream page. */}
       <Route
         path="*"
         element={
@@ -43,7 +49,6 @@ export function AdminApp() {
           )
         }
       />
-      <Route path="" element={<Navigate to="/admin" replace />} />
     </Routes>
   );
 }
