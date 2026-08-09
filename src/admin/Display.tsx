@@ -211,35 +211,115 @@ function BandStat({ value, label }: { value: string; label: string }) {
  * redistribution rather than three cards popping.
  */
 const FOCUS_MS = 7000;
+/** How long a manual pick holds before the rotation resumes. */
+const RESUME_MS = 20000;
 
 const SKIN = {
-  1: { bg: "bg-brass", face: "#FFFFFF", label: "Leading", ring: "border-brass-deep" },
-  2: { bg: "bg-[#E6E9F0]", face: "#FFFFFF", label: "Second", ring: "border-[#B9BEC7]" },
-  3: { bg: "bg-[#F2DEC9]", face: "#FFFFFF", label: "Third", ring: "border-[#D6B189]" },
+  1: { bg: "bg-brass", face: "#FFFFFF", label: "Leading" },
+  2: { bg: "bg-[#E6E9F0]", face: "#FFFFFF", label: "Second" },
+  3: { bg: "bg-[#F2DEC9]", face: "#FFFFFF", label: "Third" },
 } as const;
 
+/**
+ * Focused card big across the top, the other two side by side beneath it.
+ *
+ * All three cards are permanent children of ONE grid; focus only changes which
+ * grid area each is assigned to. That is what makes the switch a physical
+ * move — Framer's `layout` sees the same element land in a different box and
+ * travels it there. Rendering the focused one in a separate container from the
+ * other two would unmount and remount them on every switch, and there is
+ * nothing to animate between an element that died and one that was born.
+ *
+ * Auto-rotates, but every card is also a button, and 1/2/3 and the arrow keys
+ * work — an operator driving the projector should not have to wait seven
+ * seconds for the card they want. A manual pick pauses the rotation for twenty
+ * seconds rather than killing it, so an untouched laptop still cycles.
+ */
 function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
   const [focus, setFocus] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const resume = useRef<number | undefined>(undefined);
+
+  const pick = (i: number) => {
+    setFocus(i);
+    setAuto(false);
+    window.clearTimeout(resume.current);
+    resume.current = window.setTimeout(() => setAuto(true), RESUME_MS);
+  };
 
   useEffect(() => {
+    if (!auto) return;
     const id = setInterval(() => setFocus((f) => (f + 1) % 3), FOCUS_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [auto]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key >= "1" && e.key <= "3") pick(Number(e.key) - 1);
+      else if (e.key === "ArrowRight") pick((focus + 1) % 3);
+      else if (e.key === "ArrowLeft") pick((focus + 2) % 3);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focus]);
+
+  useEffect(() => () => window.clearTimeout(resume.current), []);
+
+  // The two unfocused cards keep their rank order left to right, so the small
+  // slots do not swap sides for no reason as focus moves.
+  const others = [0, 1, 2].filter((i) => i !== focus);
+  const area = (i: number) => (i === focus ? "big" : i === others[0] ? "l" : "r");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[0.9vh]">
-      {[0, 1, 2].map((i) => {
-        const p = top[i];
-        if (!p) return null;
-        return (
-          <PodiumCard
-            key={p.id}
-            rank={(i + 1) as 1 | 2 | 3}
-            player={p}
-            focused={focus === i}
+    <div className="flex min-h-0 flex-1 flex-col gap-[0.8vh]">
+      <div
+        className="grid min-h-0 flex-1 gap-[0.8vh]"
+        style={{
+          gridTemplateAreas: '"big big" "l r"',
+          gridTemplateRows: "2.7fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
+        }}
+      >
+        {[0, 1, 2].map((i) => {
+          const p = top[i];
+          if (!p) return null;
+          return (
+            <PodiumCard
+              key={p.id}
+              rank={(i + 1) as 1 | 2 | 3}
+              player={p}
+              focused={i === focus}
+              area={area(i)}
+              onPick={() => pick(i)}
+            />
+          );
+        })}
+      </div>
+
+      {/* Manual control, and a visible read of which card is up. */}
+      <div className="flex shrink-0 items-center justify-center gap-[0.5vw]">
+        {[0, 1, 2].map((i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => pick(i)}
+            aria-label={`Show rank ${i + 1}`}
+            className={cn(
+              "ink cursor-pointer rounded-pill transition-[width,background-color] duration-300",
+              i === focus ? "bg-ink" : "bg-ink/15"
+            )}
+            style={{ height: "0.55vh", width: i === focus ? "2.6vw" : "1vw" }}
           />
-        );
-      })}
+        ))}
+        {!auto && (
+          <span
+            className="ml-[0.4vw] font-body font-bold uppercase tracking-[0.16em] text-ink/30"
+            style={{ fontSize: "0.55vw" }}
+          >
+            manual
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -248,20 +328,28 @@ function PodiumCard({
   rank,
   player,
   focused,
+  area,
+  onPick,
 }: {
   rank: 1 | 2 | 3;
   player: ReturnType<typeof useHall>["ranked"][number];
   focused: boolean;
+  area: string;
+  onPick: () => void;
 }) {
   const skin = SKIN[rank];
 
   return (
     <motion.div
       layout
-      style={{ flexGrow: focused ? 3.1 : 1, flexBasis: 0 }}
-      transition={{ type: "spring", stiffness: 210, damping: 28 }}
+      onClick={onPick}
+      role="button"
+      tabIndex={0}
+      aria-label={`Rank ${rank}, ${player.name}`}
+      style={{ gridArea: area }}
+      transition={{ type: "spring", stiffness: 190, damping: 26 }}
       className={cn(
-        "ink relative flex min-h-0 flex-col items-center justify-center overflow-hidden rounded-plate px-[1vw] shadow-[0_0.8vh_0_0_var(--color-ink)]",
+        "ink relative flex min-h-0 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-plate px-[1vw] shadow-[0_0.8vh_0_0_var(--color-ink)]",
         skin.bg
       )}
     >
@@ -316,14 +404,27 @@ function PodiumCard({
       {/* ── Focused layout ─────────────────────────────────────── */}
       {focused ? (
         <>
+          {/* Two nested motion elements on purpose. The outer holds the idle
+              float; the inner does the full turn as the card takes focus.
+              Putting both on one element means the loop and the float fight
+              over the same transform and neither reads cleanly. */}
           <motion.div
-            layout="position"
             animate={{ y: [0, -4, 0] }}
             transition={{ y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" } }}
             className="spin-layer relative"
             style={{ width: "5.6vw", height: "5.6vw" }}
           >
-            {rank === 1 ? <Trophy className="h-full w-full" /> : <Medal rank={rank} />}
+            <motion.div
+              // Keyed on the player so the turn replays every time this card
+              // becomes the focused one, not just on first mount.
+              key={player.id}
+              initial={{ rotate: -180, scale: 0.4, opacity: 0 }}
+              animate={{ rotate: 0, scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 170, damping: 17 }}
+              className="h-full w-full"
+            >
+              {rank === 1 ? <Trophy className="h-full w-full" /> : <Medal rank={rank} />}
+            </motion.div>
           </motion.div>
 
           <span
@@ -384,18 +485,31 @@ function PodiumCard({
           </div>
         </>
       ) : (
-        /* ── Compact layout ─────────────────────────────────────── */
-        <div className="relative flex w-full items-center gap-[0.7vw]">
-          <span className="shrink-0" style={{ width: "2.4vw", height: "2.4vw" }}>
+        /* ── Compact layout ─────────────────────────────────────────
+           Stacked, not a row. Side by side the small cards are ~232px of
+           usable width at 1080p, and a medal plus a ten-character name plus a
+           score needs ~267px in a row — every name would have truncated. */
+        <div className="relative flex w-full flex-col items-center gap-[0.3vh]">
+          <motion.span
+            key={player.id}
+            initial={{ rotate: -140, scale: 0.5, opacity: 0 }}
+            animate={{ rotate: 0, scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 180, damping: 18 }}
+            className="shrink-0"
+            style={{ width: "2.6vw", height: "2.6vw" }}
+          >
             <Medal rank={rank} />
-          </span>
+          </motion.span>
           <span
-            className="min-w-0 flex-1 truncate font-display uppercase leading-none text-ink"
-            style={{ fontSize: "1.15vw" }}
+            className="w-full truncate text-center font-display uppercase leading-none text-ink"
+            style={{ fontSize: "1.05vw" }}
           >
             {player.name}
           </span>
-          <span className="shrink-0 font-readout font-bold text-ink/70" style={{ fontSize: "1.1vw" }}>
+          <span
+            className="font-readout font-bold leading-none text-ink/65"
+            style={{ fontSize: "0.95vw" }}
+          >
             {player.digits}/9
           </span>
         </div>
