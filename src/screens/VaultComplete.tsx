@@ -65,7 +65,7 @@ export function VaultComplete() {
       variants={screenChoreo}
       initial="initial"
       animate="animate"
-      className="flex flex-1 select-none flex-col px-5 pb-5 pt-6 text-center"
+      className="flex flex-1 select-none flex-col px-5 pb-5 pt-6 text-center short:pt-3 short:pb-3"
     >
       {/* ── Title ──────────────────────────────────────────────── */}
       <motion.div variants={dropIn} className="flex flex-col items-center">
@@ -106,13 +106,13 @@ export function VaultComplete() {
       </motion.div>
 
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <motion.div variants={popIn} className="relative mx-auto mt-3 w-full max-w-[300px]">
+      <motion.div variants={popIn} className="relative mx-auto mt-3 w-full max-w-[min(300px,32vh)]">
         <VaultDoor state={doorOpen ? "open" : "closed"} />
         <motion.div
           initial={{ opacity: 0, scale: 0.6, y: 20, rotate: -8 }}
           animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
           transition={{ delay: 1.5, type: "spring", stiffness: 300, damping: 16 }}
-          className="pointer-events-none absolute -bottom-4 -left-8 z-20 h-40 w-40"
+          className="pointer-events-none absolute -bottom-4 -left-8 z-20 h-[min(10rem,17vh)] w-[min(10rem,17vh)]"
         >
           <Art priority name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
         </motion.div>

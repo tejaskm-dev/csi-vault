@@ -24,17 +24,17 @@ export function Waiting() {
         animate="animate"
         className="flex flex-1 flex-col"
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-7 p-6 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-7 p-6 text-center short:gap-4 short:p-4">
           {/* Hero. The plate is sized from the prop, not the other way round —
               a 176px plate with p-4 leaves exactly 144 of usable interior. */}
           <motion.div
             variants={popIn}
-            className="ink flex h-44 w-44 items-center justify-center rounded-pill bg-paper-deep/60 p-4 shadow-ink"
+            className="ink flex h-[min(11rem,20vh)] w-[min(11rem,20vh)] items-center justify-center rounded-pill bg-paper-deep/60 p-4 shadow-ink"
           >
             {isPost ? (
-              <Padlock open className="h-32 w-32" />
+              <Padlock open className="h-full w-full" />
             ) : (
-              <div className="spin-layer h-32 w-32 animate-[bob_2.6s_ease-in-out_infinite]">
+              <div className="spin-layer h-full w-full animate-[bob_2.6s_ease-in-out_infinite]">
                 <Stopwatch className="h-full w-full" />
               </div>
             )}

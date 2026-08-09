@@ -70,7 +70,7 @@ export function Display() {
 
       {/* ── Body ────────────────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 gap-[1.8vw] px-[2.2vw] py-[1.8vh]">
-        <div className="flex w-[29%] shrink-0 flex-col gap-[1.6vh]">
+        <div className="flex w-[32%] shrink-0 flex-col gap-[1.4vh]">
           <Podium top={podium} />
           <RoomPanel stats={stats} history={history} />
         </div>
@@ -273,10 +273,10 @@ function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.8vh]">
       <div
-        className="grid min-h-0 flex-1 gap-[0.8vh]"
+        className="grid min-h-0 flex-1 gap-[1vh]"
         style={{
           gridTemplateAreas: '"big big" "l r"',
-          gridTemplateRows: "2.7fr 1fr",
+          gridTemplateRows: "2.6fr 1fr",
           gridTemplateColumns: "1fr 1fr",
         }}
       >
@@ -296,8 +296,11 @@ function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
         })}
       </div>
 
-      {/* Manual control, and a visible read of which card is up. */}
-      <div className="flex shrink-0 items-center justify-center gap-[0.5vw]">
+      {/* Manual control, and a visible read of which card is up.
+          These were 0.55vh tall — six pixels on a 1080p projector, sitting
+          flush against the container edge where they got clipped. A control
+          nobody can see from the back of a hall is not a control. */}
+      <div className="flex h-[2.4vh] shrink-0 items-center justify-center gap-[0.6vw]">
         {[0, 1, 2].map((i) => (
           <button
             key={i}
@@ -305,20 +308,23 @@ function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
             onClick={() => pick(i)}
             aria-label={`Show rank ${i + 1}`}
             className={cn(
-              "ink cursor-pointer rounded-pill transition-[width,background-color] duration-300",
-              i === focus ? "bg-ink" : "bg-ink/15"
+              "ink cursor-pointer rounded-pill shadow-chip-ink transition-[width,background-color] duration-300",
+              i === focus ? "bg-ink" : "bg-white"
             )}
-            style={{ height: "0.55vh", width: i === focus ? "2.6vw" : "1vw" }}
+            style={{ height: "1.1vh", width: i === focus ? "3.6vw" : "1.4vw" }}
           />
         ))}
-        {!auto && (
-          <span
-            className="ml-[0.4vw] font-body font-bold uppercase tracking-[0.16em] text-ink/30"
-            style={{ fontSize: "0.55vw" }}
-          >
-            manual
+        <span
+          className={cn(
+            "ml-[0.5vw] font-body font-bold uppercase transition-opacity duration-300",
+            auto ? "text-ink/25" : "text-ink/55"
+          )}
+          style={{ fontSize: "0.6vw" }}
+        >
+          <span style={{ letterSpacing: "0.16em", marginRight: "-0.16em" }}>
+            {auto ? "auto" : "manual"}
           </span>
-        )}
+        </span>
       </div>
     </div>
   );

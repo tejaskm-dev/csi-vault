@@ -27,7 +27,7 @@ export function BonusFound() {
         animate="animate"
         className="flex flex-1 flex-col"
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 pt-8 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 pt-8 text-center short:gap-4 short:p-4">
           {/* The plate was bg-purple/10 — a pale lavender behind a purple box,
               so the hero had nothing to sit against. Ink gives the box an
               actual ground, and the burst behind it carries the celebration. */}
@@ -37,9 +37,9 @@ export function BonusFound() {
             </div>
             <div
               style={{ rotate: "2.2deg" }}
-              className="ink relative flex h-52 w-52 items-center justify-center rounded-plate bg-ink shadow-plate-purple"
+              className="ink relative flex h-[min(13rem,24vh)] w-[min(13rem,24vh)] items-center justify-center rounded-plate bg-ink shadow-plate-purple"
             >
-              <MysteryBox className="h-40 w-40" />
+              <MysteryBox className="h-3/4 w-3/4" />
             </div>
           </motion.div>
 

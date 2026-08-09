@@ -78,7 +78,7 @@ export function Success() {
       variants={screenChoreo}
       initial="initial"
       animate="animate"
-      className="relative flex flex-1 select-none flex-col p-6 text-center"
+      className="relative flex flex-1 select-none flex-col p-6 text-center short:p-4"
     >
       <Sprinkles />
       {/* A coloured plate carries the headline. Before, the title was ink on
@@ -122,10 +122,10 @@ export function Success() {
           was what produced the void: it pinned a short column to the middle
           and dumped every spare pixel above and below it. The page scrolls,
           so the fix is to give the screen enough to say and let it run. */}
-      <div className="flex flex-col items-center gap-5 pt-7">
+      <div className="flex flex-col items-center gap-5 pt-7 short:gap-3 short:pt-4">
         <motion.div
           variants={popIn}
-          className="relative flex h-44 w-44 items-center justify-center"
+          className="relative flex h-[min(11rem,20vh)] w-[min(11rem,20vh)] items-center justify-center"
         >
           {allDone && !isBonus && (
             <div className="spin-layer absolute inset-0 z-0 scale-[1.35] animate-[tumble_12s_linear_infinite] opacity-80">
@@ -133,10 +133,10 @@ export function Success() {
             </div>
           )}
 
-          <div className="relative z-10 h-32 w-32">
+          <div className="relative z-10 h-[min(8rem,15vh)] w-[min(8rem,15vh)]">
             {isBonus ? (
-              <div className="ink flex h-32 w-32 items-center justify-center rounded-plate bg-purple/10 shadow-plate-steel">
-                <MysteryBox className="h-24 w-24" />
+              <div className="ink flex h-full w-full items-center justify-center rounded-plate bg-purple/10 shadow-plate-steel">
+                <MysteryBox className="h-3/4 w-3/4" />
               </div>
             ) : (
               <VaultTile digit={digit} state={tileSolved ? "solved" : "active"} />
@@ -149,7 +149,7 @@ export function Success() {
             initial={{ opacity: 0, scale: 0.7, y: 10, rotate: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 7 }}
             transition={{ delay: 0.5, type: "spring", stiffness: 380, damping: 18 }}
-            className="pointer-events-none absolute -bottom-8 -right-14 z-20 h-36 w-36"
+            className="pointer-events-none absolute -bottom-8 -right-14 z-20 h-[min(9rem,16vh)] w-[min(9rem,16vh)]"
           >
             <Art priority name="mascot-celebrate" alt="" className="h-full w-full object-contain" />
           </motion.div>
@@ -213,7 +213,7 @@ export function Success() {
         </motion.div>
       </div>
 
-      <motion.div variants={riseIn} className="mt-auto flex flex-col gap-3 pt-7">
+      <motion.div variants={riseIn} className="mt-auto flex flex-col gap-3 pt-7 short:gap-2 short:pt-4">
         <WavyDivider className="opacity-60" />
         <PrimaryButton
           onClick={() => navigate(allDone ? "/vault-complete" : "/vault")}

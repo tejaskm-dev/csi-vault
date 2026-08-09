@@ -163,7 +163,7 @@ export function ChallengeScreen() {
             initial={{ opacity: 0, scale: 0.8, y: 10, rotate: -3 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 5 }}
             transition={{ type: "spring", stiffness: 300, damping: 17, delay: 0.1 }}
-            className="pointer-events-none absolute -right-3 -top-10 z-0 h-32 w-32"
+            className="pointer-events-none absolute -right-3 -top-10 z-0 h-[min(8rem,14vh)] w-[min(8rem,14vh)]"
           >
             <Art priority name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
@@ -319,7 +319,7 @@ export function ChallengeScreen() {
                 variants={popIn}
                 className="pointer-events-none z-10 -mt-24 flex shrink-0 justify-center"
               >
-                <Art name="mascot-sad" alt="" className="h-52 w-52 object-contain" />
+                <Art name="mascot-sad" alt="" className="h-[min(13rem,22vh)] w-[min(13rem,22vh)] object-contain" />
               </motion.div>
 
               <motion.div

@@ -58,7 +58,7 @@ export function Splash() {
   }, [navigate, username]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6 select-none overflow-hidden relative">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-6 short:gap-3 short:p-4 select-none overflow-hidden relative">
       <Sprinkles />
 
       {/* Title Group */}
@@ -68,7 +68,7 @@ export function Splash() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.55 }}
-          className="mb-2 h-28 w-28"
+          className="mb-2 h-[min(7rem,12vh)] w-[min(7rem,12vh)]"
         >
           <Art priority name="csi-logo" alt="CSI ASIET" className="h-full w-full object-contain" />
         </motion.div>
@@ -94,7 +94,7 @@ export function Splash() {
       </div>
 
       {/* Hero Visual */}
-      <div className="my-2 relative flex items-center justify-center w-64 h-64">
+      <div className="my-2 relative flex items-center justify-center w-[min(16rem,30vh)] h-[min(16rem,30vh)]">
         {/* Starburst flashes behind the door at 1600ms */}
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div

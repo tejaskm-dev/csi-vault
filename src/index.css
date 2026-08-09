@@ -95,6 +95,13 @@
   @keyframes pulseGlow{ 0%,100% { opacity: 0.45; } 50% { opacity: 0.9; } }
 }
 
+/* A base iPhone has roughly 90px less usable height than a Pro Max — enough to
+   push a screen that fits one into scrolling on the other. `short:` tightens
+   vertical rhythm on those, without touching the layout on a big phone.
+   Height-based, deliberately: the width is nearly identical across the range,
+   so a width breakpoint would fire on the wrong devices. */
+@custom-variant short (@media (max-height: 860px));
+
 @utility ink {
   border: 3px solid var(--color-ink);
 }

@@ -44,7 +44,7 @@ export function NameEntry() {
         variants={screenChoreo}
         initial="initial"
         animate="animate"
-        className="flex flex-1 flex-col p-6 pt-7"
+        className="flex flex-1 flex-col p-6 pt-7 short:p-4 short:pt-4"
       >
         {/* The mascot leans on the input plate rather than sitting in its own
             row — overlap is what stops a stack of blocks reading as a form. */}
@@ -53,7 +53,7 @@ export function NameEntry() {
             carries `relative z-20`, so it forms a stacking context that paints
             over anything in the body no matter what z-index the mascot has.
             The head was being sliced off by the header's bottom edge. */}
-        <motion.div variants={riseIn} className="relative pt-24">
+        <motion.div variants={riseIn} className="relative pt-[min(6rem,11vh)] short:pt-[min(4.5rem,9vh)]">
           <motion.div
             // The tilt lives in `animate`, not in a class. Framer writes an
             // inline transform, so a Tailwind rotate-* on the same element is
@@ -61,7 +61,7 @@ export function NameEntry() {
             initial={{ opacity: 0, scale: 0.7, y: 12, rotate: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0, rotate: 6 }}
             transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.15 }}
-            className="pointer-events-none absolute right-0 top-0 z-0 h-36 w-36"
+            className="pointer-events-none absolute right-0 top-0 z-0 h-[min(9rem,15vh)] w-[min(9rem,15vh)]"
           >
             <Art priority name="mascot-thinking" alt="" className="h-full w-full object-contain" />
           </motion.div>
@@ -69,7 +69,7 @@ export function NameEntry() {
           {/* Input plate. The label is a chip riding the top edge, so the
               field reads as a piece of equipment with a nameplate. The plate
               is z-10 over the mascot's z-0, so it peeks rather than covers. */}
-          <div className="ink relative z-10 rounded-plate bg-white p-5 pt-7 shadow-ink">
+          <div className="ink relative z-10 rounded-plate bg-white p-5 pt-7 shadow-ink short:p-4 short:pt-6">
             <span className="ink absolute -top-3.5 left-5 rounded-pill bg-brass px-3 py-1 font-body text-[10px] font-bold uppercase tracking-[0.18em] text-ink shadow-chip-ink">
               Your codename
             </span>
@@ -114,7 +114,7 @@ export function NameEntry() {
         <motion.div
           variants={riseIn}
           style={{ rotate: -1.2 }}
-          className="ink mt-5 rounded-plate bg-brass p-4 shadow-ink-sm"
+          className="ink mt-5 rounded-plate bg-brass p-4 shadow-ink-sm short:mt-3 short:p-3"
         >
           <span className="font-display text-[11px] uppercase tracking-[0.16em] text-ink/70">
             How this works
@@ -128,15 +128,15 @@ export function NameEntry() {
         {/* What they are walking into. Three lines of setup is the difference
             between a form and a briefing, and it fills the two-thirds of this
             page that were bare cream. */}
-        <motion.div variants={riseIn} className="mt-5">
+        <motion.div variants={riseIn} className="mt-5 short:mt-3">
           <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/40">
             The mission
           </span>
-          <div className="mt-2.5 flex flex-col gap-2.5">
+          <div className="mt-2.5 flex flex-col gap-2.5 short:mt-2 short:gap-1.5">
             {BRIEFING.map((b, i) => (
               <div
                 key={b.title}
-                className="ink flex items-center gap-3 rounded-btn bg-white px-3 py-2.5 shadow-chip-ink"
+                className="ink flex items-center gap-3 rounded-btn bg-white px-3 py-2.5 shadow-chip-ink short:py-1.5"
               >
                 <span className="ink flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-red font-display text-[13px] text-white">
                   {i + 1}
@@ -156,8 +156,8 @@ export function NameEntry() {
 
         {/* Last in the sequence — the research point that attention should end
             on the primary action. */}
-        <motion.div variants={riseIn} className="mt-auto pt-7">
-          <PrimaryButton disabled={!valid} onClick={handleStart} className="h-16 w-full">
+        <motion.div variants={riseIn} className="mt-auto pt-7 short:pt-4">
+          <PrimaryButton disabled={!valid} onClick={handleStart} className="h-16 w-full short:h-14">
             START MISSION
           </PrimaryButton>
         </motion.div>
