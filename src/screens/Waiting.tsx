@@ -62,8 +62,10 @@ export function Waiting() {
               VIEW LEADERBOARD
             </PrimaryButton>
           ) : (
-            <div className="ink rounded-plate bg-paper-deep/40 py-4 text-center font-display text-[13px] uppercase tracking-[0.16em] text-ink/40">
-              Awaiting dispatch
+            <div className="ink rounded-plate bg-paper-deep/40 py-4 text-center font-display text-[13px] uppercase text-ink/40">
+              <span style={{ letterSpacing: "0.16em", marginRight: "-0.16em" }}>
+                Awaiting dispatch
+              </span>
             </div>
           )}
         </motion.div>

@@ -205,9 +205,14 @@ export function Booting() {
           {LINES.map((l) => (
             <div
               key={l}
-              className="flex h-5 items-center justify-center font-readout text-[11px] font-bold tracking-[0.18em] text-white/60"
+              className="flex h-5 items-center justify-center font-readout text-[11px] font-bold text-white/60"
             >
-              {l.toUpperCase()}
+              {/* -mr matches the tracking: letter-spacing is emitted after the
+                  last character too, so tracked text in a centred box always
+                  sits half a track left of true centre. */}
+              <span style={{ letterSpacing: "0.18em", marginRight: "-0.18em" }}>
+                {l.toUpperCase()}
+              </span>
             </div>
           ))}
         </motion.div>

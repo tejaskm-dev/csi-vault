@@ -138,7 +138,10 @@ function Band({ players, clock }: { players: number; clock: number }) {
             "repeating-linear-gradient(115deg, #FFFFFF 0 10px, transparent 10px 26px)",
         }}
       />
-      <div className="relative flex items-baseline gap-[1.2vw]">
+      {/* items-center, not items-baseline: baseline-aligning a small badge to a
+          3vw wordmark drops it to the bottom of the type rather than sitting it
+          against the block. */}
+      <div className="relative flex items-center gap-[1.2vw]">
         <span
           className="font-display uppercase leading-none text-white"
           style={{ fontSize: "3vw", textShadow: "0 0.45vh 0 var(--color-ink)" }}
@@ -146,23 +149,27 @@ function Band({ players, clock }: { players: number; clock: number }) {
           Operation Vault
         </span>
         <span
-          className="rounded-pill border-2 border-white/40 bg-red-deep px-[0.9vw] py-[0.45vh] font-body font-bold uppercase tracking-[0.22em] text-white/90"
-          style={{ fontSize: "0.8vw" }}
+          className="flex items-center justify-center rounded-pill border-2 border-white/40 bg-red-deep px-[0.9vw] py-[0.5vh] font-body font-bold uppercase text-white/90"
+          style={{ fontSize: "0.8vw", lineHeight: 1 }}
         >
-          CSI ASIET
+          {/* Letter-spacing is added AFTER the last character too, so tracked
+              text inside a centred box always sits left of centre by half the
+              tracking. Pulling the same amount back off the right edge is the
+              fix — this is why the chip looked off despite being centred. */}
+          <span style={{ letterSpacing: "0.22em", marginRight: "-0.22em" }}>CSI ASIET</span>
         </span>
       </div>
 
       <div className="relative flex items-center gap-[1.5vw]">
         <span
-          className="flex items-center gap-[0.5vw] rounded-pill border-2 border-white bg-ink px-[0.9vw] py-[0.5vh] font-body font-bold uppercase tracking-[0.2em] text-white"
+          className="flex items-center gap-[0.5vw] rounded-pill border-2 border-white bg-ink px-[0.9vw] py-[0.5vh] font-body font-bold uppercase text-white"
           style={{ fontSize: "0.8vw" }}
         >
           <span className="relative flex h-[0.65vw] w-[0.65vw]">
             <span className="absolute inset-0 animate-ping rounded-pill bg-green opacity-70" />
             <span className="relative h-full w-full rounded-pill bg-green" />
           </span>
-          Live
+          <span style={{ letterSpacing: "0.2em", marginRight: "-0.2em" }}>Live</span>
         </span>
         <BandStat value={String(players)} label="In play" />
         <BandStat value={formatClock(clock)} label="Elapsed" />
@@ -194,27 +201,37 @@ function LeaderCard({ leader }: { leader?: ReturnType<typeof useHall>["ranked"][
   if (!leader) return null;
   return (
     <div className="ink relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-plate bg-brass px-[1.2vw] py-[1.6vh] shadow-[0_0.9vh_0_0_var(--color-ink)]">
-      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[38%] bg-white/25" />
-
-      {/* Halo. Two counter-rotating fans so it never looks like one spinning
-          wheel — the interference between them is what makes it feel alive. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      {/* Halo. Both fans lighten — never one lightening and one darkening.
+          Mixing directions on the same surface produces rays that read as
+          dirt on the projector rather than light, and the hard-edged
+          `h-[38%] bg-white/25` light zone that used to sit on top of them cut
+          a visible seam straight across the card and through the trophy. A
+          single soft radial does the same job without an edge. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
         <motion.div
-          className="spin-layer absolute opacity-[0.3]"
-          style={{ width: "150%", height: "150%" }}
+          className="spin-layer absolute opacity-[0.22]"
+          style={{ width: "170%", height: "170%" }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
         >
-          <RayBurst color="#FFFFFF" deep="#FFD888" spokes={22} />
+          <RayBurst color="#FFFFFF" deep="#FFF3D6" spokes={20} />
         </motion.div>
         <motion.div
-          className="spin-layer absolute opacity-[0.18]"
-          style={{ width: "120%", height: "120%" }}
+          className="spin-layer absolute opacity-[0.12]"
+          style={{ width: "132%", height: "132%" }}
           animate={{ rotate: -360 }}
-          transition={{ duration: 52, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 74, repeat: Infinity, ease: "linear" }}
         >
-          <RayBurst color="var(--color-brass-deep)" deep="var(--color-brass-deep)" spokes={14} />
+          <RayBurst color="#FFFFFF" deep="#FFFFFF" spokes={12} />
         </motion.div>
+        {/* Soft centre glow, so the trophy sits in light rather than on lines. */}
+        <span
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(255,255,255,0.42), rgba(255,255,255,0) 72%)",
+          }}
+        />
       </div>
 
       <motion.div
@@ -258,7 +275,7 @@ function LeaderCard({ leader }: { leader?: ReturnType<typeof useHall>["ranked"][
       </div>
 
       <div className="relative mt-[1.1vh] flex items-baseline gap-[0.35vw]">
-        <RollingNumber value={leader.digits} size="3.2vw" />
+        <Odometer value={leader.digits} size="3.2vw" />
         <span className="font-readout font-bold text-ink/40" style={{ fontSize: "1.3vw" }}>
           / 9
         </span>
@@ -333,7 +350,7 @@ function RoomPanel({
 function PanelStat({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <RollingNumber value={value} size="1.6vw" />
+      <Odometer value={value} size="1.6vw" />
       <span
         className="mt-[0.2vh] font-body font-bold uppercase tracking-[0.16em] text-ink/40"
         style={{ fontSize: "0.62vw" }}
@@ -344,23 +361,60 @@ function PanelStat({ value, label }: { value: number; label: string }) {
   );
 }
 
-/** A number that arrives from below rather than blinking to a new value. */
-function RollingNumber({ value, size }: { value: number; size: string }) {
+/**
+ * A real odometer, not a swap.
+ *
+ * The previous version replaced the whole number: the old value slid out and
+ * the new one appeared, so 279 -> 280 moved all three digits and read as a
+ * flicker rather than a count.
+ *
+ * This is the mechanical version. Each digit is its own column holding 0-9 in
+ * a strip ten digits tall, clipped to a one-digit window. Landing on a digit
+ * is a translate of -digit * 10% of the strip. Because each column is
+ * independent, 279 -> 280 rolls the units from 9 to 0 and the tens from 7 to
+ * 8, and the hundreds does not move at all — which is exactly what makes it
+ * read as a counter.
+ *
+ * Columns are keyed by PLACE VALUE, not index, so when a number grows a digit
+ * the units column stays the units column instead of every digit reshuffling.
+ *
+ * Spring rather than a duration: a mechanical counter settles, it does not
+ * arrive on a schedule.
+ */
+const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+function Odometer({ value, size }: { value: number; size: string }) {
+  const chars = String(Math.max(0, Math.round(value))).split("");
   return (
-    <span className="block overflow-hidden" style={{ height: size, lineHeight: size }}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span
-          key={value}
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "-100%" }}
-          transition={{ duration: 0.42, ease: EXPO }}
-          className="block font-readout font-bold text-ink"
-          style={{ fontSize: size, lineHeight: size, fontVariantNumeric: "tabular-nums" }}
-        >
-          {value}
-        </motion.span>
-      </AnimatePresence>
+    <span
+      className="flex font-readout font-bold text-ink"
+      style={{ fontSize: size, lineHeight: size, fontVariantNumeric: "tabular-nums" }}
+    >
+      {chars.map((c, i) => (
+        <DigitColumn key={chars.length - i} digit={Number(c)} size={size} />
+      ))}
+    </span>
+  );
+}
+
+function DigitColumn({ digit, size }: { digit: number; size: string }) {
+  return (
+    <span className="block overflow-hidden" style={{ height: size }}>
+      <motion.span
+        className="flex flex-col"
+        animate={{ y: `-${digit * 10}%` }}
+        transition={{ type: "spring", stiffness: 190, damping: 24, mass: 0.9 }}
+      >
+        {DIGITS.map((n) => (
+          <span
+            key={n}
+            className="block text-center"
+            style={{ height: size, lineHeight: size }}
+          >
+            {n}
+          </span>
+        ))}
+      </motion.span>
     </span>
   );
 }
