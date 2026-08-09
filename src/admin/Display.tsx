@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Medal, Trophy } from "../components/Props";
+import { Medal, Trophy, MysteryBox } from "../components/Props";
 import { Safe } from "../components/Safe";
 import { RayBurst, Laurel, RankDelta, Halftone, Sparkline } from "./DisplayArt";
 import { useHall } from "./useHall";
@@ -45,7 +45,7 @@ export function Display() {
     return () => clearInterval(id);
   }, []);
 
-  const leader = ranked[0];
+  const podium = ranked.slice(0, 3);
   const board = ranked.slice(0, BOARD_SIZE);
 
   return (
@@ -71,7 +71,7 @@ export function Display() {
       {/* ── Body ────────────────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 gap-[1.8vw] px-[2.2vw] py-[1.8vh]">
         <div className="flex w-[29%] shrink-0 flex-col gap-[1.6vh]">
-          <LeaderCard leader={leader} />
+          <Podium top={podium} />
           <RoomPanel stats={stats} history={history} />
         </div>
 
@@ -197,104 +197,232 @@ function BandStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function LeaderCard({ leader }: { leader?: ReturnType<typeof useHall>["ranked"][number] }) {
-  if (!leader) return null;
+/**
+ * THE PODIUM — all three visible, focus rotating between them.
+ *
+ * A single leader card told the room one name and hid the race. Three cards
+ * with a rotating focus keeps every contender on screen while still having a
+ * clear subject: the focused card grows and shows the full treatment (halo,
+ * trophy, their nine safes), the other two stay compact.
+ *
+ * The skin follows the RANK, not the focus — gold, silver, bronze — so the
+ * colour always tells you which position you are looking at even as the sizes
+ * change. Framer's `layout` animates the resize, so focus moving is one smooth
+ * redistribution rather than three cards popping.
+ */
+const FOCUS_MS = 7000;
+
+const SKIN = {
+  1: { bg: "bg-brass", face: "#FFFFFF", label: "Leading", ring: "border-brass-deep" },
+  2: { bg: "bg-[#E6E9F0]", face: "#FFFFFF", label: "Second", ring: "border-[#B9BEC7]" },
+  3: { bg: "bg-[#F2DEC9]", face: "#FFFFFF", label: "Third", ring: "border-[#D6B189]" },
+} as const;
+
+function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
+  const [focus, setFocus] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setFocus((f) => (f + 1) % 3), FOCUS_MS);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div className="ink relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-plate bg-brass px-[1.2vw] py-[1.6vh] shadow-[0_0.9vh_0_0_var(--color-ink)]">
-      {/* Halo. Both fans lighten — never one lightening and one darkening.
-          Mixing directions on the same surface produces rays that read as
-          dirt on the projector rather than light, and the hard-edged
-          `h-[38%] bg-white/25` light zone that used to sit on top of them cut
-          a visible seam straight across the card and through the trophy. A
-          single soft radial does the same job without an edge. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-        <motion.div
-          className="spin-layer absolute opacity-[0.22]"
-          style={{ width: "170%", height: "170%" }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
-        >
-          <RayBurst color="#FFFFFF" deep="#FFF3D6" spokes={20} />
-        </motion.div>
-        <motion.div
-          className="spin-layer absolute opacity-[0.12]"
-          style={{ width: "132%", height: "132%" }}
-          animate={{ rotate: -360 }}
-          transition={{ duration: 74, repeat: Infinity, ease: "linear" }}
-        >
-          <RayBurst color="#FFFFFF" deep="#FFFFFF" spokes={12} />
-        </motion.div>
-        {/* Soft centre glow, so the trophy sits in light rather than on lines. */}
-        <span
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(255,255,255,0.42), rgba(255,255,255,0) 72%)",
-          }}
-        />
-      </div>
-
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-        className="spin-layer relative"
-        style={{ width: "7.5vw", height: "7.5vw" }}
-      >
-        <Trophy className="h-full w-full" />
-      </motion.div>
-
-      <span
-        className="relative mt-[0.8vh] font-body font-bold uppercase tracking-[0.28em] text-ink/55"
-        style={{ fontSize: "0.8vw" }}
-      >
-        Leading
-      </span>
-
-      {/* Name flanked by laurels, re-animating on every change of leader — a
-          takeover should be an event, not a text substitution. */}
-      <div className="relative mt-[0.5vh] flex w-full items-center justify-center gap-[0.6vw]">
-        <span className="shrink-0" style={{ width: "2.2vw", height: "3vw" }}>
-          <Laurel />
-        </span>
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={leader.id}
-            initial={{ y: "55%", opacity: 0, scale: 0.9 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: "-55%", opacity: 0 }}
-            transition={{ duration: 0.5, ease: EXPO }}
-            className="block min-w-0 flex-1 truncate text-center font-display uppercase leading-none text-ink"
-            style={{ fontSize: "2.3vw", textShadow: "0 0.3vh 0 rgba(255,255,255,0.5)" }}
-          >
-            {leader.name}
-          </motion.span>
-        </AnimatePresence>
-        <span className="shrink-0" style={{ width: "2.2vw", height: "3vw" }}>
-          <Laurel flip />
-        </span>
-      </div>
-
-      <div className="relative mt-[1.1vh] flex items-baseline gap-[0.35vw]">
-        <Odometer value={leader.digits} size="3.2vw" />
-        <span className="font-readout font-bold text-ink/40" style={{ fontSize: "1.3vw" }}>
-          / 9
-        </span>
-      </div>
-
-      <div className="relative mt-[1.3vh] grid w-full grid-cols-9 gap-[0.28vw]">
-        {Array.from({ length: 9 }, (_, i) => (
-          <motion.div
-            key={i}
-            initial={false}
-            animate={i === leader.digits - 1 ? { scale: [1, 1.22, 1] } : { scale: 1 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="aspect-square w-full"
-          >
-            <Safe digit={i + 1} state={i < leader.digits ? "solved" : "locked"} />
-          </motion.div>
-        ))}
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-[0.9vh]">
+      {[0, 1, 2].map((i) => {
+        const p = top[i];
+        if (!p) return null;
+        return (
+          <PodiumCard
+            key={p.id}
+            rank={(i + 1) as 1 | 2 | 3}
+            player={p}
+            focused={focus === i}
+          />
+        );
+      })}
     </div>
+  );
+}
+
+function PodiumCard({
+  rank,
+  player,
+  focused,
+}: {
+  rank: 1 | 2 | 3;
+  player: ReturnType<typeof useHall>["ranked"][number];
+  focused: boolean;
+}) {
+  const skin = SKIN[rank];
+
+  return (
+    <motion.div
+      layout
+      style={{ flexGrow: focused ? 3.1 : 1, flexBasis: 0 }}
+      transition={{ type: "spring", stiffness: 210, damping: 28 }}
+      className={cn(
+        "ink relative flex min-h-0 flex-col items-center justify-center overflow-hidden rounded-plate px-[1vw] shadow-[0_0.8vh_0_0_var(--color-ink)]",
+        skin.bg
+      )}
+    >
+      {/* Halo, focused card only — three spinning haloes at once would be
+          noise, and the point of focus is that only one thing has it. */}
+      <AnimatePresence>
+        {focused && (
+          <motion.div
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <motion.div
+              className="spin-layer absolute opacity-[0.22]"
+              style={{ width: "180%", height: "180%" }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
+            >
+              <RayBurst color={skin.face} deep={skin.face} spokes={20} />
+            </motion.div>
+            <span
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgba(255,255,255,0.4), rgba(255,255,255,0) 72%)",
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Score burst — fires on the focused card when its player unlocks. */}
+      <AnimatePresence>
+        {player.justScored && (
+          <motion.div
+            aria-hidden
+            key="burst"
+            initial={{ scale: 0.2, opacity: 0.9 }}
+            animate={{ scale: 2.4, opacity: 0 }}
+            transition={{ duration: 0.95, ease: "easeOut" }}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ width: "60%", aspectRatio: "1" }}
+          >
+            <RayBurst color="#FFFFFF" deep="#FFFFFF" spokes={16} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Focused layout ─────────────────────────────────────── */}
+      {focused ? (
+        <>
+          <motion.div
+            layout="position"
+            animate={{ y: [0, -4, 0] }}
+            transition={{ y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" } }}
+            className="spin-layer relative"
+            style={{ width: "5.6vw", height: "5.6vw" }}
+          >
+            {rank === 1 ? <Trophy className="h-full w-full" /> : <Medal rank={rank} />}
+          </motion.div>
+
+          <span
+            className="relative mt-[0.5vh] font-body font-bold uppercase text-ink/55"
+            style={{ fontSize: "0.75vw" }}
+          >
+            <span style={{ letterSpacing: "0.28em", marginRight: "-0.28em" }}>{skin.label}</span>
+          </span>
+
+          <div className="relative mt-[0.3vh] flex w-full items-center justify-center gap-[0.5vw]">
+            <span className="shrink-0" style={{ width: "1.8vw", height: "2.5vw" }}>
+              <Laurel />
+            </span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={player.id}
+                initial={{ y: "55%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "-55%", opacity: 0 }}
+                transition={{ duration: 0.5, ease: EXPO }}
+                className="block min-w-0 flex-1 truncate text-center font-display uppercase leading-none text-ink"
+                style={{ fontSize: "2vw", textShadow: "0 0.28vh 0 rgba(255,255,255,0.5)" }}
+              >
+                {player.name}
+              </motion.span>
+            </AnimatePresence>
+            <span className="shrink-0" style={{ width: "1.8vw", height: "2.5vw" }}>
+              <Laurel flip />
+            </span>
+          </div>
+
+          <div className="relative mt-[0.6vh] flex items-baseline gap-[0.3vw]">
+            <Odometer value={player.digits} size="2.6vw" />
+            <span className="font-readout font-bold text-ink/40" style={{ fontSize: "1.1vw" }}>
+              / 9
+            </span>
+          </div>
+
+          {/* Their board. The Safe component owns its own open sequence, so a
+              digit landing here plays the real door swing rather than a
+              colour change. */}
+          <div className="relative mt-[0.8vh] grid w-full grid-cols-9 gap-[0.24vw]">
+            {Array.from({ length: 9 }, (_, i) => (
+              <motion.div
+                key={i}
+                initial={false}
+                animate={
+                  player.justScored && i === player.digits - 1
+                    ? { scale: [1, 1.3, 1], y: [0, -4, 0] }
+                    : { scale: 1, y: 0 }
+                }
+                transition={{ duration: 0.55, ease: "easeOut" }}
+                className="aspect-square w-full"
+              >
+                <Safe digit={i + 1} state={i < player.digits ? "solved" : "locked"} />
+              </motion.div>
+            ))}
+          </div>
+        </>
+      ) : (
+        /* ── Compact layout ─────────────────────────────────────── */
+        <div className="relative flex w-full items-center gap-[0.7vw]">
+          <span className="shrink-0" style={{ width: "2.4vw", height: "2.4vw" }}>
+            <Medal rank={rank} />
+          </span>
+          <span
+            className="min-w-0 flex-1 truncate font-display uppercase leading-none text-ink"
+            style={{ fontSize: "1.15vw" }}
+          >
+            {player.name}
+          </span>
+          <span className="shrink-0 font-readout font-bold text-ink/70" style={{ fontSize: "1.1vw" }}>
+            {player.digits}/9
+          </span>
+        </div>
+      )}
+
+      {/* Bonus chest — flies in the moment a bonus lands, then settles into a
+          badge in the corner. */}
+      <AnimatePresence>
+        {player.bonus && (
+          <motion.div
+            key="bonus"
+            initial={
+              player.justBonus
+                ? { scale: 0, rotate: -40, y: "-60%", opacity: 0 }
+                : { scale: 1, rotate: -8, opacity: 1 }
+            }
+            animate={{ scale: 1, rotate: -8, y: 0, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 15 }}
+            className="pointer-events-none absolute right-[0.7vw] top-[0.7vh]"
+            style={{ width: focused ? "3vw" : "1.8vw", height: focused ? "3vw" : "1.8vw" }}
+          >
+            <MysteryBox className="h-full w-full" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -439,14 +567,33 @@ function BoardRow({
       className={cn(
         "ink relative flex min-h-0 flex-1 items-center gap-[1vw] overflow-hidden rounded-btn px-[1vw]",
         "shadow-[0_0.45vh_0_0_var(--color-ink)]",
-        player.justScored ? "bg-green" : rank === 1 ? "bg-brass" : podium ? "bg-paper-deep" : "bg-white"
+        rank === 1 ? "bg-brass" : podium ? "bg-paper-deep" : "bg-white"
       )}
     >
+      {/* The score highlight is a LAYER, not the row's background colour.
+          Swapping the class gave it an entrance and no exit — the green
+          appeared, sat there, then vanished on a frame. As an element it can
+          fade out properly, and the row's own colour is never disturbed. */}
+      <AnimatePresence>
+        {player.justScored && (
+          <motion.span
+            key="flash"
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.75, ease: "easeOut" } }}
+            transition={{ duration: 0.18 }}
+            className="pointer-events-none absolute inset-0 bg-green"
+          />
+        )}
+      </AnimatePresence>
+
       {/* A light sweep across the row the moment it scores. Colour alone says
           "this one is different"; the sweep says "this one just happened". */}
       <AnimatePresence>
         {player.justScored && (
           <motion.span
+            key="sweep"
             aria-hidden
             initial={{ x: "-120%" }}
             animate={{ x: "120%" }}
@@ -532,47 +679,81 @@ function BoardRow({
 }
 
 /**
- * A genuine continuous marquee, not a list that shuffles.
+ * A continuous marquee that does not jump.
  *
- * The content is rendered twice and the track translates exactly -50%, so the
- * second copy is in the first's place at the moment it loops and the seam is
- * invisible. Duration scales with how much content there is, which keeps the
- * speed constant instead of the whole thing accelerating as events pile up.
+ * The previous version fed live events straight into the track, and a new one
+ * arrived every 2.2 seconds. Three separate things then went wrong at once:
+ * the item count changed, so the track's width changed; -50% therefore meant a
+ * different distance mid-flight; and the keyframe array was rebuilt, which
+ * restarted the animation from x:0. That is the jump.
+ *
+ * All three are addressed structurally rather than by easing it away:
+ *
+ *   FIXED SLOT COUNT — always SLOTS items, padded when there are fewer, so the
+ *   number of children never changes.
+ *
+ *   FIXED SLOT WIDTH — each item is a fixed vw with the name truncating, so
+ *   the track's width does not depend on how long anyone's name is.
+ *
+ *   CONTENT COMMITTED AT THE SEAM — the animation is a single pass, and the
+ *   newest events are only adopted when it completes. At -50% the second copy
+ *   sits exactly where the first started, so remounting at x:0 with fresh
+ *   content is invisible. Nothing ever changes mid-pass.
  */
+const SLOTS = 6;
+const PASS_MS = 22000;
+
 function Marquee({ events }: { events: ReturnType<typeof useHall>["events"] }) {
-  const items = events.length ? events : [];
-  const loop = [...items, ...items];
+  const [pass, setPass] = useState(0);
+  const [track, setTrack] = useState<typeof events>([]);
+  const latest = useRef(events);
+  latest.current = events;
+
+  // Adopt whatever has arrived, but only at a seam.
+  useEffect(() => {
+    if (track.length === 0 && events.length > 0) setTrack(events);
+  }, [events, track.length]);
+
+  const padded = Array.from({ length: SLOTS }, (_, i) => track[i % Math.max(1, track.length)]);
+  const loop = [...padded, ...padded];
 
   return (
     <footer className="relative z-20 flex shrink-0 items-center gap-[1.2vw] overflow-hidden border-t-3 border-ink bg-ink py-[1vh] pl-[2.2vw]">
       <span
-        className="relative z-10 shrink-0 rounded-pill bg-brass px-[0.85vw] py-[0.4vh] font-display uppercase tracking-[0.18em] text-ink"
+        className="relative z-10 shrink-0 rounded-pill bg-brass px-[0.85vw] py-[0.4vh] font-display uppercase text-ink"
         style={{ fontSize: "0.72vw" }}
       >
-        Just cracked
+        <span style={{ letterSpacing: "0.18em", marginRight: "-0.18em" }}>Just cracked</span>
       </span>
 
       <div className="relative min-w-0 flex-1 overflow-hidden">
-        {items.length === 0 ? (
+        {track.length === 0 ? (
           <span className="font-body font-bold text-white/30" style={{ fontSize: "0.95vw" }}>
             Waiting for the first unlock…
           </span>
         ) : (
           <motion.div
-            className="flex w-max items-center gap-[2.2vw]"
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: Math.max(14, items.length * 4), repeat: Infinity, ease: "linear" }}
+            key={pass}
+            className="flex w-max items-center"
+            initial={{ x: "0%" }}
+            animate={{ x: "-50%" }}
+            transition={{ duration: PASS_MS / 1000, ease: "linear" }}
+            onAnimationComplete={() => {
+              setTrack(latest.current);
+              setPass((p) => p + 1);
+            }}
           >
             {loop.map((e, i) => (
               <span
-                key={`${e.id}-${i}`}
-                className="flex shrink-0 items-center gap-[0.45vw] whitespace-nowrap font-body font-bold text-white/75"
-                style={{ fontSize: "0.95vw" }}
+                key={i}
+                // Fixed width — this is what keeps the track geometry constant.
+                className="flex shrink-0 items-center gap-[0.45vw] pr-[2.4vw] font-body font-bold text-white/75"
+                style={{ fontSize: "0.95vw", width: "16vw" }}
               >
-                <span className="h-[0.45vw] w-[0.45vw] rounded-pill bg-green" />
-                <span className="text-brass">{e.name}</span>
-                <span className="text-white/45">reached</span>
-                <span className="font-readout text-white">{e.digits}/9</span>
+                <span className="h-[0.45vw] w-[0.45vw] shrink-0 rounded-pill bg-green" />
+                <span className="min-w-0 truncate text-brass">{e?.name ?? "—"}</span>
+                <span className="shrink-0 text-white/45">reached</span>
+                <span className="shrink-0 font-readout text-white">{e?.digits ?? 0}/9</span>
               </span>
             ))}
           </motion.div>

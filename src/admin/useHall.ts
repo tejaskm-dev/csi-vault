@@ -27,6 +27,7 @@ export function useHall(live = true) {
   const [players, setPlayers] = useState<HallPlayer[]>(() => seedHall());
   const [events, setEvents] = useState<HallEvent[]>([]);
   const counter = useRef(0);
+  const tick = useRef(0);
   const clearScored = useRef<Record<string, number>>({});
 
   // A mirror of the current players, so the tick can choose a target WITHOUT
@@ -39,6 +40,27 @@ export function useHall(live = true) {
   useEffect(() => {
     if (!live) return;
     const id = setInterval(() => {
+      // Every fourth tick, award a bonus instead of a digit. The seeded data
+      // set bonuses once and never changed them, so the display had no way to
+      // ever show a bonus arriving — only that one had already been won.
+      tick.current += 1;
+      if (tick.current % 4 === 0) {
+        const eligible = latest.current.filter((p) => !p.bonus);
+        if (eligible.length) {
+          const lucky = eligible[Math.floor(Math.random() * eligible.length)];
+          setPlayers((prev) =>
+            prev.map((p) => (p.id === lucky.id ? { ...p, bonus: true, justBonus: true } : p))
+          );
+          window.clearTimeout(clearScored.current[`b${lucky.id}`]);
+          clearScored.current[`b${lucky.id}`] = window.setTimeout(() => {
+            setPlayers((cur) =>
+              cur.map((p) => (p.id === lucky.id ? { ...p, justBonus: false } : p))
+            );
+          }, 3000);
+          return;
+        }
+      }
+
       const movable = latest.current.filter((p) => p.digits < 9);
       if (!movable.length) return;
       const target = movable[Math.floor(Math.random() * movable.length)];

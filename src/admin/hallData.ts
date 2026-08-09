@@ -21,6 +21,8 @@ export interface HallPlayer {
   elapsed: number;
   /** Set for a few seconds after they score, so the display can react. */
   justScored?: boolean;
+  /** Same, for the moment a bonus lands. */
+  justBonus?: boolean;
 }
 
 export interface HallEvent {
