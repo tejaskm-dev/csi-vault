@@ -37,9 +37,24 @@ export function ConnectTask({ challenge }: { challenge: Challenge }) {
   // Bible §16 says give a route rather than block the player. Offered only
   // after the first attempt times out, so it never becomes the default path.
   const [manualNo, setManualNo] = useState("");
+  /**
+   * Show the "type a number" panel even though a target IS assigned.
+   *
+   * Opened by any failed knock. The screenshot that prompted this had the
+   * server refusing the assigned target — correctly, it had already been met —
+   * while the only control on screen was I FOUND THEM, which knocks that same
+   * number again. The player was told to find someone new and given no way to
+   * say who. A refusal must always come with a route.
+   */
+  const [openPick, setOpenPick] = useState(false);
   const timer = useRef<number | null>(null);
 
   const target = challenge.targetNo;
+
+  // The server repoints a target that has become impossible (retarget_board),
+  // so the number here can legitimately change under the player. When it does,
+  // the old complaint about the old number is stale.
+  useEffect(() => { setErr(null); setOpenPick(false); }, [target]);
 
   /**
    * Have they met everyone in the room?
@@ -97,6 +112,7 @@ export function ConnectTask({ challenge }: { challenge: Challenge }) {
       // nothing about whether to try again, find someone else, or give up.
       setErr(humanError(e, "Could not reach them. Try again in a second."));
       setPhase("idle");
+      setOpenPick(true);
     }
   };
 
@@ -178,14 +194,15 @@ export function ConnectTask({ challenge }: { challenge: Challenge }) {
           room for pick_target() to choose. They get the open version: find
           anyone, type their number. The server still rejects a repeat pair, so
           it cannot be farmed. */}
-      {!target && (
+      {(!target || openPick) && (
         <div className="ink rounded-plate bg-white p-5 shadow-ink">
           <p className="font-display text-[18px] uppercase leading-tight text-ink">
             Your pick
           </p>
           <p className="mt-1 font-body text-[13px] font-semibold leading-snug text-ink/60">
-            You got here early, so this one is open. Find anyone you have not
-            met, ask them the question, and enter their vault number.
+            {target
+              ? "Enter the vault number of whoever is actually in front of you."
+              : "You got here early, so this one is open. Find anyone you have not met, ask them the question, and enter their vault number."}
           </p>
           <div className="mt-3 flex gap-2">
             <input
