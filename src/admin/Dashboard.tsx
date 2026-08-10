@@ -90,7 +90,15 @@ export function Dashboard({
           <Tile icon={<MysteryBox className="h-full w-full" />} value={String(stats.bonuses)} label="Bonus rounds won" />
         </motion.div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        {/* minmax(0, …), not a bare fr.
+            An `fr` track will not shrink below the MIN-CONTENT width of what
+            is in it, and the errors panel below sets `white-space: nowrap` on
+            a Postgres message — whose min-content width is the entire
+            sentence. So one long error pushed the right-hand track wider than
+            its share, the grid grew past max-w-[1200px], and the whole
+            dashboard ran off the edge of the window while the standings
+            column was squeezed. minmax(0, …) says the track may shrink. */}
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           {/* ── Standings ───────────────────────────────────────── */}
           <motion.section variants={riseIn} className="ink rounded-plate bg-white p-5 shadow-ink">
             <div className="flex items-baseline justify-between">
@@ -141,7 +149,10 @@ export function Dashboard({
             </div>
           </motion.section>
 
-          <div className="flex flex-col gap-5">
+          {/* min-w-0 for the same reason as the track above: a flex item's
+              default min-width is auto, so one nowrap child would push this
+              column wider than the space it was given. */}
+          <div className="flex min-w-0 flex-col gap-5">
             {/* ── Needs attention ───────────────────────────────── */}
             <motion.section variants={riseIn} className="ink rounded-plate bg-white p-5 shadow-ink">
               <h2 className="font-display text-[15px] uppercase tracking-[0.14em] text-ink">

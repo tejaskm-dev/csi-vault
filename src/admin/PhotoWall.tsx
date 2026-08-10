@@ -90,7 +90,7 @@ export function PhotoWall({ className }: { className?: string }) {
           demanded 460px and squeezed the podium above it into overlapping
           cards. The photo is cropped by object-cover anyway, so a bounded
           height costs a little framing and keeps the panel that matters. */}
-      <div className="relative h-[21vh] w-full min-h-0 shrink">
+      <div className="relative h-[18vh] w-full min-h-0 shrink">
         <AnimatePresence>
           <motion.div
             key={current.id}

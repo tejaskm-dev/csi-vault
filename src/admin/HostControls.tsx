@@ -263,7 +263,14 @@ export function HostControls({ code }: { code: string }) {
                     {e.hits}x · {e.players} player{Number(e.players) === 1 ? "" : "s"}
                   </span>
                 </div>
-                <p className="truncate font-body text-[10px] font-semibold text-ink/60">
+                {/* Wrapped, not truncated. `truncate` sets white-space:nowrap,
+                    which both made the panel the widest thing on the page and
+                    cut the message at the point it starts being useful — the
+                    host was reading "Could not find the function
+                    public.game_snapshot with parameter p_session or with a
+                    single unnamed json/jsonb parameter, but no matche…". Two
+                    lines of a real sentence beats one line of a prefix. */}
+                <p className="line-clamp-2 break-words font-body text-[10px] font-semibold text-ink/60">
                   {e.message}
                 </p>
               </div>
