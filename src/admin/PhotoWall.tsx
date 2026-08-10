@@ -68,8 +68,8 @@ export function PhotoWall({ className }: { className?: string }) {
   const current = photos[index % photos.length];
 
   return (
-    <section className={className}>
-      <div className="mb-[0.6vh] flex items-baseline justify-between">
+    <section className={`flex min-h-0 flex-col ${className ?? ""}`}>
+      <div className="mb-[0.6vh] flex shrink-0 items-baseline justify-between">
         <span
           className="font-display uppercase tracking-[0.18em] text-ink/45"
           style={{ fontSize: "0.9vw" }}
@@ -84,7 +84,13 @@ export function PhotoWall({ className }: { className?: string }) {
       {/* Matted and tilted, like the photo preview on the phone — the same
           instant-print language, so a picture on the projector reads as part
           of the same world as the app that took it. */}
-      <div className="relative aspect-[4/3] w-full">
+      {/* Height in vh, NOT an aspect ratio.
+          `aspect-[4/3]` derives height from the column's width, and this
+          column is a third of a projector — so on a 1920px screen the frame
+          demanded 460px and squeezed the podium above it into overlapping
+          cards. The photo is cropped by object-cover anyway, so a bounded
+          height costs a little framing and keeps the panel that matters. */}
+      <div className="relative h-[21vh] w-full min-h-0 shrink">
         <AnimatePresence>
           <motion.div
             key={current.id}

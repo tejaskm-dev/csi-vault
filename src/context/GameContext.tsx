@@ -205,6 +205,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const refreshSeq = useRef(0);
 
   /**
+   * Collapse overlapping refreshes into one.
+   *
+   * The timer, the realtime channel, waking the tab and every action that ends
+   * in `void refresh()` all pull on the same rope, and they bunch. Without
+   * this a single solve opened three requests inside a second, on every phone.
+   */
+  const inFlight = useRef(false);
+  const pendingRefresh = useRef(false);
+
+  /**
+   * What the server told us the board and roster looked like last time.
+   *
+   * Sent back on the next call so it can skip whichever has not changed. Both
+   * are cleared by forgetRoom, because a version from a room this phone has
+   * left would suppress the first board of the room it joins next.
+   */
+  const boardVer = useRef<string | null>(null);
+  const rosterVer = useRef<string | null>(null);
+
+  /**
+   * A stable handle on the latest refresh(), declared here because refresh
+   * itself uses it to run a coalesced follow-up.
+   *
+   * refresh() closes over `session` and `player`, so its identity changes
+   * whenever either does. Reading it through a ref lets the subscription below
+   * depend only on the player id, which is what it actually cares about.
+   */
+  const refreshRef = useRef<() => Promise<void>>(async () => {});
+
+  /**
    * Is the websocket actually delivering?
    *
    * Held in a ref as well as state because the poll closure reads it every
@@ -363,6 +393,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setStreak(0);
     setIncoming(null);
     solvedIds.current.clear();
+    boardVer.current = null;
+    rosterVer.current = null;
     if (!keepName) setUsername('');
     localStorage.removeItem('csi_pin');
     localStorage.removeItem('csi_unlocked');
@@ -410,11 +442,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!isLive || !session) return;
 
+    /**
+     * One in flight at a time, always.
+     *
+     * refresh() is called from the timer, from realtime, on waking the tab and
+     * by hand after every action. Those bunch — a solve fires a submit, a
+     * refresh, and a realtime echo within the same second — and each one used
+     * to open its own request. Collapsing them costs a few hundred
+     * milliseconds of staleness and removes an entire class of self-inflicted
+     * load, which at sixty phones is the difference that matters.
+     */
+    if (inFlight.current) { pendingRefresh.current = true; return; }
+    inFlight.current = true;
+
     // Claim this request. Anything older than the newest must not write.
     const seq = ++refreshSeq.current;
 
     try {
-      const snap = await api.fetchSnapshot(session.id, player?.id);
+      const snap = await api.fetchSnapshot(
+        session.id, player?.id, boardVer.current, rosterVer.current
+      );
       if (seq !== refreshSeq.current) return;    // a newer answer already landed
 
       /**
@@ -463,7 +510,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        */
       if (snap.auth && player && !snap.player) { evict(); return; }
 
-      if (player && snap.player) applyBoard(snap.board);
+      /**
+       * `board` and `roster` arrive only when they have CHANGED.
+       *
+       * Both are large and both are nearly always identical to the last tick —
+       * a board changes about twenty times in half an hour, a roster stops
+       * changing once everyone is through the door. The server compares the
+       * version this phone sent and omits the section if it matches, so the
+       * steady-state response is the standings and little else. `undefined`
+       * here means "unchanged", which is not the same as an empty list.
+       */
+      if (snap.boardVer !== undefined) boardVer.current = snap.boardVer;
+      if (snap.rosterVer !== undefined) rosterVer.current = snap.rosterVer;
+
+      if (player && snap.player && snap.board) applyBoard(snap.board);
 
       setLiveBoard((prev) =>
         sameSig(
@@ -473,10 +533,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       );
 
       // The roster only grows during a session; names and numbers never change.
-      setPlayers((prev) =>
-        prev.length === snap.roster.length &&
-        prev.every((p, i) => p.id === snap.roster[i].id) ? prev : snap.roster
-      );
+      if (snap.roster) {
+        const roster = snap.roster;
+        setPlayers((prev) =>
+          prev.length === roster.length &&
+          prev.every((p, i) => p.id === roster[i].id) ? prev : roster
+        );
+      }
 
       // Never clobber a prompt that is already on screen; confirmMeet() clears
       // it, and replacing the row underneath a tap would drop it.
@@ -488,6 +551,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       if (seq !== refreshSeq.current) return;
       setError(humanError(e, "Could not reach the game. Check your signal."));
+    } finally {
+      inFlight.current = false;
+      // Something asked while this was running. Serve it now, once, however
+      // many times it was asked.
+      if (pendingRefresh.current) {
+        pendingRefresh.current = false;
+        setTimeout(() => { void refreshRef.current(); }, 0);
+      }
     }
   }, [session, player, applyBoard, evict, forgetRoom]);
 
@@ -623,16 +694,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * Live: realtime
    * ------------------------------------------------------------------ */
 
-  /**
-   * A stable handle on the latest refresh().
-   *
-   * refresh() closes over `session` and `player`, so its identity changes
-   * whenever either does — which, with a session poll running every four
-   * seconds, was every four seconds. Any effect depending on it re-ran on that
-   * cadence. Reading it through a ref lets the subscription below depend only
-   * on the player id, which is what it actually cares about.
-   */
-  const refreshRef = useRef(refresh);
   refreshRef.current = refresh;
 
   // Someone walked up and tapped CONNECT.
@@ -648,21 +709,39 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!isLive || !supabase || !player?.id) return;
     const playerId = player.id;
 
+    /**
+     * BOTH SUBSCRIPTIONS ARE FILTERED SERVER-SIDE, AND THAT IS NOT AN
+     * OPTIMISATION.
+     *
+     * Without `filter`, every client receives every row change on these tables
+     * — so one player solving one challenge woke all sixty phones, and the
+     * assignments handler below turned each of those into a refresh. Sixty
+     * players solving roughly one challenge a second is sixty broadcasts a
+     * second, each fanning out to sixty listeners, each firing a request. The
+     * poll was never the problem next to that.
+     *
+     * The filter is applied by the realtime server before it sends anything,
+     * so the phone is woken only by rows that are genuinely its own.
+     */
     const channel = supabase
       .channel(`player-${playerId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'interactions' },
+        {
+          event: 'INSERT', schema: 'public', table: 'interactions',
+          filter: `target_id=eq.${playerId}`,
+        },
         (payload) => {
           const row = payload.new as InteractionRow;
-          if (row.target_id === playerId && row.state === 'pending') {
-            setIncoming(row);
-          }
+          if (row.state === 'pending') setIncoming(row);
         }
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'assignments' },
+        {
+          event: 'UPDATE', schema: 'public', table: 'assignments',
+          filter: `player_id=eq.${playerId}`,
+        },
         () => { void refreshRef.current(); }
       )
       /**
@@ -706,14 +785,29 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     if (!isLive || !session) return;
-    void refresh();
+
+    /**
+     * Jittered, because the herd is real.
+     *
+     * The host presses Start and sixty phones see the phase change within the
+     * same tick, re-run this effect, and fire immediately — sixty requests in
+     * one instant, then sixty more exactly four seconds later, aligned for the
+     * rest of the game. Spreading the first call over a second and a half
+     * turns a spike into a flat 15/s, which is the same total work arriving in
+     * an order the server can actually keep up with.
+     */
+    const spread = Math.random() * 1500;
+    const kick = window.setTimeout(() => { void refresh(); }, spread);
+
     const t = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       void refresh();
-    }, 4000);
+    }, 4000 + spread);
+
     const wake = () => { if (!document.hidden) void refresh(); };
     document.addEventListener('visibilitychange', wake);
     return () => {
+      window.clearTimeout(kick);
       clearInterval(t);
       document.removeEventListener('visibilitychange', wake);
     };

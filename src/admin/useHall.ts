@@ -78,7 +78,10 @@ export function useHall(live = true) {
           initials: (r.name.trim().charAt(0) || "?").toUpperCase(),
           digits: Number(r.vaults),
           bonus: Number(r.bonus) > 0,
-          elapsed: r.elapsed,
+          // The server's own "has solved nothing" sentinel. fetchLeaderboard
+          // always sends this; the snapshot does not, and strict mode is off
+          // here so nothing would have told us if that ever changed.
+          elapsed: r.elapsed ?? 999999,
         }));
 
         // Diff against the previous pull to find what actually happened. The
