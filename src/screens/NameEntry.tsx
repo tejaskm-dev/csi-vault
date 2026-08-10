@@ -24,7 +24,10 @@ const BRIEFING = [
 ];
 
 export function NameEntry() {
-  const [name, setName] = useState("");
+  // Pre-filled from whatever the app already knows. A player coming back after
+  // a reset or a reload should be one tap from playing, not retyping a name
+  // that is sitting in localStorage.
+  const [name, setName] = useState(() => localStorage.getItem("csi_username") || "");
   const [focused, setFocused] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);

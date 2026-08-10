@@ -101,6 +101,31 @@ export function ChallengeScreen() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  /**
+   * Wipe the per-question state when the question changes.
+   *
+   * Steps inside one vault navigate to the SAME path — /challenge/2 step 1 and
+   * step 2 are both "/challenge/2" — so React never unmounts this screen and
+   * every piece of local state survived into the next question. The previous
+   * answer stayed selected, CRACK IT stayed enabled, and one tap submitted a
+   * stale option for a question the player had not read.
+   *
+   * Keyed on assignmentId, which is unique per question per player, rather
+   * than on the route, which is exactly what failed to change.
+   */
+  useEffect(() => {
+    setSelectedId(null);
+    setTextInput("");
+    setWrongId(null);
+    setToast(null);
+    setStatus("idle");
+    setMisses(0);
+    setShowMiss(false);
+    setSubmitError(null);
+    setHintOpen(false);
+    setTime(challenge?.timeLimit ?? 45);
+  }, [challenge?.assignmentId]);
+
   useEffect(() => {
     if (status === "correct") return;
     const interval = setInterval(() => {

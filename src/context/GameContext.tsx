@@ -353,11 +353,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!isLive || !session) return;
     try {
-      const [rows, ranked, roster] = await Promise.all([
+      /**
+       * allSettled, NOT all.
+       *
+       * With Promise.all a single failing call discarded the other two — so a
+       * board fetch that errored (or timed out) also threw away a perfectly
+       * good leaderboard, and the standings silently stopped updating. Each
+       * result is now applied on its own merits.
+       */
+      const [boardRes, rankRes, rosterRes] = await Promise.allSettled([
         player ? api.fetchBoard(session.id) : Promise.resolve([]),
         api.fetchLeaderboard(session.id),
         api.fetchPlayers(session.id),
       ]);
+
+      const rows   = boardRes.status  === 'fulfilled' ? boardRes.value  : null;
+      const ranked = rankRes.status   === 'fulfilled' ? rankRes.value   : null;
+      const roster = rosterRes.status === 'fulfilled' ? rosterRes.value : null;
 
       /**
        * Did the host wipe the room out from under us?
@@ -376,14 +388,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        * case to catch. fetchPlayers throws on a failed request rather than
        * returning [], so an empty array here means genuinely empty.
        */
-      if (player && !roster.some((p) => p.id === player.id)) {
+      // Only trust an eviction when the roster actually arrived. A failed
+      // fetch is not evidence that the player was deleted.
+      if (roster && player && !roster.some((p) => p.id === player.id)) {
         evict();
         return;
       }
 
-      if (player) applyBoard(rows);
+      if (player && rows) applyBoard(rows);
 
-      setLiveBoard((prev) =>
+      if (ranked) setLiveBoard((prev) =>
         sameSig(
           ranked.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|"),
           prev.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|")
@@ -391,7 +405,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       );
 
       // The roster only grows during a session; names and numbers never change.
-      setPlayers((prev) =>
+      if (roster) setPlayers((prev) =>
         prev.length === roster.length &&
         prev.every((p, i) => p.id === roster[i].id) ? prev : roster
       );
@@ -518,9 +532,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // A different room, or an identity from before this was tracked. Drop it
-    // and send them through the door properly.
-    if (storedRoom || username) forgetRoom(false);
+    // A different room, or an identity whose room stamp is gone — which is
+    // what evict() leaves behind, since it clears the room but keeps the name.
+    //
+    // Do NOT auto-join, but KEEP the name. Wiping it meant a player who
+    // reloaded after a reset had to retype a name the app already knew, and
+    // the name screen now pre-fills from it so getting back in is one tap.
+    if (storedRoom) forgetRoom(true);
     setBooted(true);
   }, [session, username, join, evicted, forgetRoom]);
 
