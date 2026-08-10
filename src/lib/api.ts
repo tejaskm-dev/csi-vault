@@ -1,4 +1,5 @@
 import { supabase, ensureAuth } from "./supabase";
+import { shrinkForUpload } from "./image";
 import type { Challenge, ChallengeOption, GlyphKey } from "../data/mockData";
 
 /**
@@ -344,6 +345,113 @@ export async function fetchBoard(sessionId: string): Promise<Challenge[]> {
   return (data as BoardRow[]).map(toChallenge);
 }
 
+/** Everything a phone polls for, from one instant. See fetchSnapshot. */
+export interface Snapshot {
+  /** The caller's identity, or null if the token did not reach the server. */
+  auth: string | null;
+  /** The CURRENT room, which is not necessarily the one that was asked about. */
+  session: SessionRow | null;
+  /**
+   * This phone's player row, or null.
+   *
+   * Authoritative when `auth` is set: the server looked the row up as its own
+   * owner, so null means the row is gone rather than hidden.
+   */
+  player: PlayerRow | null;
+  board: Challenge[];
+  leaders: LeaderRow[];
+  roster: PlayerRow[];
+  pending: InteractionRow[];
+}
+
+/**
+ * One round trip, one consistent instant.
+ *
+ * This replaces five separate polls — board, leaderboard, roster, session
+ * phase and pending handshakes — that a phone used to fire independently every
+ * three or four seconds. Sixty phones doing that is sixty to a hundred and
+ * twenty requests a second, which is where the timeouts came from.
+ *
+ * Consistency matters as much as the count. Independent calls meant the board
+ * could come from one instant and the leaderboard from another, and a board
+ * response issued BEFORE a submit could land after it — putting a solved step
+ * back to unsolved, which is what the flicker between two questions was.
+ */
+/**
+ * Set once if the server has not had 0032 applied yet.
+ *
+ * The frontend deploys on push; the migration is run by hand. Between those
+ * two moments every refresh would call a function that does not exist, four
+ * times a second across the room — so the first miss switches to the old
+ * multi-call path permanently rather than retrying forever.
+ */
+let noSnapshotRpc = false;
+
+export async function fetchSnapshot(
+  sessionId: string,
+  playerId?: string
+): Promise<Snapshot> {
+  if (!noSnapshotRpc) {
+    try {
+      const data = await rpc<any>("game_snapshot", { p_session: sessionId });
+      const s = (data ?? {}) as Record<string, unknown>;
+      return {
+        auth: (s.auth as string) ?? null,
+        session: (s.session as SessionRow) ?? null,
+        player: (s.player as PlayerRow) ?? null,
+        board: ((s.board as BoardRow[]) ?? []).map(toChallenge),
+        leaders: (s.leaders as LeaderRow[]) ?? [],
+        roster: (s.roster as PlayerRow[]) ?? [],
+        pending: (s.pending as InteractionRow[]) ?? [],
+      };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // PostgREST answers PGRST202 / "Could not find the function" when the
+      // migration has not run. Anything else — a timeout, a network drop — is
+      // a real failure and must propagate.
+      if (!/could not find the function|pgrst202|does not exist/i.test(msg)) throw e;
+      console.warn("[vault] game_snapshot missing — run 0032_snapshot.sql. Using the old polls.");
+      noSnapshotRpc = true;
+    }
+  }
+
+  /**
+   * Legacy path. Four requests instead of one, which is the load problem 0032
+   * exists to solve — but a slow game beats a broken one.
+   *
+   * `auth` is deliberately null here: eviction keys off it, and the only way
+   * to work out presence without the RPC is to look for yourself in an
+   * RLS-filtered roster, which is the inference that has now been wrong in
+   * both directions. Degrade to never evicting rather than to evicting wrongly.
+   */
+  const [sess, board, leaders, roster, pending] = await Promise.allSettled([
+    defaultSession(),
+    playerId ? fetchBoard(sessionId) : Promise.resolve<Challenge[]>([]),
+    fetchLeaderboard(sessionId),
+    fetchPlayers(sessionId),
+    playerId ? pendingForMe(playerId) : Promise.resolve<InteractionRow[]>([]),
+  ]);
+
+  // A snapshot is all-or-nothing by construction, and the caller now applies
+  // it that way. Salvaging half of one would write an empty leaderboard over a
+  // good one, so a failure here fails the whole refresh exactly as the RPC
+  // path does — the next tick tries again four seconds later.
+  for (const r of [sess, leaders, roster]) {
+    if (r.status === "rejected") throw r.reason;
+  }
+
+  const roll = roster.status === "fulfilled" ? roster.value : [];
+  return {
+    auth: null,
+    session: sess.status === "fulfilled" ? sess.value : null,
+    player: playerId ? roll.find((p) => p.id === playerId) ?? null : null,
+    board: board.status === "fulfilled" ? board.value : [],
+    leaders: leaders.status === "fulfilled" ? leaders.value : [],
+    roster: roll,
+    pending: pending.status === "fulfilled" ? pending.value : [],
+  };
+}
+
 /**
  * Submit an answer. The boolean that comes back is the server's, not ours —
  * the client has no way to compute it and no say in it.
@@ -416,6 +524,17 @@ export async function uploadPhoto(
   const uid = await ensureAuth();
   if (!uid) throw new Error("not signed in");
 
+  /**
+   * Compressed HERE, not at the call sites.
+   *
+   * There were two capture paths and only one of them shrank anything — the
+   * viewfinder encoded its own 1280px square and went straight past the
+   * downscale helper. Doing it at the single point every photo passes through
+   * means a new path cannot forget, and the bytes on the wire are bounded no
+   * matter what produced the blob.
+   */
+  const small = await shrinkForUpload(file, { square: true });
+
   const path = `${uid}/${assignmentId}-${Date.now()}.jpg`;
 
   /**
@@ -427,14 +546,31 @@ export async function uploadPhoto(
    * congested venue wifi. 30s rather than 12: a slow upload is normal, a dead
    * one is not, and the difference matters when sixty phones upload at once.
    */
-  const { error: upErr } = await Promise.race([
-    client().storage.from("photos")
-      .upload(path, file, { contentType: "image/jpeg", upsert: true }),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Upload timed out. Check your signal.")), 30000)
-    ),
-  ]);
-  if (upErr) throw upErr;
+  const attempt = async () => {
+    const { error } = await Promise.race([
+      client().storage.from("photos")
+        .upload(path, small, { contentType: "image/jpeg", upsert: true }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Upload timed out. Check your signal.")), 30000)
+      ),
+    ]);
+    if (error) throw error;
+  };
+
+  /**
+   * One automatic retry.
+   *
+   * A single dropped request on venue wifi should not cost a player their
+   * photo — they are standing somewhere holding a phone, and asking them to
+   * frame the shot again is the worst possible response to a transient
+   * failure. `upsert: true` makes the retry safe: same path, same result.
+   */
+  try {
+    await attempt();
+  } catch (first) {
+    console.warn("[vault] photo upload failed, retrying once", first);
+    await attempt();
+  }
 
   await rpc<unknown>("record_photo", {
     p_assignment: assignmentId,

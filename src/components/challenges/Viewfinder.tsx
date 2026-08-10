@@ -128,9 +128,14 @@ export function Viewfinder({
     // Square crop from the centre, taken at capture time rather than after.
     // The wall on the projector is a grid, and a mix of portrait and landscape
     // photos in a grid looks like a mistake.
+    // 800, not 1280. These end up as tiles on a projector wall and as a small
+    // square on a phone, and the difference between the two sizes was a photo
+    // three to five times heavier going over shared wifi with sixty other
+    // phones doing the same thing. uploadPhoto enforces a byte budget on top,
+    // but capturing small means the common path never has to re-encode.
     const side = Math.min(video.videoWidth, video.videoHeight);
     const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = Math.min(side, 1280);
+    canvas.width = canvas.height = Math.min(side, 800);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     // Mirror the capture too when using the front camera, so the photo saved
@@ -147,7 +152,7 @@ export function Viewfinder({
       side, side,
       0, 0, canvas.width, canvas.height
     );
-    canvas.toBlob((b) => b && onCaptureRef.current(b), "image/jpeg", 0.78);
+    canvas.toBlob((b) => b && onCaptureRef.current(b), "image/jpeg", 0.7);
   };
 
   return (

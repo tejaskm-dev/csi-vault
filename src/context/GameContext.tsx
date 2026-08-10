@@ -181,13 +181,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [evicted, setEvicted] = useState(false);
 
   /**
-   * Consecutive roster reads that came back without us in them.
+   * Assignments this phone knows are solved.
    *
-   * Eviction is destructive — it throws away the board — so it needs more
-   * evidence than one query. See the block in refresh() for why a single read
-   * is not enough in either direction.
+   * `solved` only ever goes false -> true inside a session, but the network
+   * does not respect that. A board response issued BEFORE a submit can land
+   * AFTER it — routine when requests are queueing — and it carries the old
+   * `solved: false`. getChallenge() then hands back the step the player has
+   * just finished, the screen re-keys, and the previous question flashes up
+   * before the next response corrects it. That is the blink.
+   *
+   * Remembering what is solved makes the flag monotonic on the client, so a
+   * late answer can no longer un-solve anything.
    */
-  const missingSelf = useRef(0);
+  const solvedIds = useRef<Set<string>>(new Set());
+
+  /**
+   * Which refresh is the newest.
+   *
+   * Two snapshots in flight can complete in either order, and the loser must
+   * not overwrite the winner. Every response checks that it is still the most
+   * recent request before touching state.
+   */
+  const refreshSeq = useRef(0);
 
   /**
    * Is the websocket actually delivering?
@@ -196,9 +211,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * three seconds and must not be rebuilt (and the channel torn down) each
    * time it flips.
    */
-  const [realtimeOk, setRealtimeOk] = useState(false);
-  const realtimeOkRef = useRef(false);
-  realtimeOkRef.current = realtimeOk;
+  const [, setRealtimeOk] = useState(false);
 
   /**
    * Has this phone finished working out who it is?
@@ -281,7 +294,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * Live: connect
    * ------------------------------------------------------------------ */
 
-  const applyBoard = useCallback((rows: Challenge[]) => {
+  const applyBoard = useCallback((incoming: Challenge[]) => {
+    // Fold in everything already known to be solved before anything else looks
+    // at this board. A response that predates a submit still says the step is
+    // unsolved, and taking it at face value walks the player backwards.
+    const rows = incoming.map((c) =>
+      !c.solved && c.assignmentId && solvedIds.current.has(c.assignmentId)
+        ? { ...c, solved: true }
+        : c
+    );
+    for (const c of rows) {
+      if (c.solved && c.assignmentId) solvedIds.current.add(c.assignmentId);
+    }
+
     // Identity, solved-state and dealt payload are the only things a re-render
     // could depend on; anything else on a row is immutable for the session.
     const sig = rows.map((c) => `${c.assignmentId}:${c.solved ? 1 : 0}`).join("|");
@@ -337,6 +362,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setBonusSolved(false);
     setStreak(0);
     setIncoming(null);
+    solvedIds.current.clear();
     if (!keepName) setUsername('');
     localStorage.removeItem('csi_pin');
     localStorage.removeItem('csi_unlocked');
@@ -365,85 +391,105 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setEvicted(true);
   }, [forgetRoom]);
 
+  /**
+   * The whole game state, in ONE request.
+   *
+   * This used to be three parallel calls, next to a fourth poll for the phase
+   * and a fifth for pending handshakes — five requests every three or four
+   * seconds, per phone. Sixty phones is a hundred requests a second sustained,
+   * which is exactly as much as it sounds like: the pooler queues, queued
+   * requests blow the client's twelve-second deadline, and the player sees a
+   * connection error while the dashboard fills with them. The server was never
+   * broken. It was being asked far more often than it could answer.
+   *
+   * Independence was the second problem. Five calls are five different instants
+   * — the board could disagree with the leaderboard, and a board response
+   * issued before a submit could land after it. One snapshot cannot disagree
+   * with itself.
+   */
   const refresh = useCallback(async () => {
     if (!isLive || !session) return;
-    try {
-      /**
-       * allSettled, NOT all.
-       *
-       * With Promise.all a single failing call discarded the other two — so a
-       * board fetch that errored (or timed out) also threw away a perfectly
-       * good leaderboard, and the standings silently stopped updating. Each
-       * result is now applied on its own merits.
-       */
-      const [boardRes, rankRes, rosterRes] = await Promise.allSettled([
-        player ? api.fetchBoard(session.id) : Promise.resolve([]),
-        api.fetchLeaderboard(session.id),
-        api.fetchPlayers(session.id),
-      ]);
 
-      const rows   = boardRes.status  === 'fulfilled' ? boardRes.value  : null;
-      const ranked = rankRes.status   === 'fulfilled' ? rankRes.value   : null;
-      const roster = rosterRes.status === 'fulfilled' ? rosterRes.value : null;
+    // Claim this request. Anything older than the newest must not write.
+    const seq = ++refreshSeq.current;
+
+    try {
+      const snap = await api.fetchSnapshot(session.id, player?.id);
+      if (seq !== refreshSeq.current) return;    // a newer answer already landed
+
+      /**
+       * A DIFFERENT room appeared. The host started a fresh session while this
+       * phone was open, so the board it is holding belongs to a game that is
+       * no longer running. Drop the identity and send them to the door rather
+       * than leaving them tapping at a dead board.
+       */
+      if (snap.session && snap.session.id !== session.id) {
+        forgetRoom(true);
+        setSession(snap.session);
+        setEvicted(true);
+        return;
+      }
+
+      // Only swap the object when something actually changed. A fresh object
+      // every tick gave `session` a new identity four times a minute, which
+      // cascaded into every effect depending on it — including the realtime
+      // subscription, which was then torn down and resubscribed on that same
+      // cadence, dropping any handshake that arrived in the gap.
+      if (snap.session) {
+        const next = snap.session;
+        setSession((cur) =>
+          cur && cur.id === next.id && cur.phase === next.phase &&
+          cur.started_at === next.started_at && cur.notice_at === next.notice_at &&
+          cur.doors_open === next.doors_open
+            ? cur
+            : next
+        );
+      }
 
       /**
        * Did the host wipe the room out from under us?
        *
-       * host_reset() deletes every player row. The phone holding this context
-       * has no idea — it still has a `player` object, so it keeps asking for a
-       * board that no longer exists and gets an empty one back forever. The
-       * player sees nine locked vaults and no way forward, and nothing tells
-       * them why.
+       * This has been wrong in both directions before, and both times because
+       * it was INFERRED from a list. fetchPlayers is an ordinary RLS-filtered
+       * select, so a request whose token has not attached yet returns [] with
+       * no error — identical, from here, to a room the host just reset.
+       * Trusting that evicted everybody at once; guarding against it with
+       * `roster.length > 0` then meant a real reset reached nobody, because a
+       * reset empties the roster completely.
        *
-       * This has now been wrong in BOTH directions, and the two mistakes look
-       * identical from here:
-       *
-       *   · Trusting one empty read evicted the entire room at once, because
-       *     fetchPlayers is a plain RLS-filtered select and a moment where the
-       *     auth token is not attached yet returns [] with no error at all.
-       *
-       *   · Requiring `roster.length > 0` to compensate then broke the case
-       *     the check exists for. host_reset deletes EVERY player, so after a
-       *     reset the roster is legitimately empty — and that guard meant no
-       *     phone ever noticed. Every player kept a dead board and got dragged
-       *     between /waiting and /winner by a `player` object the server had
-       *     already deleted. That is the reset the host pressed and nobody's
-       *     phone reacted to.
-       *
-       * So: count instead of guessing. A failed fetch (roster === null) is not
-       * evidence of anything and is ignored. A successful read that does not
-       * contain us is one strike, and two consecutive strikes — eight seconds
-       * — is the wipe. Any read that finds us clears the count.
+       * There is nothing to infer now. `player` comes back from a SECURITY
+       * DEFINER lookup against auth.uid(), so it is not subject to RLS: if the
+       * token arrived (`auth` is set) and the row is absent, the row is gone.
        */
-      if (!player || (roster && roster.some((p) => p.id === player.id))) {
-        missingSelf.current = 0;
-      } else if (roster) {
-        missingSelf.current += 1;
-        if (missingSelf.current >= 2) {
-          missingSelf.current = 0;
-          evict();
-          return;
-        }
-      }
+      if (snap.auth && player && !snap.player) { evict(); return; }
 
-      if (player && rows) applyBoard(rows);
+      if (player && snap.player) applyBoard(snap.board);
 
-      if (ranked) setLiveBoard((prev) =>
+      setLiveBoard((prev) =>
         sameSig(
-          ranked.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|"),
+          snap.leaders.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|"),
           prev.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|")
-        ) ? prev : ranked
+        ) ? prev : snap.leaders
       );
 
       // The roster only grows during a session; names and numbers never change.
-      if (roster) setPlayers((prev) =>
-        prev.length === roster.length &&
-        prev.every((p, i) => p.id === roster[i].id) ? prev : roster
+      setPlayers((prev) =>
+        prev.length === snap.roster.length &&
+        prev.every((p, i) => p.id === snap.roster[i].id) ? prev : snap.roster
       );
+
+      // Never clobber a prompt that is already on screen; confirmMeet() clears
+      // it, and replacing the row underneath a tap would drop it.
+      setIncoming((cur) => cur ?? snap.pending[0] ?? null);
+
+      // One good answer means the connection is back. Leaving a stale error
+      // banner up made a recovered phone look permanently broken.
+      setError(null);
     } catch (e) {
+      if (seq !== refreshSeq.current) return;
       setError(humanError(e, "Could not reach the game. Check your signal."));
     }
-  }, [session, player, applyBoard, evict]);
+  }, [session, player, applyBoard, evict, forgetRoom]);
 
   // Find the room on boot. One session runs at a time for this event, so the
   // app picks the open one rather than making a first-year type a join code
@@ -637,88 +683,52 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       });
 
     /**
-     * Poll for pending handshakes as well as subscribing to them.
+     * There is no separate handshake poll any more.
      *
-     * The websocket is the fast path, not the reliable one. A phone that
-     * locked, changed cell, or sat in a pocket drops frames and gets them back
-     * only on reconnect — and the person in front of it is waiting. Three
-     * seconds against a 60-second expiry window is a cheap guarantee that the
-     * prompt always arrives while it is still valid.
+     * There used to be one every three seconds, and on top of it a full board
+     * + leaderboard + roster refresh on that same tick whenever the socket was
+     * not subscribed — which was three more requests, duplicating the refresh
+     * already running on its own four-second timer next door. Four redundant
+     * requests per phone per three seconds, times sixty phones, for a fallback
+     * that the snapshot below already covers: it carries `pending`, so a
+     * dropped socket frame costs at most four seconds either way.
      */
-    const poll = async () => {
-      try {
-        const rows = await api.pendingForMe(playerId);
-        // Never clobber a prompt that is already on screen; confirmMeet()
-        // clears it, and replacing the row underneath a tap would drop it.
-        setIncoming((cur) => cur ?? rows[0] ?? null);
-        // The board too, when the socket is not delivering — otherwise a
-        // connect or photo completion would never be noticed on a phone whose
-        // channel failed to subscribe.
-        if (!realtimeOkRef.current) void refreshRef.current();
-      } catch { /* next tick */ }
-    };
-    void poll();
-    const t = setInterval(poll, 3000);
-
-    return () => {
-      clearInterval(t);
-      void supabase.removeChannel(channel);
-    };
+    return () => { void supabase.removeChannel(channel); };
   }, [player?.id]);
 
-  // The leaderboard, on a timer rather than a subscription. Sixty players
-  // solving vaults would push a recompute several times a second; every four
-  // seconds is faster than anyone can read a board and costs one query.
+  /**
+   * The one poll. Board, leaderboard, roster, phase and handshakes, together.
+   *
+   * Skipped while the tab is hidden. A phone in a pocket does not need the
+   * board, and sixty phones polling from pockets is a real slice of a request
+   * budget that has already proved to be the binding constraint. Coming back
+   * to the foreground refreshes immediately, so nothing is stale on screen.
+   */
   useEffect(() => {
     if (!isLive || !session) return;
     void refresh();
-    const t = setInterval(() => { void refresh(); }, 4000);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void refresh();
+    }, 4000);
+    const wake = () => { if (!document.hidden) void refresh(); };
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', wake);
+    };
   }, [session, refresh]);
 
-  // Session phase changes — the host starting or ending the room.
+  // Session phase changes — the host starting or ending the room — used to be
+  // their own four-second poll of sessions_public, running alongside the board
+  // poll and asking a second time for something the same tick could have
+  // fetched once. The snapshot carries the session, so refresh() above handles
+  // the phase change, the notice, the doors, and a brand new room appearing.
   //
-  // Polled, not subscribed. `sessions` carries the host passcode, so SELECT on
-  // it is revoked from players entirely (0006 Part 3) and reads go through the
-  // `sessions_public` view — which means realtime postgres_changes on that
-  // table can no longer authorise a subscriber and would silently deliver
-  // nothing. A phase change landing two seconds late costs nothing; a
-  // subscription that quietly stopped working would have cost the whole event.
-  useEffect(() => {
-    if (!isLive || !session) return;
-    const pull = async () => {
-      try {
-        const s = await api.defaultSession();
-        if (!s) return;
-
-        // A DIFFERENT room appeared. The host started a fresh session while
-        // this phone was open, so the board it is holding belongs to a game
-        // that is no longer running. Drop the identity and send them to the
-        // door rather than leaving them tapping at a dead board.
-        if (session && s.id !== session.id) {
-          forgetRoom(true);
-          setSession(s);
-          setEvicted(true);
-          return;
-        }
-
-        // Only swap the object when something actually changed. Setting a
-        // fresh object every tick gave `session` a new identity four times a
-        // minute, which cascaded into refresh() and from there into every
-        // effect that depended on it — including the realtime subscription.
-        setSession((cur) =>
-          cur &&
-          cur.id === s.id &&
-          cur.phase === s.phase &&
-          cur.started_at === s.started_at
-            ? cur
-            : s
-        );
-      } catch { /* the next tick tries again */ }
-    };
-    const t = setInterval(pull, 4000);
-    return () => clearInterval(t);
-  }, [session?.id, forgetRoom]);
+  // (It is still polled rather than subscribed, and that part was right:
+  // `sessions` carries the host passcode, SELECT on it is revoked from players
+  // entirely, and realtime postgres_changes cannot authorise a subscriber to a
+  // table they cannot read — it would silently deliver nothing forever.)
 
   /* ------------------------------------------------------------------ *
    * The shared contract
@@ -792,6 +802,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         result = await api.submitAnswer(challenge.assignmentId, answer);
 
         if (result.correct) {
+          // Remember it, not just render it. Without this the next snapshot —
+          // which may have been issued before this submit — hands back
+          // `solved: false` and walks the player back to the question they
+          // just answered.
+          if (challenge.assignmentId) solvedIds.current.add(challenge.assignmentId);
+
           // Mark this step solved locally so getChallenge() advances to the
           // next one immediately, rather than after the next refresh tick.
           setBoard((prev) =>
