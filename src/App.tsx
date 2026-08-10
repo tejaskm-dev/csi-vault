@@ -34,6 +34,7 @@ import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
 import { IncomingMeet } from "./components/IncomingMeet";
 import { RoomReset } from "./components/RoomReset";
+import { CrewCard } from "./components/CrewCard";
 import { RouteGuard, ConnectingGate } from "./components/RouteGuard";
 import { Reaction } from "./components/Reaction";
 import { scrollToTop } from "./lib/scroll";
@@ -173,6 +174,7 @@ export default function App() {
                       inside the route tree would unmount a half-shown reaction
                       (or, much worse, a pending handshake prompt) the moment
                       the player navigated. */}
+                  <CrewCard />
                   <IncomingMeet />
                   <RoomReset />
                   <Reaction />

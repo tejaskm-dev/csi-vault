@@ -29,7 +29,7 @@ const WINDOW_S = 60;
 type Phase = "idle" | "sending" | "waiting" | "expired";
 
 export function ConnectTask({ challenge }: { challenge: Challenge }) {
-  const { live, refresh, player: me } = useGame();
+  const { live, refresh, player: me, players } = useGame();
   const [phase, setPhase] = useState<Phase>("idle");
   const [left, setLeft] = useState(WINDOW_S);
   const [err, setErr] = useState<string | null>(null);
@@ -40,6 +40,20 @@ export function ConnectTask({ challenge }: { challenge: Challenge }) {
   const timer = useRef<number | null>(null);
 
   const target = challenge.targetNo;
+
+  /**
+   * Have they met everyone in the room?
+   *
+   * With N players a board can only ask for N-1 distinct partners, so a small
+   * room runs out — three phones can satisfy two social challenges and no
+   * more. The server relaxes the no-repeats rule once that happens; this says
+   * so, because otherwise the player is left rereading a rule the game has
+   * quietly stopped enforcing.
+   *
+   * Approximate on purpose: the exact check lives server-side. This only
+   * decides what the screen says.
+   */
+  const roomTooSmall = players.length > 0 && players.length <= 3;
 
   useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
 
@@ -144,6 +158,18 @@ export function ConnectTask({ challenge }: { challenge: Challenge }) {
         <span className="font-body text-[13px] font-bold text-ink/70">
           {target ? "Their vault number is on their screen" : "Anyone you have not met yet"}
         </span>
+
+        {/* A room this small cannot supply a new partner for every social
+            challenge — with N players a board can only ask for N-1. The server
+            drops the no-repeats rule once you have met everyone; saying so
+            here stops the player rereading a rule the game has stopped
+            enforcing and assuming they are stuck. */}
+        {roomTooSmall && (
+          <p className="mt-2 font-body text-[12px] font-semibold leading-snug text-ink/70">
+            Small room — once you have met everyone here, repeats start counting
+            again.
+          </p>
+        )}
       </motion.div>
 
       {/* No assigned target.
