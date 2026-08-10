@@ -546,6 +546,15 @@ export function getChallengeSet(seed: string): Challenge[] {
 export interface LeaderboardEntry {
   /** Stable identity. Never key a row by rank — rank is what moves. */
   id: string;
+  /**
+   * Shown beside the name only when two players share one.
+   *
+   * Duplicate names are allowed on purpose — sixty first-years will collide on
+   * common ones, and turning people away at the door to enforce uniqueness is
+   * worse than the confusion it prevents. The vault number is what actually
+   * identifies someone, so it is what disambiguates.
+   */
+  vaultNo?: number;
   rank: number;
   name: string;
   initials: string;

@@ -857,6 +857,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           // The tile art counts digits, and effective score is the real
           // ordering — so show vaults here and let rank carry the bonus.
           digits: r.vaults,
+          vaultNo: r.vault_no,
           isYou: r.player_id === player?.id,
         }))
       : (() => {
@@ -876,11 +877,33 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           );
         })();
 
+    /**
+     * Disambiguate shared names, once, here.
+     *
+     * Duplicates are allowed deliberately — sixty first-years collide on common
+     * names, and turning people away at the door to enforce uniqueness is worse
+     * than the confusion it avoids. But two identical rows on a projector are
+     * genuinely unreadable, so a name that appears more than once gets its
+     * vault number appended.
+     *
+     * Done at this single point rather than in each screen, so the leaderboard,
+     * the podium, the crew feed and the hall display all agree.
+     */
+    const seen = new Map<string, number>();
+    for (const r of rows) {
+      const key = r.name.replace(/ \(You\)$/, "").toLowerCase();
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+
     const ranked = rows.map((entry, index) => {
       const rank = index + 1;
       const previous = prevRanks.current[entry.id];
+      const base = entry.name.replace(/ \(You\)$/, "");
+      const shared = (seen.get(base.toLowerCase()) ?? 0) > 1 && entry.vaultNo != null;
+
       return {
         ...entry,
+        name: shared ? entry.name.replace(base, `${base} #${entry.vaultNo}`) : entry.name,
         rank,
         delta: previous && previous > rank ? previous - rank : 0,
       };
