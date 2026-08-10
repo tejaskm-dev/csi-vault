@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Medal, Trophy, MysteryBox } from "../components/Props";
 import { Safe } from "../components/Safe";
-import { RayBurst, Laurel, RankDelta, Halftone, Sparkline } from "./DisplayArt";
+import { RayBurst, Laurel, RankDelta, Halftone } from "./DisplayArt";
 import { useHall } from "./useHall";
 import { PhotoWall } from "./PhotoWall";
 import { cn, formatClock } from "../lib/utils";
@@ -38,7 +38,7 @@ const BOARD_SIZE = 10;
 const EXPO: [number, number, number, number] = [0.76, 0, 0.24, 1];
 
 export function Display() {
-  const { ranked, stats, events, deltas, history } = useHall();
+  const { ranked, stats, events, deltas } = useHall();
   const [clock, setClock] = useState(0);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function Display() {
             pushed below. */}
         <div className="flex min-h-0 w-[32%] shrink-0 flex-col gap-[1.4vh]">
           <Podium top={podium} />
-          <RoomPanel stats={stats} history={history} />
+          <RoomPanel stats={stats} />
           {/* Renders nothing until the first photo arrives, so the column does
               not reserve space for an empty frame during the opening minutes. */}
           <PhotoWall className="min-h-0" />
@@ -288,7 +288,7 @@ function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
     // min-h, not min-h-0. Three cards and their controls need a floor, and
     // being flex-1 in a column with a fixed-height sibling is not one — it
     // means "take what is left", which was sometimes nothing.
-    <div className="flex min-h-[32vh] flex-1 flex-col gap-[0.8vh]">
+    <div className="flex min-h-[36vh] flex-1 flex-col gap-[0.8vh]">
       <div
         className="grid min-h-0 flex-1 gap-[1vh]"
         style={{
@@ -563,16 +563,23 @@ function PodiumCard({
   );
 }
 
-function RoomPanel({
-  stats,
-  history,
-}: {
-  stats: ReturnType<typeof useHall>["stats"];
-  history: number[];
-}) {
+/**
+ * Room progress, in a strip.
+ *
+ * This used to carry a sparkline of progress over time, and the reasoning for
+ * it was sound in isolation — a percentage says where the room is, a curve
+ * says whether it is speeding up. It cost about five vh, and the thing it took
+ * that from was the podium, which then could not hold three cards without
+ * clipping the top one.
+ *
+ * That is not a trade worth making. The top three ARE the display; the curve
+ * is a detail the host can read off the dashboard on their own laptop. So this
+ * is now a header row, a bar and three numbers, and nothing else.
+ */
+function RoomPanel({ stats }: { stats: ReturnType<typeof useHall>["stats"] }) {
   const pct = Math.round((stats.cracked / Math.max(1, stats.possible)) * 100);
   return (
-    <div className="ink shrink-0 rounded-plate bg-white px-[1.2vw] py-[1.4vh] shadow-[0_0.7vh_0_0_var(--color-ink)]">
+    <div className="ink shrink-0 rounded-plate bg-white px-[1.2vw] py-[1.1vh] shadow-[0_0.7vh_0_0_var(--color-ink)]">
       <div className="flex items-baseline justify-between">
         <span
           className="font-display uppercase tracking-[0.18em] text-ink/45"
@@ -588,14 +595,7 @@ function RoomPanel({
         </span>
       </div>
 
-      {/* Progress over time. A percentage says where the room is; the curve
-          says whether it is speeding up, which is the read that matters when
-          you are deciding whether to call time. */}
-      <div className="mt-[0.8vh]" style={{ height: "4.4vh" }}>
-        <Sparkline points={history} className="h-full" />
-      </div>
-
-      <div className="ink mt-[0.6vh] h-[1.5vh] w-full overflow-hidden rounded-pill bg-paper-deep">
+      <div className="ink mt-[0.7vh] h-[1.4vh] w-full overflow-hidden rounded-pill bg-paper-deep">
         <motion.div
           className="h-full origin-left rounded-pill bg-green"
           animate={{ scaleX: stats.cracked / Math.max(1, stats.possible) }}
@@ -603,7 +603,7 @@ function RoomPanel({
         />
       </div>
 
-      <div className="mt-[1.3vh] grid grid-cols-3 gap-[0.7vw]">
+      <div className="mt-[0.9vh] grid grid-cols-3 gap-[0.7vw]">
         <PanelStat value={stats.cracked} label="Digits" />
         <PanelStat value={stats.finished} label="Finished" />
         <PanelStat value={stats.bonuses} label="Bonuses" />
