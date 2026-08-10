@@ -22,7 +22,7 @@ export interface MinigameProps {
    * Used by games whose content is chosen server-side rather than derived
    * from the seed — Anagram reads `letters` from here.
    */
-  payload?: { letters?: string; combo?: number[] };
+  payload?: { letters?: string; clue?: string; combo?: number[] };
   /** Hand the result to the server. Resolves to whether it was accepted. */
   onSubmit: (answer: Record<string, unknown>) => Promise<{ correct: boolean }>;
   /** Locked while checking, or after a win. */

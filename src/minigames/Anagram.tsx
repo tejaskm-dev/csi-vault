@@ -32,6 +32,17 @@ export function Anagram({ payload, onSubmit, busy }: MinigameProps) {
     [payload?.letters]
   );
 
+  /**
+   * What the word MEANS, dealt with the letters.
+   *
+   * 0015 closed the question — the tiles are exactly one word and every letter
+   * must be used — and that was the right fix for a grader that rejected real
+   * answers. But it left the player with a closed question and nothing to
+   * close it with: six tiles is 720 orderings, and somebody with no reason to
+   * prefer any of them just stops. Which is what happened.
+   */
+  const clue = typeof payload?.clue === "string" ? payload.clue : null;
+
   const [picked, setPicked] = useState<number[]>([]);
   const [note, setNote] = useState<string | null>(null);
 
@@ -68,6 +79,20 @@ export function Anagram({ payload, onSubmit, busy }: MinigameProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* The clue, above everything. It is not a hint the player has to go
+          looking for behind a button — without it there is no puzzle, only a
+          search. */}
+      {clue && (
+        <div className="ink rounded-plate bg-brass px-4 py-3 text-center shadow-[0_5px_0_0_var(--color-brass-deep)]">
+          <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/60">
+            The word means
+          </span>
+          <p className="mt-0.5 font-display text-[17px] uppercase leading-tight text-ink">
+            {clue}
+          </p>
+        </div>
+      )}
+
       {/* The answer slots, one per letter.
           Showing empty slots rather than a free-form line is the instruction:
           it says without words that every tile is used and how long the answer

@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 import type { MinigameProps } from "./types";
 
 /**
- * MAZE ESCAPE — swipe or drag from the corner to the vault.
+ * MAZE ESCAPE — steer from the corner to the vault.
  *
  * Generated from the seed by depth-first backtracking, which gives a perfect
  * maze (exactly one route between any two cells). That property is why it is
@@ -14,8 +14,17 @@ import type { MinigameProps } from "./types";
  * path is legal and ends on the exit — it does not have to trust a "won: true"
  * flag from a phone.
  *
- * Swipe rather than a D-pad. On a phone held one-handed in a crowded room, a
- * four-button pad is a fiddly target; a swipe anywhere on the grid is not.
+ * A PAD, NOT A SWIPE, and the reasoning that put a swipe here was wrong.
+ *
+ * It said a four-button pad is a fiddly target on a phone held one-handed and
+ * a swipe anywhere on the grid is not. True in the abstract, and irrelevant:
+ * on iOS Safari — which is most of this room — a horizontal swipe that starts
+ * near the left edge is the system back gesture. The player does not move
+ * left; they leave the game. `touch-action: none` does not stop it, because
+ * the edge gesture belongs to the OS and not the page.
+ *
+ * A control that sometimes navigates away is not a control. The pad below is
+ * four 56px targets, which is larger than the thing the swipe was avoiding.
  */
 const SIZE = [7, 9, 11]; // by level
 
@@ -81,7 +90,7 @@ export function Maze({ seed, level = 1, onSubmit, busy }: MinigameProps) {
     }
   }, [pos, n, path, onSubmit]);
 
-  // Keyboard for desktop review; the phone uses the swipe handler below.
+  // Keyboard for desktop review; the phone uses the pad below.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const map: Record<string, "n" | "e" | "s" | "w"> = {
@@ -93,26 +102,12 @@ export function Maze({ seed, level = 1, onSubmit, busy }: MinigameProps) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const touch = useRef<[number, number] | null>(null);
+  /** Is there a wall that way? Used to grey out a pad button. */
+  const blocked = (dir: "n" | "e" | "s" | "w") => grid[pos[0]][pos[1]][dir];
 
   return (
     <div className="flex flex-col gap-3">
-      <div
-        className="ink relative touch-none overflow-hidden rounded-plate bg-white p-2 shadow-ink"
-        onTouchStart={(e) => {
-          touch.current = [e.touches[0].clientX, e.touches[0].clientY];
-        }}
-        onTouchEnd={(e) => {
-          if (!touch.current) return;
-          const dx = e.changedTouches[0].clientX - touch.current[0];
-          const dy = e.changedTouches[0].clientY - touch.current[1];
-          // 18px deadzone: below that it is a tap, and treating a tap as a
-          // swipe makes the maze feel like it moves on its own.
-          if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
-          move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "e" : "w") : (dy > 0 ? "s" : "n"));
-          touch.current = null;
-        }}
-      >
+      <div className="ink relative overflow-hidden rounded-plate bg-white p-2 shadow-ink">
         <div
           className="grid gap-0"
           style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
@@ -154,9 +149,54 @@ export function Maze({ seed, level = 1, onSubmit, busy }: MinigameProps) {
         />
       </div>
 
+      {/* The pad. Three columns so up sits above down and left/right flank it,
+          which is the shape a thumb already knows. A direction with a wall in
+          it dims rather than disappearing — a pad whose buttons come and go is
+          harder to aim at than one that simply says no. */}
+      <div className="mx-auto grid w-full max-w-[240px] grid-cols-3 gap-2">
+        <span />
+        <PadKey dir="n" label="▲" onMove={move} disabled={busy || blocked("n")} />
+        <span />
+        <PadKey dir="w" label="◀" onMove={move} disabled={busy || blocked("w")} />
+        <span />
+        <PadKey dir="e" label="▶" onMove={move} disabled={busy || blocked("e")} />
+        <span />
+        <PadKey dir="s" label="▼" onMove={move} disabled={busy || blocked("s")} />
+        <span />
+      </div>
+
       <p className="text-center font-body text-[13px] font-semibold text-ink/55">
-        Swipe to move. Get to the green corner.
+        Get to the green corner.
       </p>
     </div>
+  );
+}
+
+function PadKey({
+  dir,
+  label,
+  onMove,
+  disabled,
+}: {
+  dir: "n" | "e" | "s" | "w";
+  label: string;
+  onMove: (d: "n" | "e" | "s" | "w") => void;
+  disabled: boolean;
+}) {
+  return (
+    <motion.button
+      type="button"
+      disabled={disabled}
+      onClick={() => onMove(dir)}
+      whileTap={{ y: 3 }}
+      aria-label={{ n: "Up", e: "Right", s: "Down", w: "Left" }[dir]}
+      className={cn(
+        "ink flex h-14 items-center justify-center rounded-btn font-display text-[20px] text-ink",
+        "shadow-[4px_4px_0_0_var(--color-ink)] transition-opacity",
+        disabled ? "bg-paper-deep opacity-30" : "bg-white"
+      )}
+    >
+      {label}
+    </motion.button>
   );
 }
