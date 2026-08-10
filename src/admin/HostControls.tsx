@@ -30,6 +30,8 @@ export function HostControls({ code }: { code: string }) {
   const [renameNo, setRenameNo] = useState("");
   const [renameTo, setRenameTo] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  /** Photos nobody has looked at yet. Shown next to END THE GAME. */
+  const [unreviewed, setUnreviewed] = useState(0);
 
   useEffect(() => {
     if (!isLive) return;
@@ -43,6 +45,9 @@ export function HostControls({ code }: { code: string }) {
         if (!stop) setStuck(await api.hostStuck(s.id, code));
         if (!stop) setErrors(await api.hostErrors(s.id, code));
         if (!stop) setDupes(await api.hostDuplicateNames(s.id, code));
+        // The host is a reviewer by virtue of holding the claim, so this needs
+        // no extra code — see reviewer_ok() in 0035.
+        if (!stop) setUnreviewed((await api.reviewStats(s.id)).pending);
       } catch (e) {
         if (!stop) setErr(humanError(e, "Could not read the room state."));
       }
@@ -151,6 +156,19 @@ export function HostControls({ code }: { code: string }) {
       {err && (
         <p className="mt-3 rounded-btn border-2 border-red-deep bg-red px-3 py-2 font-body text-[12px] font-bold text-white">
           {err}
+        </p>
+      )}
+
+      {/* A cross after the game ends still takes the vault back, so the final
+          standings can move once the podium is already up. That is the honest
+          behaviour — a correction is a correction — which makes this line the
+          mitigation: the person deciding when to stop can see what is still
+          waiting to be judged. */}
+      {unreviewed > 0 && (
+        <p className="mt-3 rounded-btn border-2 border-ink/15 bg-brass px-3 py-2 font-body text-[12px] font-bold text-ink">
+          {unreviewed} photo{unreviewed === 1 ? "" : "s"} still unjudged. They
+          count as accepted, but a late cross would move the standings — clear
+          the queue before ending the game.
         </p>
       )}
 

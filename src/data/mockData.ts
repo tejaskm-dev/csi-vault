@@ -559,6 +559,12 @@ export interface LeaderboardEntry {
   name: string;
   initials: string;
   digits: number;
+  /**
+   * Approved photos. Half a vault each, so it settles close finishes without
+   * outranking somebody who simply cracked more. Live only — there is nobody
+   * to judge a photo in the offline sandbox.
+   */
+  evidence?: number;
   isYou?: boolean;
   delta?: number;
 }

@@ -222,6 +222,35 @@ where a.solved_at is null
 group by p.name, t.vault_no
 having count(*) > 1
 
+union all
+
+-- 20. Evidence nobody has looked at.
+--     Not a fault — photos count as accepted until crossed, which is the whole
+--     point of the default. But a cross after the game ends still takes a vault
+--     back, so the standings can move once the podium is up. Clear the queue
+--     before pressing END THE GAME.
+select 'INFO', 'photos awaiting a verdict', count(*)::text,
+       'they score as accepted; a late cross would move the standings'
+from public.photos where verdict = 'pending'
+having count(*) > 0
+
+union all
+
+-- 21. A rejected photo whose vault is somehow still open.
+--     review_photo clears solved_at unless another non-rejected photo covers
+--     the same assignment. If this ever fires, that guard has a hole in it and
+--     a player is scoring for evidence a human refused.
+select 'BLOCKER', 'rejected evidence still counting',
+       p.name, 'vault ' || a.slot
+from public.photos ph
+join public.assignments a on a.id = ph.assignment_id
+join public.players p on p.id = ph.player_id
+where ph.verdict = 'rejected'
+  and a.solved_at is not null
+  and not exists (
+    select 1 from public.photos p2
+    where p2.assignment_id = ph.assignment_id and p2.verdict <> 'rejected')
+
 )
 select severity, problem, id, detail
 from problems

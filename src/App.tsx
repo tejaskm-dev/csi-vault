@@ -28,6 +28,14 @@ const AssetsPreview = lazy(() =>
 const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp }))
 );
+
+// The invigilators' surface. Its own route rather than a corner of /admin,
+// because it is held by different people with a different code — and because
+// a volunteer should be able to open one URL and see a queue, not navigate a
+// dashboard full of buttons they must not press.
+const ReviewApp = lazy(() =>
+  import("./admin/ReviewApp").then((m) => ({ default: m.ReviewApp }))
+);
 import { GameProvider } from "./context/GameContext";
 import { setErrorReporter } from "./lib/errors";
 import { reportError } from "./lib/api";
@@ -38,6 +46,7 @@ import { IncomingMeet } from "./components/IncomingMeet";
 import { RoomReset } from "./components/RoomReset";
 import { CrewCard } from "./components/CrewCard";
 import { Notice } from "./components/Notice";
+import { PlayerNotice } from "./components/PlayerNotice";
 import { RouteGuard, ConnectingGate } from "./components/RouteGuard";
 import { Reaction } from "./components/Reaction";
 import { scrollToTop } from "./lib/scroll";
@@ -164,6 +173,14 @@ export default function App() {
               }
             />
             <Route
+              path="/review"
+              element={
+                <Suspense fallback={null}>
+                  <ReviewApp />
+                </Suspense>
+              }
+            />
+            <Route
               path="*"
               element={
                 <GameShell>
@@ -182,6 +199,10 @@ export default function App() {
                       (or, much worse, a pending handshake prompt) the moment
                       the player navigated. */}
                   <Notice />
+                  {/* Room-wide above, one-player below. A rejected photo closes a
+                      vault, and that has to arrive as a sentence rather than as
+                      a board that silently shrinks. */}
+                  <PlayerNotice />
                   <CrewCard />
                   <IncomingMeet />
                   <RoomReset />

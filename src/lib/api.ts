@@ -91,6 +91,13 @@ export interface PlayerRow {
   name: string;
   vault_no: number;
   avatar_url: string | null;
+  /**
+   * A message for THIS player, as opposed to sessions.notice which goes to
+   * every phone. Currently only written by evidence review — a vault that
+   * closes without a word is indistinguishable from a bug.
+   */
+  notice?: string | null;
+  notice_at?: string | null;
 }
 
 export interface SessionRow {
@@ -113,6 +120,8 @@ export interface LeaderRow {
   vault_no: number;
   vaults: number;
   bonus: number;
+  /** Approved photos. Half a vault each — see 0035_evidence_review.sql. */
+  evidence?: number;
   /**
    * Present from fetchLeaderboard, ABSENT from the snapshot.
    *
@@ -866,4 +875,80 @@ export async function hostHidePhoto(photoId: string, code: string, visible = fal
 
 export async function hostReset(sessionId: string, code: string) {
   await rpc<unknown>("host_reset", { p_session: sessionId, p_code: code });
+}
+
+/* ------------------------------------------------------------------ *
+ * Evidence review
+ * ------------------------------------------------------------------ */
+// Authorised by reviewer_ok(), which accepts a reviewer OR the current host —
+// so the standalone /review page and the tab inside the host dashboard call
+// exactly these, with no branch between them.
+
+/** One photo waiting on a verdict, with the task it was answering. */
+export interface ReviewItem {
+  id: string;
+  storage_path: string;
+  caption: string | null;
+  created_at: string;
+  player_name: string;
+  player_vault: number;
+  vault: number | null;
+  step: number | null;
+  /** The challenge the player was given. A photo cannot be judged without it. */
+  task_title: string | null;
+  task_question: string | null;
+}
+
+export interface ReviewStats {
+  pending: number;
+  ok: number;
+  rejected: number;
+  total: number;
+}
+
+/**
+ * Join the review desk.
+ *
+ * Membership, not a claim: unlike hostClaim this does not evict anybody, so
+ * three invigilators can work the same queue from their own phones.
+ */
+export async function reviewClaim(sessionId: string, code: string, name?: string) {
+  await ensureAuth();
+  const data = await rpc<any>("review_claim", {
+    p_session: sessionId,
+    p_code: code,
+    p_name: name ?? null,
+  });
+  const r = data as { ok: boolean; error?: string };
+  // Same reasoning as hostClaim: a rejection is a value so the attempt log
+  // survives to feed the throttle.
+  if (!r.ok) throw new Error(r.error ?? "review claim failed");
+}
+
+export async function reviewQueue(sessionId: string, limit = 30): Promise<ReviewItem[]> {
+  const data = await rpc<any>("review_queue", { p_session: sessionId, p_limit: limit });
+  return (data ?? []) as ReviewItem[];
+}
+
+/**
+ * Tick or cross. Overturnable in both directions — a reviewer will hit the
+ * wrong button on a phone, and that must not need a laptop to undo.
+ */
+export async function reviewPhoto(photoId: string, ok: boolean, reason?: string) {
+  return rpc<{ ok: boolean; verdict: string }>("review_photo", {
+    p_photo: photoId,
+    p_ok: ok,
+    p_reason: reason ?? null,
+  });
+}
+
+export async function reviewStats(sessionId: string): Promise<ReviewStats> {
+  const data = await rpc<any>("review_stats", { p_session: sessionId });
+  return (data ?? { pending: 0, ok: 0, rejected: 0, total: 0 }) as ReviewStats;
+}
+
+/** Dismiss my own notice, server-side, so it does not return on every reload. */
+export async function clearMyNotice(sessionId: string) {
+  try { await rpc<unknown>("clear_my_notice", { p_session: sessionId }); }
+  catch { /* the banner is already gone locally; this is tidying */ }
 }
