@@ -4,6 +4,9 @@ import { Art } from "../Art";
 import { playTap } from "../../lib/sound";
 import { listStagger, riseIn } from "../../lib/motion";
 import { cn } from "../../lib/utils";
+import { FlashRecall } from "./observe/FlashRecall";
+import { SpotPair } from "./observe/SpotPair";
+import type { GlyphKey } from "../../data/mockData";
 import type { TaskProps } from "./types";
 
 /**
@@ -116,6 +119,36 @@ export function ObserveTask({ challenge, submit, onCorrect, onWrong, busy }: Tas
           ))}
         </motion.div>
       </div>
+    );
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Flash recall — hold a row in your head for two seconds
+   * ---------------------------------------------------------------- */
+  if (payload.mode === "flash") {
+    return (
+      <FlashRecall
+        symbols={(payload.symbols ?? []) as GlyphKey[]}
+        askIndex={payload.ask_index ?? 0}
+        choices={(payload.choices ?? []) as GlyphKey[]}
+        busy={locked || busy}
+        onAnswer={(glyph) => answer(glyph)}
+      />
+    );
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Spot the pair — two tiles agree, everything else differs
+   * ---------------------------------------------------------------- */
+  if (payload.mode === "pair") {
+    return (
+      <SpotPair
+        tiles={(payload.tiles ?? []) as GlyphKey[]}
+        busy={locked || busy}
+        // Sorted so "3 then 7" and "7 then 3" are the same answer — the order
+        // a player taps two identical tiles in carries no meaning.
+        onAnswer={(idx) => answer([...idx].sort((a, b) => a - b).join(","))}
+      />
     );
   }
 

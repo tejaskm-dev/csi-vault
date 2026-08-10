@@ -22,6 +22,7 @@ import { useGame } from "../context/GameContext";
 import { playCorrect, playWrong } from "../lib/sound";
 import { useReactions, triggerForSolve } from "../lib/reactions";
 import { humanError } from "../lib/errors";
+import * as api from "../lib/api";
 import { SOCIAL_TYPES, type ChallengeType } from "../data/mockData";
 import {
   shakeVariants,
@@ -77,7 +78,7 @@ const OWNS_COMMIT: ReadonlySet<ChallengeType> = new Set<ChallengeType>([
 export function ChallengeScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getChallenge, unlockedVaults, solveBonus, submit, streak, challenges } = useGame();
+  const { getChallenge, unlockedVaults, solveBonus, submit, streak, challenges, refresh } = useGame();
   const { fire } = useReactions();
 
   const challenge = getChallenge(id);
@@ -93,6 +94,8 @@ export function ChallengeScreen() {
   const [showMiss, setShowMiss] = useState(false);
   /** A request that failed, as opposed to an answer that was wrong. */
   const [submitError, setSubmitError] = useState<string | null>(null);
+  /** True once this challenge has been open long enough to count as stuck. */
+  const [canRelease, setCanRelease] = useState(false);
   const timers = useRef<number[]>([]);
   const ctaRef = useRef<HTMLDivElement | null>(null);
 
@@ -113,6 +116,20 @@ export function ChallengeScreen() {
    * Keyed on assignmentId, which is unique per question per player, rather
    * than on the route, which is exactly what failed to change.
    */
+  /**
+   * Tell the server this challenge is now on screen, and start the stuck
+   * clock. The offer below only appears once it has genuinely been open for a
+   * while — a player who has just arrived should be trying, not looking for
+   * the exit.
+   */
+  useEffect(() => {
+    if (!challenge?.assignmentId) return;
+    void api.markSeen(challenge.assignmentId);
+    setCanRelease(false);
+    const t = window.setTimeout(() => setCanRelease(true), 5 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [challenge?.assignmentId]);
+
   useEffect(() => {
     // Timers from the PREVIOUS question would otherwise still fire into this
     // one — the delayed miss overlay especially, which would slam a "Not
@@ -400,6 +417,29 @@ export function ChallengeScreen() {
             {challenge.question}
           </p>
         </div>
+
+        {/* The escape hatch.
+            Vaults are sequential, so a challenge that has become impossible —
+            a target who went home, a camera that will not open — ends the
+            player's game. Offered only on the ones that depend on somebody
+            else, and only after five minutes, so it never becomes the easy
+            route past a puzzle they simply have not solved yet. */}
+        {canRelease && SOCIAL_TYPES.has(challenge.type) && !challenge.solved && (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await api.releaseStuck(challenge.assignmentId!);
+                await refresh();
+              } catch (e) {
+                setSubmitError(humanError(e, "Could not skip that one."));
+              }
+            }}
+            className="ink rounded-btn bg-paper-deep px-4 py-3 text-center font-body text-[13px] font-bold text-ink/70 shadow-ink-sm"
+          >
+            Cannot finish this one? Move past it →
+          </button>
+        )}
 
         {submitError && (
           <div className="rounded-btn border-3 border-ink bg-red px-4 py-3 text-center">

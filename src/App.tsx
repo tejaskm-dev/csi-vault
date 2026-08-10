@@ -29,12 +29,15 @@ const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp }))
 );
 import { GameProvider } from "./context/GameContext";
+import { setErrorReporter } from "./lib/errors";
+import { reportError } from "./lib/api";
 import { ReactionProvider } from "./lib/reactions";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
 import { IncomingMeet } from "./components/IncomingMeet";
 import { RoomReset } from "./components/RoomReset";
 import { CrewCard } from "./components/CrewCard";
+import { Notice } from "./components/Notice";
 import { RouteGuard, ConnectingGate } from "./components/RouteGuard";
 import { Reaction } from "./components/Reaction";
 import { scrollToTop } from "./lib/scroll";
@@ -139,6 +142,10 @@ function AnimatedRoutes() {
   );
 }
 
+// Wired once, here, so lib/errors does not have to import the API layer and
+// create a cycle.
+setErrorReporter((where, message) => { void reportError(where, message); });
+
 export default function App() {
   return (
     <GameProvider>
@@ -174,6 +181,7 @@ export default function App() {
                       inside the route tree would unmount a half-shown reaction
                       (or, much worse, a pending handshake prompt) the moment
                       the player navigated. */}
+                  <Notice />
                   <CrewCard />
                   <IncomingMeet />
                   <RoomReset />

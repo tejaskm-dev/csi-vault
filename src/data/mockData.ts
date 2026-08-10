@@ -73,7 +73,7 @@ export interface ChallengeExtras {
   letters?: string;
   /** tumbler: the dealt combination. */
   combo?: number[];
-  mode?: 'colour_trap' | 'impostor';
+  mode?: 'colour_trap' | 'impostor' | 'flash' | 'pair';
   word?: string;
   ink?: string;
   choices?: string[];
@@ -84,6 +84,11 @@ export interface ChallengeExtras {
   /** impostor: how the odd tile differs, and how subtly (1 easiest). */
   variant?: 'rotate' | 'size' | 'flip' | 'tint';
   strength?: number;
+  /** flash: the row shown, which position is asked, and the options. */
+  symbols?: string[];
+  ask_index?: number;
+  /** pair: the grid, with exactly two matching tiles. */
+  tiles?: string[];
   mine?: number;
   symbol?: string;
   about?: string;
