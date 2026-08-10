@@ -5,7 +5,7 @@ import { playTap } from "../lib/sound";
 import type { MinigameProps } from "./types";
 
 /**
- * CRACK THE TUMBLER — drag three dials to a combination.
+ * CRACK THE TUMBLER — turn three dials to a combination.
  *
  * The most on-theme game in the set, and the reason it is first: the whole app
  * is a heist about opening safes, and until now nothing in it involved
@@ -14,6 +14,11 @@ import type { MinigameProps } from "./types";
  * The player is not guessing blind. Each dial reports hot/cold as it turns —
  * so it is a three-dimensional "warmer, warmer, colder" that a first-year can
  * solve in about forty seconds without knowing anything.
+ *
+ * Buttons, never a drag. A vertical drag on a dial is a page scroll on iOS and
+ * a horizontal one near the edge is the back gesture; both belong to the OS
+ * and neither can be taken back by the page. Every input in this game is a tap
+ * for that reason.
  */
 const DIALS = 3;
 const STOPS = 12;
@@ -81,7 +86,7 @@ export function Tumbler({ payload, onSubmit, busy }: MinigameProps) {
                 onClick={() => turn(i, 1)}
                 disabled={busy}
                 aria-label={`Dial ${i + 1} up`}
-                className="ink w-full rounded-btn bg-paper-deep py-1 font-display text-[16px] text-ink shadow-ink-sm"
+                className="ink h-11 w-full rounded-btn bg-paper-deep font-display text-[18px] text-ink shadow-ink-sm active:translate-y-[2px]"
               >
                 ▲
               </button>
@@ -116,7 +121,7 @@ export function Tumbler({ payload, onSubmit, busy }: MinigameProps) {
                 onClick={() => turn(i, -1)}
                 disabled={busy}
                 aria-label={`Dial ${i + 1} down`}
-                className="ink w-full rounded-btn bg-paper-deep py-1 font-display text-[16px] text-ink shadow-ink-sm"
+                className="ink h-11 w-full rounded-btn bg-paper-deep font-display text-[18px] text-ink shadow-ink-sm active:translate-y-[2px]"
               >
                 ▼
               </button>

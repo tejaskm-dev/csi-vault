@@ -33,6 +33,19 @@ export function FlashRecall({
   /** showing → the row is visible · asking → it is gone and the question is up */
   const [phase, setPhase] = useState<"ready" | "showing" | "asking">("ready");
 
+  /**
+   * One second look, and only one.
+   *
+   * Two seconds of a five-symbol row, with no warning of which position will
+   * be asked, is a genuinely hard ask — and a player who blinked had nothing
+   * left but a one-in-four guess, with no way to earn the answer. That is the
+   * same shape as the clue-less anagram: a wall rather than a route.
+   *
+   * Once, not unlimited, because unlimited looks means the row is never gone
+   * and there is no memory in the memory game.
+   */
+  const [replays, setReplays] = useState(1);
+
   useEffect(() => {
     if (phase !== "showing") return;
     const t = setTimeout(() => setPhase("asking"), 2200);
@@ -114,6 +127,17 @@ export function FlashRecall({
             </motion.button>
           ))}
         </motion.div>
+      )}
+
+      {phase === "asking" && replays > 0 && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => { playTap(); setReplays(0); setPhase("showing"); }}
+          className="mx-auto font-body text-[12px] font-bold uppercase tracking-[0.14em] text-ink/40 underline decoration-ink/20 underline-offset-4"
+        >
+          Show it once more
+        </button>
       )}
 
       {phase !== "asking" && (

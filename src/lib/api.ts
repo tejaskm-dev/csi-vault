@@ -78,6 +78,9 @@ export interface ChallengePayload {
   prompt?: string;
   /** anagram: the scrambled letters, dealt server-side. */
   letters?: string;
+  /** anagram: what the word means. Without it the tiles are a search, not a
+   *  puzzle — see the note in Anagram.tsx. */
+  clue?: string;
   /** tumbler: the dealt combination. */
   combo?: number[];
 }
