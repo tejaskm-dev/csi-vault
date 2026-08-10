@@ -21,6 +21,17 @@
 -- Deliberately a definition, not a category. "A word for a room" narrows to
 -- hundreds; "where a car is kept" narrows to one, and the puzzle is then the
 -- letters rather than the guessing.
+--
+-- SIXTY WORDS, not twenty-five. 0015 seeded twenty-five and 0023 quietly added
+-- thirty-five more in the middle of an unrelated migration, so a first pass at
+-- this only covered the first batch and the assertion at the bottom caught it.
+-- Every row in the table is clued below.
+--
+-- Where a word is obscure but its ALTS are ordinary, the clue points at the
+-- ordinary one. `carets` is the plural of the ^ symbol and nobody is finding
+-- that from six tiles — but CRATES, TRACES and REACTS are all accepted alts,
+-- so the clue describes a crate. The grader was already permissive; the clue
+-- just stops the player having to be a lexicographer to use it.
 -- ============================================================================
 
 alter table public.anagram_words
@@ -52,19 +63,65 @@ from (values
   ('rescue', 'To save someone from trouble'),
   ('quiet',  'Making no noise at all'),
   ('stable', 'Where a horse sleeps, or steady and not wobbling'),
-  ('dealer', 'The person who hands out the cards')
+  ('dealer', 'The person who hands out the cards'),
+
+  -- The batch 0023 added. Same rule: describe the answer, not its category.
+  ('ocean',   'The biggest body of water on Earth'),
+  ('north',   'The direction at the top of a map'),
+  ('stream',  'A small flowing river, or what you do to a video'),
+  -- word THING, alt NIGHT. "Thing" cannot be defined into one answer, so the
+  -- clue points at the alt, which the grader already accepts.
+  ('thing',   'When it is dark outside'),
+  ('saved',   'Kept from being lost'),
+  ('cause',   'The reason something happened'),
+  ('latest',  'The most recent one'),
+  ('signal',  'The bars on your phone, or a wave to get attention'),
+  ('rescued', 'Saved from danger'),
+  ('marine',  'To do with the sea'),
+  ('danger2', 'Where you grow flowers and vegetables'),
+  ('listen2', 'Making no sound at all'),
+  ('parties', 'Celebrations with music and cake'),
+  -- word EARNEST, alt NEAREST — the alt is the one a first-year will find.
+  ('earnest', 'Closest of all'),
+  -- word DIAPER, alt PAIRED.
+  ('diaper',  'Matched up, two by two'),
+  ('lemons',  'Sour yellow fruit'),
+  ('staple',  'The little metal clip that holds paper together'),
+  -- word CARETS — the ^ symbol, plural. Alt CRATES.
+  ('carets',  'Wooden boxes for shipping things'),
+  ('dusty',   'Covered in a layer you could write your name in'),
+  -- word THESE, alt SHEET.
+  ('these',   'A flat piece of paper, or what covers a bed'),
+  ('angered', 'Made someone furious'),
+  ('notes2',  'The very beginning of something'),
+  ('reset',   'To put something back to the start'),
+  ('salt',    'You sprinkle it on chips'),
+  ('care',    'To look after someone'),
+  ('west',    'The direction the sun sets'),
+  ('form',    'A document you fill in'),
+  ('item',    'A single thing on a list'),
+  ('star2',   'It twinkles in the night sky'),
+  ('dear',    'How you begin a letter'),
+  ('evil',    'Wicked — the opposite of good'),
+  ('snap',    'To break with a sharp sound'),
+  ('silver2', 'The metal of a second-place medal'),
+  ('throne',  'The chair a king sits on'),
+  ('cellar',  'An underground room below a house')
 ) as c(id, clue)
 where public.anagram_words.id = c.id;
 
 -- A word with no clue would deal a puzzle with nothing to go on, which is the
--- bug this migration exists to close. Fail loudly here rather than quietly on
--- somebody's phone.
+-- bug this migration exists to close. Fail loudly rather than quietly on
+-- somebody's phone — and NAME the rows, because "35 rows" sent me looking in
+-- the wrong migration for the ones I had missed.
 do $$
-declare n int;
+declare v_missing text;
 begin
-  select count(*) into n from public.anagram_words where coalesce(trim(clue), '') = '';
-  if n > 0 then
-    raise exception 'anagram_words: % row(s) still have no clue', n;
+  select string_agg(id, ', ' order by id) into v_missing
+  from public.anagram_words where coalesce(trim(clue), '') = '';
+
+  if v_missing is not null then
+    raise exception 'anagram_words has no clue for: %', v_missing;
   end if;
 end $$;
 
