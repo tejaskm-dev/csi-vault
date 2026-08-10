@@ -31,6 +31,16 @@ export interface RouteState {
   booted: boolean;
   /** Null when never joined, or when the host wiped the room. */
   hasPlayer: boolean;
+  /**
+   * A rejoin is still possible: this phone has a name and a stored room that
+   * matches the open one, so it is about to become a player again.
+   *
+   * Without this, the window between "no player yet" and "rejoined" reads as
+   * "you do not belong here" and bounces the student to the name screen —
+   * which is what happened when the host pressed Start while people were
+   * sitting in the waiting room.
+   */
+  rejoinable?: boolean;
   phase?: Phase;
 }
 
@@ -63,6 +73,10 @@ export function redirectFor(s: RouteState, pathname: string): string | null {
     if (RESULTS.has(pathname)) return null;
     return s.hasPlayer ? "/winner" : PRE_GAME.has(pathname) ? null : "/name";
   }
+
+  // Hold, do not redirect. The rejoin resolves within a round trip and the
+  // player lands back where they were.
+  if (!s.hasPlayer && s.rejoinable) return null;
 
   if (!s.hasPlayer) return PRE_GAME.has(pathname) ? null : "/name";
 

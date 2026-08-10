@@ -94,6 +94,12 @@ interface GameState {
   evicted: boolean;
   /** False during the initial session lookup and rejoin attempt. */
   booted: boolean;
+  /**
+   * This phone can still become a player without asking anything: it has a
+   * name and its stored room matches the one that is open. Routing uses it to
+   * wait rather than bounce someone to the door mid-rejoin.
+   */
+  rejoinable: boolean;
   /** Dismiss the eviction notice, ready to rejoin. */
   clearEviction: () => void;
   /** A handshake aimed at me, waiting for my tap. Null when nobody is here. */
@@ -390,7 +396,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        */
       // Only trust an eviction when the roster actually arrived. A failed
       // fetch is not evidence that the player was deleted.
-      if (roster && player && !roster.some((p) => p.id === player.id)) {
+      // roster.length > 0 matters: a successful-but-empty fetch used to
+      // satisfy this and evict EVERY player at once. You are always in your own
+      // room, so an empty list is evidence the fetch was wrong, not that you
+      // were removed.
+      if (roster && roster.length > 0 && player && !roster.some((p) => p.id === player.id)) {
         evict();
         return;
       }
@@ -807,6 +817,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const clearEviction = useCallback(() => setEvicted(false), []);
 
+  /**
+   * Recomputed rather than stored, so it cannot go stale. Deliberately does NOT
+   * consider `evicted`: a player the host wiped should see the notice and go
+   * through the door, not be silently rejoined.
+   */
+  const rejoinable = Boolean(
+    isLive && session && username && !player && !evicted &&
+    localStorage.getItem('csi_session') === session.id
+  );
+
   const confirmMeet = useCallback(async (interactionId: string) => {
     await api.confirmConnect(interactionId);
     setIncoming(null);
@@ -881,13 +901,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       unlockedVaults, unlockVault, bonusSolved, solveBonus, leaderboard, reset,
       live: isLive, status, error, session, player, players,
       join, pin, reclaim, submit, streak, incoming, confirmMeet, refresh,
-      evicted, clearEviction, booted,
+      evicted, clearEviction, booted, rejoinable,
     }),
     [
       username, challenges, getChallenge, digitForChallenge, unlockedVaults,
       unlockVault, bonusSolved, solveBonus, leaderboard, reset, status, error,
       session, player, players, join, pin, reclaim, submit, streak, incoming,
-      confirmMeet, refresh, evicted, clearEviction, booted,
+      confirmMeet, refresh, evicted, clearEviction, booted, rejoinable,
     ]
   );
 
