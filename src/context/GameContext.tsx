@@ -783,11 +783,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
+        // audit-ok: the OFFLINE branch. It only runs when there is no server
+        // to ask, and the live board never carries an answer to compare with.
         const correct =
           challenge.type === 'text_input'
             ? String(answer.text ?? '').trim().toLowerCase() ===
-              challenge.correctAnswerText?.toLowerCase()
-            : String(answer.option ?? '') === challenge.correctAnswerId;
+              challenge.correctAnswerText?.toLowerCase()  // audit-ok
+            : String(answer.option ?? '') === challenge.correctAnswerId; // audit-ok
         // Offline boards are one challenge per vault, so a correct answer
         // always completes it.
         result = { correct, solved: correct, vaultComplete: correct };

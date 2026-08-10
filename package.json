@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test:routes": "tsx src/lib/routing.test.ts"
+    "test:routes": "tsx src/lib/routing.test.ts",
+    "audit:code": "node scripts/audit-code.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

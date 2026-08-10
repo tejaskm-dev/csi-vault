@@ -13,7 +13,6 @@ import type { MinigameKey, MinigameProps } from "./types";
 const GAMES: Record<MinigameKey, React.LazyExoticComponent<React.FC<MinigameProps>>> = {
   tumbler:   lazy(() => import("./Tumbler").then((m) => ({ default: m.Tumbler }))),
   maze:      lazy(() => import("./Maze").then((m) => ({ default: m.Maze }))),
-  wordbuild: lazy(() => import("./WordBuild").then((m) => ({ default: m.WordBuild }))),
   survival:  lazy(() => import("./Survival").then((m) => ({ default: m.Survival }))),
   pairs:     lazy(() => import("./Pairs").then((m) => ({ default: m.Pairs }))),
   wires:     lazy(() => import("./Wires").then((m) => ({ default: m.Wires }))),

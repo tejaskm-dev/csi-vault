@@ -405,9 +405,23 @@ export async function uploadPhoto(
   if (!uid) throw new Error("not signed in");
 
   const path = `${uid}/${assignmentId}-${Date.now()}.jpg`;
-  const { error: upErr } = await client()
-    .storage.from("photos")
-    .upload(path, file, { contentType: "image/jpeg", upsert: true });
+
+  /**
+   * The upload needs its own, longer deadline.
+   *
+   * It is the only call in the app that is not an RPC, so it bypassed the
+   * timeout helper entirely — and it is also the single most likely thing to
+   * hang, because it is the only one sending a couple of hundred KB over
+   * congested venue wifi. 30s rather than 12: a slow upload is normal, a dead
+   * one is not, and the difference matters when sixty phones upload at once.
+   */
+  const { error: upErr } = await Promise.race([
+    client().storage.from("photos")
+      .upload(path, file, { contentType: "image/jpeg", upsert: true }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Upload timed out. Check your signal.")), 30000)
+    ),
+  ]);
   if (upErr) throw upErr;
 
   await rpc<unknown>("record_photo", {

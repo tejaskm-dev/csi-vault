@@ -114,6 +114,11 @@ export function ChallengeScreen() {
    * than on the route, which is exactly what failed to change.
    */
   useEffect(() => {
+    // Timers from the PREVIOUS question would otherwise still fire into this
+    // one — the delayed miss overlay especially, which would slam a "Not
+    // quite" screen over a question the player had only just been shown.
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setSelectedId(null);
     setTextInput("");
     setWrongId(null);
@@ -395,19 +400,19 @@ export function ChallengeScreen() {
         {/* Choices Layout */}
         <div className="grow flex flex-col justify-center my-2">
           {challenge.type === "observe" ? (
-            <ObserveTask {...taskProps} />
+            <ObserveTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "connect" ? (
-            <ConnectTask challenge={challenge} />
+            <ConnectTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "exchange" ? (
-            <ExchangeTask {...taskProps} />
+            <ExchangeTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "recall" ? (
-            <RecallTask {...taskProps} />
+            <RecallTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "photo" ? (
-            <PhotoTask challenge={challenge} />
+            <PhotoTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "charades" ? (
-            <CharadesTask challenge={challenge} />
+            <CharadesTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "minigame" ? (
-            <Minigame
+            <Minigame key={challenge.assignmentId}
               game={challenge.payload?.game ?? "tumbler"}
               // Seeded server-side at deal time. Two players get different
               // puzzles, the same player gets the same one back after a
