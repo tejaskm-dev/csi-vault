@@ -11,6 +11,7 @@ import { CombinationReadout } from "../components/CombinationReadout";
 import { CrewFeed } from "../components/CrewFeed";
 import { Wordmark } from "../components/Wordmark";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { RecoveryChip } from "../components/RecoveryCode";
 import { useGame, useElapsed } from "../context/GameContext";
 import type { VaultState } from "../components/VaultTile";
 import { screenChoreo, riseIn, popIn } from "../lib/motion";
@@ -70,6 +71,15 @@ export function Home() {
           and never moves the page when someone scores. */}
       <div className="relative z-30 h-0">
         <CrewFeed />
+      </div>
+
+      {/* The player's own number and recovery code, small and permanent.
+          It is here rather than behind a menu for two reasons: other players
+          need the number to find you, and nobody reads a warning about
+          clearing their cache — but they do glance at their own screen.
+          Renders nothing offline. */}
+      <div className="flex justify-center px-6 pt-3">
+        <RecoveryChip />
       </div>
 
       {/* ── Body ───────────────────────────────────────────────────

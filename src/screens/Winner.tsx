@@ -93,6 +93,45 @@ export function Winner() {
     return () => clearTimeout(t);
   }, []);
 
+  /**
+   * Nobody is on the board.
+   *
+   * The podium renders "OPEN" for an unfilled place, which was right when the
+   * board always had bots in it. On a real session that ended with no players
+   * — everyone wiped by a reset, or a room that never filled — all three slots
+   * say OPEN under a giant WINNER!, which reads as a broken app rather than an
+   * empty one. Say what actually happened instead, and leave a way onward.
+   */
+  if (leaderboard.length === 0) {
+    return (
+      <motion.div
+        variants={screenChoreo}
+        initial="initial"
+        animate="animate"
+        className="relative flex flex-1 select-none flex-col items-center justify-center gap-6 px-6 text-center"
+      >
+        <Sprinkles />
+        {/* A plain div, not a motion.div — so the rotation needs its unit.
+            Framer accepts a bare number here; the DOM does not. */}
+        <div className="ink relative rounded-plate bg-white p-6 shadow-ink" style={{ rotate: "-1deg" }}>
+          <h1 className="font-display text-[26px] uppercase leading-tight text-ink">
+            No standings yet
+          </h1>
+          <p className="mt-2 font-body text-[15px] font-bold leading-snug text-ink/70">
+            This round finished with nobody on the board. Nothing was lost —
+            there is simply no result to show.
+          </p>
+          <p className="mt-2 font-body text-[13px] font-semibold text-ink/45">
+            The host can reopen the room to start a new round.
+          </p>
+        </div>
+        <PrimaryButton onClick={() => navigate("/leaderboard")} className="h-14 w-full max-w-xs">
+          VIEW THE BOARD
+        </PrimaryButton>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       variants={screenChoreo}

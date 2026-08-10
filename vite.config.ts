@@ -43,6 +43,11 @@ export default defineConfig(() => {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
             motion: ['motion', 'motion/react'],
+            // Same reasoning as the two above, and it earns its place harder
+            // than either: the client is ~70KB gzipped, it changes only when
+            // the dependency is bumped, and a phone that has loaded the game
+            // once should never download it again for a copy tweak.
+            supabase: ['@supabase/supabase-js'],
           },
         },
       },

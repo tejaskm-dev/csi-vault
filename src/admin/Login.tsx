@@ -5,38 +5,93 @@ import { Padlock } from "../components/Props";
 import { Sprinkles } from "../components/Sprinkles";
 import { playTap, playWrong, playUnlock } from "../lib/sound";
 import { cn } from "../lib/utils";
+import { isLive } from "../lib/supabase";
+import * as api from "../lib/api";
 
 /**
  * Operator sign-in.
  *
- * UI ONLY. There is no auth behind this and it must not be mistaken for any:
- * the passcode is compared in the browser, which means anyone who opens
- * devtools can read it. It exists so the screen the operator sees is designed,
- * and so the shape of the flow — six digits, lockout after repeated failures,
- * a clear signed-in state — is settled before the real thing is wired up.
+ * LIVE: the code is verified server-side. Every host action re-sends it and
+ * every host function re-checks it against sessions.host_code, so there is no
+ * client-side "signed in" flag worth forging — passing this screen with
+ * devtools gets you a dashboard whose every button fails.
  *
- * When the backend lands this becomes a Supabase session and the check moves
- * to the server. Everything visual here survives that change; nothing about
- * the layout depends on where the check happens.
+ * OFFLINE: still a browser-side compare against DEMO_CODE, because there is no
+ * server to ask. Do not mistake that path for auth; it exists so the screen
+ * can be designed and demoed without a database.
  */
+/** The offline code. Live, the real one lives in sessions.host_code. */
 const DEMO_CODE = "801422";
 const MAX_TRIES = 5;
 
-export function Login({ onPass }: { onPass: () => void }) {
+export function Login({ onPass }: { onPass: (code: string) => void }) {
   const [code, setCode] = useState("");
   const [tries, setTries] = useState(0);
   const [shake, setShake] = useState(false);
+  const [checking, setChecking] = useState(false);
+  /** Server-side reason for a rejection, when there is one worth showing. */
+  const [note, setNote] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const locked = tries >= MAX_TRIES;
 
-  const submit = (value: string) => {
-    if (value === DEMO_CODE) {
-      playUnlock();
-      onPass();
+  /**
+   * This does not check a code. It CLAIMS the session.
+   *
+   * The distinction is the whole security model. host_claim() spends the six
+   * digits once, binds the session to this browser's auth user, and from then
+   * on every host action is authorised by that binding — so someone who
+   * eventually guesses the code cannot act while a real host holds the room.
+   *
+   * The server also owns the lockout now. The five-try counter below is
+   * cosmetic; the real one is in Postgres, keyed on the caller's identity, and
+   * cannot be stepped over in devtools the way this one can.
+   */
+  const submit = async (value: string) => {
+    if (checking) return;
+
+    if (!isLive) {
+      if (value === DEMO_CODE) { playUnlock(); onPass(value); return; }
+      reject();
       return;
     }
+
+    setChecking(true);
+    try {
+      const s = await api.defaultSession();
+      if (!s) throw new Error("no session");
+      await api.hostClaim(s.id, value);
+      playUnlock();
+      onPass(value);
+    } catch (e) {
+      // Only ONE of the things that can go wrong here is a wrong code, and
+      // reporting all of them as one sent me chasing a passcode for twenty
+      // minutes when the actual fault was a broken view. An operator staring
+      // at "incorrect code" will retype a correct code until the server locks
+      // them out, so anything that is not a rejected passcode says what it is.
+      const msg = e instanceof Error ? e.message : String(e);
+      reject(
+        /already hosting/i.test(msg)
+          ? "Another device is hosting. Release it there, or wait 12 hours."
+          : /too many/i.test(msg)
+          ? "Too many attempts. Wait a few minutes."
+          : /bad host code/i.test(msg)
+          ? null // the one genuine wrong-code case
+          : /no session|no such session/i.test(msg)
+          ? "No open session. Check the migrations have run."
+          : `Could not reach the server — ${msg.slice(0, 90)}`
+      );
+      // Full detail to the console regardless. The screen has room for one
+      // line; a Postgres error code belongs where it can be read properly.
+      console.error("[vault] host claim failed", e);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const reject = (message: string | null = null) => {
     playWrong();
+    setNote(message);
     setTries((t) => t + 1);
     setShake(true);
     setCode("");
@@ -44,10 +99,10 @@ export function Login({ onPass }: { onPass: () => void }) {
   };
 
   const onChange = (raw: string) => {
-    if (locked) return;
+    if (locked || checking) return;
     const next = raw.replace(/\D/g, "").slice(0, 6);
     setCode(next);
-    if (next.length === 6) submit(next);
+    if (next.length === 6) void submit(next);
     else if (next.length > code.length) playTap();
   };
 
@@ -133,12 +188,19 @@ export function Login({ onPass }: { onPass: () => void }) {
             className="sr-only"
           />
 
-          {tries > 0 && !locked && (
+          {/* `note` carries the server's actual reason — an already-claimed
+              room or a server-side throttle — which are not wrong codes and
+              must not be reported as one. */}
+          {note ? (
+            <p className="mt-3 text-center font-body text-[12px] font-bold text-red">
+              {note}
+            </p>
+          ) : tries > 0 && !locked ? (
             <p className="mt-3 text-center font-body text-[12px] font-bold text-red">
               Incorrect code — {MAX_TRIES - tries} attempt
               {MAX_TRIES - tries === 1 ? "" : "s"} left.
             </p>
-          )}
+          ) : null}
 
           <PrimaryButton
             onClick={() => inputRef.current?.focus()}
@@ -148,12 +210,20 @@ export function Login({ onPass }: { onPass: () => void }) {
             {locked ? "LOCKED" : "UNLOCK"}
           </PrimaryButton>
 
-          {/* Stated plainly rather than hidden, because a passcode checked in
-              the browser is not security and nobody should think it is. */}
-          <p className="mt-4 text-center font-body text-[11px] font-semibold leading-snug text-ink/35">
-            Demo build — this check runs in the browser and protects nothing.
-            Code <span className="font-readout text-ink/55">{DEMO_CODE}</span>.
-          </p>
+          {/* Offline, the check is a browser-side string compare and printing
+              the code alongside that admission is honest. LIVE, it is a real
+              claim against the server — so this must not print the secret. */}
+          {isLive ? (
+            <p className="mt-4 text-center font-body text-[11px] font-semibold leading-snug text-ink/35">
+              Unlocking claims this room for this browser. Other devices are
+              locked out until you release it.
+            </p>
+          ) : (
+            <p className="mt-4 text-center font-body text-[11px] font-semibold leading-snug text-ink/35">
+              Demo build — this check runs in the browser and protects nothing.
+              Code <span className="font-readout text-ink/55">{DEMO_CODE}</span>.
+            </p>
+          )}
         </motion.div>
       </motion.div>
     </div>

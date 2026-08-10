@@ -4,10 +4,13 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { screenChoreo, popIn, riseIn } from "../lib/motion";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Padlock, Stopwatch } from "../components/Props";
+import { useGame } from "../context/GameContext";
+import { RecoveryChip } from "../components/RecoveryCode";
 
 export function Waiting() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { live, player, players } = useGame();
   const isPost = params.get("state") === "post";
 
   return (
@@ -56,7 +59,52 @@ export function Waiting() {
           </motion.div>
         </div>
 
-        <motion.div variants={riseIn} className="p-6 pt-0">
+        <motion.div variants={riseIn} className="flex flex-col gap-3 p-6 pt-0">
+          {/* The lobby is no longer a dead screen — the route guard now parks
+              every player here between joining and the host pressing Start, so
+              it is the first real thing most of them see.
+
+              Their vault number is the thing that matters. Within a minute of
+              the game starting, strangers will be walking up asking for it, and
+              a player who has to go hunting for their own number is already
+              behind. The live count is there because a lobby that shows the
+              room filling up feels like an event about to start; a static
+              "please wait" feels like a loading screen. */}
+          {!isPost && live && player && (
+            <div className="flex items-stretch gap-3">
+              <div className="ink flex-1 rounded-plate bg-brass px-3 py-3 text-center shadow-[0_4px_0_0_var(--color-brass-deep)]">
+                <span className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-ink/60">
+                  You are
+                </span>
+                <div
+                  className="font-display text-[34px] leading-none text-white"
+                  style={{ WebkitTextStroke: "2px var(--color-ink)" }}
+                >
+                  {player.vault_no}
+                </div>
+              </div>
+              <div className="ink flex-1 rounded-plate bg-white px-3 py-3 text-center shadow-ink-sm">
+                <span className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-ink/45">
+                  In the room
+                </span>
+                <div className="font-display text-[34px] leading-none text-ink">
+                  {players.length}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* The PIN, while they have nothing else to do.
+              Once the host presses Start, new joins are refused — so this code
+              becomes the ONLY way back in for anyone who clears their browser.
+              The lobby is the one moment in the whole event when a player has
+              idle time to notice it. */}
+          {!isPost && (
+            <div className="flex justify-center">
+              <RecoveryChip />
+            </div>
+          )}
+
           {isPost ? (
             <PrimaryButton onClick={() => navigate("/leaderboard")} className="h-16 w-full">
               VIEW LEADERBOARD

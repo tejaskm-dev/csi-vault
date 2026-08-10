@@ -3,23 +3,30 @@ import { motion } from "motion/react";
 import { Medal, Stopwatch, Padlock, MysteryBox } from "../components/Props";
 import { Sprinkles } from "../components/Sprinkles";
 import { useHall } from "./useHall";
+import { HostControls } from "./HostControls";
 import { listStagger, riseIn } from "../lib/motion";
 import { cn } from "../lib/utils";
 
 /**
  * Operator dashboard — the laptop view, not the projected one.
  *
- * Monitoring only, and deliberately: at an event the operator is watching a
+ * Mostly monitoring, and deliberately: at an event the operator is watching a
  * room, not administering records. The things that actually get looked at are
  * how far along the room is, who is stuck, and whether anything has broken —
  * so those are the whole page, and the controls are the few that would be
  * reached for under pressure.
  *
- * Every control here is inert. Wiring them without a backend would produce
- * buttons that look live and do nothing, which is worse than buttons that say
- * what they are.
+ * Those controls are real now, and live in HostControls so the one part of
+ * this page that changes the room is visually separate from the parts that
+ * only report on it.
  */
-export function Dashboard({ onSignOut }: { onSignOut: () => void }) {
+export function Dashboard({
+  hostCode,
+  onSignOut,
+}: {
+  hostCode: string;
+  onSignOut: () => void;
+}) {
   const { ranked, stats, events } = useHall();
 
   const stuck = ranked.filter((p) => p.digits <= 2).length;
@@ -187,27 +194,9 @@ export function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               </div>
             </motion.section>
 
-            {/* ── Controls, honestly labelled ───────────────────── */}
-            <motion.section variants={riseIn} className="ink rounded-plate bg-paper-deep/60 p-5 shadow-ink-sm">
-              <h2 className="font-display text-[13px] uppercase tracking-[0.14em] text-ink/60">
-                Event controls
-              </h2>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {["Open doors", "Freeze board", "Reveal results", "Reset event"].map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    disabled
-                    className="ink cursor-not-allowed rounded-btn bg-white/60 px-3 py-2.5 font-display text-[11px] uppercase tracking-wide text-ink/35"
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-3 font-body text-[11px] font-semibold leading-snug text-ink/40">
-                Inert until there is a backend. Live-looking buttons that do
-                nothing are worse than disabled ones.
-              </p>
+            {/* ── Controls, now actually wired ──────────────────── */}
+            <motion.section variants={riseIn}>
+              <HostControls code={hostCode} />
             </motion.section>
           </div>
         </div>
