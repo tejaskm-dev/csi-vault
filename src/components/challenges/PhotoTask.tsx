@@ -86,6 +86,10 @@ export function PhotoTask({ challenge }: { challenge: Challenge }) {
       // should not be different just because this one used a camera.
     } catch (e) {
       setErr(humanError(e, "Upload failed. Check your signal and retry."));
+    } finally {
+      // Cleared on EVERY path. Previously success left it true and relied on
+      // the parent navigating away — so if the refresh was slow or the vault
+      // did not flip, the button sat on "SENDING…" with no way out.
       setBusy(false);
     }
   };

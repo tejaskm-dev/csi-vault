@@ -271,6 +271,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
+   * Everything this phone remembers about ONE room.
+   *
+   * `csi_session` is the important one and it is new: without it the stored
+   * identity had no idea which game it belonged to, so a player who came back
+   * for a second session was silently auto-rejoined into a board dealt for the
+   * previous one.
+   */
+  const forgetRoom = useCallback((keepName: boolean) => {
+    setPlayer(null);
+    setBoard([]);
+    setPin(null);
+    setUnlockedVaults([]);
+    setBonusSolved(false);
+    setStreak(0);
+    setIncoming(null);
+    if (!keepName) setUsername('');
+    localStorage.removeItem('csi_pin');
+    localStorage.removeItem('csi_unlocked');
+    localStorage.removeItem('csi_bonus');
+    localStorage.removeItem('csi_started');
+    localStorage.removeItem('csi_session');
+    if (!keepName) localStorage.removeItem('csi_username');
+    rejoined.current = false;
+  }, []);
+
+  /**
    * Put this phone back at the door.
    *
    * Everything derived from the deleted player row goes: board, pin, progress.
@@ -282,21 +308,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * for it with a new vault number, which is exactly right after a reset.
    */
   const evict = useCallback(() => {
-    setPlayer(null);
-    setBoard([]);
-    setPin(null);
-    setUnlockedVaults([]);
-    setBonusSolved(false);
-    setStreak(0);
-    setIncoming(null);
-    localStorage.removeItem('csi_pin');
-    localStorage.removeItem('csi_unlocked');
-    localStorage.removeItem('csi_bonus');
-    localStorage.removeItem('csi_started');
-    // Let the rejoin effect fire again once they choose to go back in.
-    rejoined.current = false;
+    // Name kept: the student is standing in the room being told to rejoin, and
+    // making them retype it is a small cruelty.
+    forgetRoom(true);
     setEvicted(true);
-  }, []);
+  }, [forgetRoom]);
 
   const refresh = useCallback(async () => {
     if (!isLive || !session) return;
@@ -355,8 +371,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }
         setSession(s);
         setStatus('ready');
-        // Nothing stored to rejoin as, so we are already as settled as we get.
-        if (!localStorage.getItem('csi_username')) setBooted(true);
+        // Deliberately does NOT set booted. The rejoin effect below decides,
+        // because only it knows whether the stored identity belongs to THIS
+        // room — and marking booted early would let the route guard act on a
+        // half-known state.
       } catch (e) {
         if (cancelled) return;
         setStatus('error');
@@ -383,6 +401,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Kept so the recovery chip survives a reload without a round trip.
         // Losing THIS is harmless — the PIN is also recoverable from the host.
         localStorage.setItem('csi_pin', recovery ?? '');
+        // Stamps WHICH room this identity is for. Everything below keys off it.
+        localStorage.setItem('csi_session', s.id);
         applyBoard(await api.fetchBoard(s.id));
         setPlayers(await api.fetchPlayers(s.id));
       } catch (e) {
@@ -411,6 +431,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setPin(recovery);
       setUsername(p.name);
       localStorage.setItem('csi_pin', recovery ?? '');
+      localStorage.setItem('csi_session', s.id);
       applyBoard(await api.fetchBoard(s.id));
       setPlayers(await api.fetchPlayers(s.id));
     },
@@ -423,12 +444,38 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // `evicted` gates this: without it the reset notice would be torn down
     // by an automatic rejoin a fraction of a second after it appeared.
-    if (!isLive || !session || rejoined.current || !username || evicted) return;
-    rejoined.current = true;
-    join(username)
-      .catch(() => { rejoined.current = false; })
-      .finally(() => setBooted(true));
-  }, [session, username, join, evicted]);
+    if (!isLive || !session || rejoined.current || evicted) return;
+
+    /**
+     * Auto-rejoin ONLY into the room this identity was created in.
+     *
+     * Silently rejoining is right within a session — it is what makes a
+     * refresh, a locked screen or a pocketed phone cost nothing, and it is the
+     * single most common path in the app.
+     *
+     * It is wrong ACROSS sessions. Every stored key was global, so a phone that
+     * had played before walked back in and was auto-joined without ever seeing
+     * the name screen, carrying a leftover name into a brand new game. The
+     * anonymous auth user is fine to keep — join_session scopes players by
+     * (session, auth_id), so a new room mints a new player row and a new vault
+     * number regardless — but the CLIENT has to stop assuming the old identity
+     * still means something.
+     */
+    const storedRoom = localStorage.getItem('csi_session');
+
+    if (username && storedRoom === session.id) {
+      rejoined.current = true;
+      join(username)
+        .catch(() => { rejoined.current = false; })
+        .finally(() => setBooted(true));
+      return;
+    }
+
+    // A different room, or an identity from before this was tracked. Drop it
+    // and send them through the door properly.
+    if (storedRoom || username) forgetRoom(false);
+    setBooted(true);
+  }, [session, username, join, evicted, forgetRoom]);
 
   /* ------------------------------------------------------------------ *
    * Live: realtime
@@ -528,6 +575,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       try {
         const s = await api.defaultSession();
         if (!s) return;
+
+        // A DIFFERENT room appeared. The host started a fresh session while
+        // this phone was open, so the board it is holding belongs to a game
+        // that is no longer running. Drop the identity and send them to the
+        // door rather than leaving them tapping at a dead board.
+        if (session && s.id !== session.id) {
+          forgetRoom(true);
+          setSession(s);
+          setEvicted(true);
+          return;
+        }
+
         // Only swap the object when something actually changed. Setting a
         // fresh object every tick gave `session` a new identity four times a
         // minute, which cascaded into refresh() and from there into every
@@ -544,7 +603,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     };
     const t = setInterval(pull, 4000);
     return () => clearInterval(t);
-  }, [session?.id]);
+  }, [session?.id, forgetRoom]);
 
   /* ------------------------------------------------------------------ *
    * The shared contract

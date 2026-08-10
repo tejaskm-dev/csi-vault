@@ -34,7 +34,7 @@ import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
 import { IncomingMeet } from "./components/IncomingMeet";
 import { RoomReset } from "./components/RoomReset";
-import { RouteGuard } from "./components/RouteGuard";
+import { RouteGuard, ConnectingGate } from "./components/RouteGuard";
 import { Reaction } from "./components/Reaction";
 import { scrollToTop } from "./lib/scroll";
 
@@ -159,14 +159,20 @@ export default function App() {
               path="*"
               element={
                 <GameShell>
-                  <AnimatedRoutes />
+                  {/* Guard wraps rather than sits beside: a sibling cannot stop
+                      its siblings rendering, which is why the old version had
+                      to correct the URL after the wrong screen had painted. */}
+                  <RouteGuard>
+                    <ConnectingGate>
+                      <AnimatedRoutes />
+                    </ConnectingGate>
+                  </RouteGuard>
                   {/* Both of these live outside AnimatedRoutes on purpose.
                       They are not screens — they are things that happen TO the
                       player wherever they happen to be, and mounting them
                       inside the route tree would unmount a half-shown reaction
                       (or, much worse, a pending handshake prompt) the moment
                       the player navigated. */}
-                  <RouteGuard />
                   <IncomingMeet />
                   <RoomReset />
                   <Reaction />

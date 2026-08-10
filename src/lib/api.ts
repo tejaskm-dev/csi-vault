@@ -56,6 +56,9 @@ export interface ChallengePayload {
   odd?: GlyphKey;
   count?: number;
   odd_index?: number;
+  /** impostor: how the odd tile differs, and how subtly (1 easiest). */
+  variant?: 'rotate' | 'size' | 'flip' | 'tint';
+  strength?: number;
   /** exchange: this player's half of the combination */
   mine?: number;
   symbol?: string;
@@ -199,7 +202,14 @@ function client() {
  * .from("sessions").
  */
 
-/** The session a join code refers to, or null if there is no such room. */
+/**
+ * The session a join code refers to, or null if there is no such room.
+ *
+ * CURRENTLY UNUSED. Players never type a code — defaultSession() picks the
+ * open room and the client passes that room's own code to the RPCs. This is
+ * kept for the day there are two concurrent rooms and students have to say
+ * which one they are in; until then, nothing should call it.
+ */
 export async function findSession(joinCode: string): Promise<SessionRow | null> {
   const { data, error } = await client()
     .from("sessions_public")

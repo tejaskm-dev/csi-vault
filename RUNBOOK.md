@@ -57,7 +57,14 @@ Without them the reaction layer still works — it shows a hand-lettered shout
 and GIFs replace the shouts automatically, with the shout as a caption. A file
 that 404s falls back per-reaction, so a half-uploaded bucket is fine.
 
-## 5. Change the host code
+## 5. There is no player join code
+
+`CSI1` names the room in the database. **Players never type it** — they open
+the site link and land in whichever room is open. Do not put it on a slide.
+
+The only thing students need is the URL (and a QR code to it).
+
+## 6. Change the host code
 
 ```sql
 update public.sessions set host_code = '<six digits>' where join_code = 'CSI1';
@@ -97,6 +104,20 @@ as many times as you liked.
 After running `0014`, check the SQL editor output for any
 `Vault N wants X step(s) but only Y qualify` warnings. That means a vault
 cannot be filled and would strand players.
+
+### Fresh session (2 min)
+
+An identity is scoped to the room it was made in. Within a session, refreshing
+or locking the phone rejoins silently — that path must keep working. Across
+sessions it must not.
+
+- Join, play a bit, then **Reset room**. The phone shows VAULTS RESEALED and
+  goes back to the door — it must not silently rejoin with the old name.
+- Refresh mid-game in the *same* session → straight back to your board, no
+  name screen. (If this breaks, it is worse than the bug it replaced.)
+- Create a second session in SQL while a phone is open:
+  `insert into sessions (name, join_code, phase) values ('Round 2','CSI2','lobby');`
+  That phone should drop its old board and return to the door.
 
 ### Routing (3 min)
 
