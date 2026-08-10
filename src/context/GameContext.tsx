@@ -193,7 +193,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * Remembering what is solved makes the flag monotonic on the client, so a
    * late answer can no longer un-solve anything.
    */
-  const solvedIds = useRef<Set<string>>(new Set());
+  /**
+   * WHEN each was solved, not just that it was.
+   *
+   * This started as a plain Set and forced `solved` to be permanently
+   * monotonic, which was right for the race it fixes — a response issued
+   * before a submit landing after it — and wrong the moment anything could
+   * legitimately un-solve a step. Evidence review can: a rejected photo clears
+   * solved_at, and a permanent Set would have quietly overwritten that on
+   * every snapshot, so the vault would reopen on its own a tick later and
+   * nothing the reviewer did would stick.
+   *
+   * A timestamp fixes both. The race resolves inside a second or two, so a
+   * short window covers it completely; past that the server is simply right.
+   */
+  const solvedIds = useRef<Map<string, number>>(new Map());
+
+  /** How long a local solve outranks the server. See above. */
+  const OPTIMISTIC_MS = 20000;
 
   /**
    * Which refresh is the newest.
@@ -328,13 +345,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     // Fold in everything already known to be solved before anything else looks
     // at this board. A response that predates a submit still says the step is
     // unsolved, and taking it at face value walks the player backwards.
-    const rows = incoming.map((c) =>
-      !c.solved && c.assignmentId && solvedIds.current.has(c.assignmentId)
-        ? { ...c, solved: true }
-        : c
-    );
+    const now = Date.now();
+    const rows = incoming.map((c) => {
+      if (c.solved || !c.assignmentId) return c;
+      const at = solvedIds.current.get(c.assignmentId);
+      // Recent enough to be a race; older than that and the server means it.
+      if (at !== undefined && now - at < OPTIMISTIC_MS) return { ...c, solved: true };
+      if (at !== undefined) solvedIds.current.delete(c.assignmentId);
+      return c;
+    });
     for (const c of rows) {
-      if (c.solved && c.assignmentId) solvedIds.current.add(c.assignmentId);
+      if (c.solved && c.assignmentId && !solvedIds.current.has(c.assignmentId)) {
+        solvedIds.current.set(c.assignmentId, now);
+      }
     }
 
     // Identity, solved-state and dealt payload are the only things a re-render
@@ -509,6 +532,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        * token arrived (`auth` is set) and the row is absent, the row is gone.
        */
       if (snap.auth && player && !snap.player) { evict(); return; }
+
+      /**
+       * Keep the player row current, not just present.
+       *
+       * refresh() used to read `snap.player` only to decide whether this phone
+       * had been wiped, and never wrote it back — which was harmless while a
+       * player row never changed after the join that created it. It changes
+       * now: evidence review writes a notice onto it, and a host rename writes
+       * a name. Without this the banner telling somebody their vault has been
+       * reopened would sit on the server forever.
+       *
+       * Compared field by field so the object only changes identity when
+       * something real did — a new object every four seconds would cascade
+       * through every effect that depends on `player`, including the realtime
+       * subscription.
+       */
+      if (snap.player) {
+        const next = snap.player;
+        setPlayer((cur) =>
+          cur && cur.id === next.id && cur.name === next.name &&
+          cur.vault_no === next.vault_no &&
+          (cur.notice_at ?? null) === (next.notice_at ?? null)
+            ? cur
+            : next
+        );
+      }
 
       /**
        * `board` and `roster` arrive only when they have CHANGED.
@@ -900,7 +949,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           // which may have been issued before this submit — hands back
           // `solved: false` and walks the player back to the question they
           // just answered.
-          if (challenge.assignmentId) solvedIds.current.add(challenge.assignmentId);
+          if (challenge.assignmentId) {
+            solvedIds.current.set(challenge.assignmentId, Date.now());
+          }
 
           // Mark this step solved locally so getChallenge() advances to the
           // next one immediately, rather than after the next refresh tick.
@@ -988,6 +1039,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           // The tile art counts digits, and effective score is the real
           // ordering — so show vaults here and let rank carry the bonus.
           digits: r.vaults,
+          evidence: Number(r.evidence ?? 0),
           vaultNo: r.vault_no,
           isYou: r.player_id === player?.id,
         }))

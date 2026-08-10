@@ -50,8 +50,14 @@ const PRE_GAME = new Set(["/", "/name", "/booting"]);
 /** Reachable once the game is over, by anyone. */
 const RESULTS = new Set(["/winner", "/leaderboard"]);
 
-/** Design pages, opened directly on purpose. Never guarded. */
-const EXEMPT = ["/safes", "/assets", "/admin"];
+/**
+ * Opened directly on purpose, by somebody who is not a player. Never guarded.
+ *
+ * /review is already outside the guard by route ordering — it is a sibling of
+ * the branch RouteGuard wraps — but naming it here keeps that a stated rule
+ * rather than an accident of where a <Route> happens to sit.
+ */
+const EXEMPT = ["/safes", "/assets", "/admin", "/review"];
 
 /**
  * Where a player with this state should be sitting right now.

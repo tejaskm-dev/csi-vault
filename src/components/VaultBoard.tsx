@@ -18,11 +18,26 @@ import { cn } from "../lib/utils";
  * and by every challenge having a hint.
  */
 export function vaultStates(unlockedVaults: string[]): VaultState[] {
-  const solvedCount = unlockedVaults.length;
+  /**
+   * The live tile is the LOWEST unsolved vault, found by looking.
+   *
+   * It used to be `i === unlockedVaults.length`, which is the same answer only
+   * while the solved vaults are an unbroken prefix — true for as long as
+   * nothing could ever un-solve one.
+   *
+   * Evidence review can. Reject the photo in vault 3 while 1, 2, 4 and 5 are
+   * done and the list is ["1","2","4","5"]: length is 4, so index 2 is neither
+   * solved nor `=== 4` and renders LOCKED, while index 4 is already solved and
+   * never gets the active state either. The board ends up with no live tile at
+   * all and the player has nowhere to tap.
+   */
+  const solved = new Set(unlockedVaults);
+  let activeTaken = false;
+
   return Array.from({ length: 9 }, (_, i) => {
-    if (unlockedVaults.includes(String(i + 1))) return "solved";
-    // Exactly one live target: the first unsolved position.
-    return i === solvedCount ? "active" : "locked";
+    if (solved.has(String(i + 1))) return "solved";
+    if (!activeTaken) { activeTaken = true; return "active"; }
+    return "locked";
   });
 }
 

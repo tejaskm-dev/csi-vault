@@ -71,7 +71,14 @@ export function Leaderboard() {
             <Rule />
             <Stat value={`${you.digits}/9`} label="Your digits" />
             <Rule />
-            <Stat value={String(field)} label="In play" />
+            {/* Evidence only appears once you have some. A column reading 0
+                for the whole game, on a board where most challenges are not
+                photos, would just look like something is broken. */}
+            {you.evidence ? (
+              <Stat value={String(you.evidence)} label="Evidence" />
+            ) : (
+              <Stat value={String(field)} label="In play" />
+            )}
           </motion.div>
         )}
 
@@ -80,10 +87,10 @@ export function Leaderboard() {
             <>
               <span className="font-bold text-ink">{leader.name}</span> leads on{" "}
               <span className="font-readout font-bold text-ink">{leader.digits}/9</span>. Ranked
-              by digits, then completion time.
+              by digits, then accepted evidence, then completion time.
             </>
           ) : (
-            "Ranked by digits unlocked, then by completion time."
+            "Ranked by digits unlocked, then accepted evidence, then completion time."
           )}
         </p>
 

@@ -4,6 +4,9 @@ import { Medal, Stopwatch, Padlock, MysteryBox } from "../components/Props";
 import { Sprinkles } from "../components/Sprinkles";
 import { useHall } from "./useHall";
 import { HostControls } from "./HostControls";
+import { Review } from "./Review";
+import * as api from "../lib/api";
+import { useEffect, useState } from "react";
 import { listStagger, riseIn } from "../lib/motion";
 import { cn } from "../lib/utils";
 
@@ -28,6 +31,18 @@ export function Dashboard({
   onSignOut: () => void;
 }) {
   const { ranked, stats, events } = useHall();
+
+  /**
+   * The room, for the review panel.
+   *
+   * Fetched once rather than threaded down from AdminApp: the host is already
+   * authorised by their claim, so reviewer_ok() lets them judge without a
+   * second code, and this panel is the same component the invigilators use.
+   */
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  useEffect(() => {
+    api.defaultSession().then((s) => setSessionId(s?.id ?? null)).catch(() => {});
+  }, []);
 
   const stuck = ranked.filter((p) => p.digits <= 2).length;
   const pct = Math.round((stats.cracked / Math.max(1, stats.possible)) * 100);
@@ -153,6 +168,17 @@ export function Dashboard({
               default min-width is auto, so one nowrap child would push this
               column wider than the space it was given. */}
           <div className="flex min-w-0 flex-col gap-5">
+            {/* ── Evidence ──────────────────────────────────────────
+                The same queue the invigilators hold on /review. It sits here
+                too because at a small event the host IS the review desk, and
+                because the person deciding when to press END THE GAME is the
+                one who should see how many photos are still waiting. */}
+            {sessionId && (
+              <motion.section variants={riseIn} className="ink rounded-plate bg-white shadow-ink">
+                <Review sessionId={sessionId} />
+              </motion.section>
+            )}
+
             {/* ── Needs attention ───────────────────────────────── */}
             <motion.section variants={riseIn} className="ink rounded-plate bg-white p-5 shadow-ink">
               <h2 className="font-display text-[15px] uppercase tracking-[0.14em] text-ink">
