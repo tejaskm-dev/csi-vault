@@ -108,11 +108,21 @@ export interface LeaderRow {
   player_id: string;
   name: string;
   vault_no: number;
-  avatar_url: string | null;
   vaults: number;
   bonus: number;
-  effective: number;
-  elapsed: number;
+  /**
+   * Present from fetchLeaderboard, ABSENT from the snapshot.
+   *
+   * The snapshot sends a hundred of these to every phone every four seconds,
+   * and the game screens render none of these three — `effective` and
+   * `elapsed` are the ordering the server has already applied, and avatar_url
+   * has always been null. Three unused columns at that rate is most of a
+   * megabyte a minute, so the snapshot omits them. The hall display, which is
+   * one laptop polling every few seconds, still gets the full row.
+   */
+  avatar_url?: string | null;
+  effective?: number;
+  elapsed?: number;
 }
 
 export interface InteractionRow {
@@ -358,9 +368,16 @@ export interface Snapshot {
    * owner, so null means the row is gone rather than hidden.
    */
   player: PlayerRow | null;
-  board: Challenge[];
+  /**
+   * UNDEFINED means "unchanged since the version you sent" — which is not the
+   * same as an empty board, and the difference is a player staring at nine
+   * locked vaults. Only assign when it is present.
+   */
+  board?: Challenge[];
+  boardVer?: string;
+  roster?: PlayerRow[];
+  rosterVer?: string;
   leaders: LeaderRow[];
-  roster: PlayerRow[];
   pending: InteractionRow[];
 }
 
@@ -389,19 +406,29 @@ let noSnapshotRpc = false;
 
 export async function fetchSnapshot(
   sessionId: string,
-  playerId?: string
+  playerId?: string,
+  boardVer?: string | null,
+  rosterVer?: string | null
 ): Promise<Snapshot> {
   if (!noSnapshotRpc) {
     try {
-      const data = await rpc<any>("game_snapshot", { p_session: sessionId });
+      const data = await rpc<any>("game_snapshot", {
+        p_session: sessionId,
+        p_board_ver: boardVer ?? null,
+        p_roster_ver: rosterVer ?? null,
+      });
       const s = (data ?? {}) as Record<string, unknown>;
       return {
         auth: (s.auth as string) ?? null,
         session: (s.session as SessionRow) ?? null,
         player: (s.player as PlayerRow) ?? null,
-        board: ((s.board as BoardRow[]) ?? []).map(toChallenge),
+        // `in` rather than a truthiness test: the server omits the key when
+        // nothing changed, and an omitted board must not read as an empty one.
+        board: "board" in s ? ((s.board as BoardRow[]) ?? []).map(toChallenge) : undefined,
+        boardVer: (s.board_ver as string) ?? undefined,
+        roster: "roster" in s ? ((s.roster as PlayerRow[]) ?? []) : undefined,
+        rosterVer: (s.roster_ver as string) ?? undefined,
         leaders: (s.leaders as LeaderRow[]) ?? [],
-        roster: (s.roster as PlayerRow[]) ?? [],
         pending: (s.pending as InteractionRow[]) ?? [],
       };
     } catch (e) {

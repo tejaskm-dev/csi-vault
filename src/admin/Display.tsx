@@ -71,12 +71,22 @@ export function Display() {
 
       {/* ── Body ────────────────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 gap-[1.8vw] px-[2.2vw] py-[1.8vh]">
-        <div className="flex w-[32%] shrink-0 flex-col gap-[1.4vh]">
+        {/* The podium is the hero of this column and it was being crushed.
+            PhotoWall asked for a 4:3 frame at 32% of a 1920px screen — 460px,
+            over 40% of the height — and took it as `shrink-0`, so the podium,
+            which is the flexible one, got whatever was left. On a 16:9
+            projector that was not enough to hold three cards: the focused card
+            overlapped the other two and the controls under it were clipped.
+
+            So the photo is capped in viewport height rather than derived from
+            the column's width, and the podium is given a floor it cannot be
+            pushed below. */}
+        <div className="flex min-h-0 w-[32%] shrink-0 flex-col gap-[1.4vh]">
           <Podium top={podium} />
           <RoomPanel stats={stats} history={history} />
           {/* Renders nothing until the first photo arrives, so the column does
               not reserve space for an empty frame during the opening minutes. */}
-          <PhotoWall className="shrink-0" />
+          <PhotoWall className="min-h-0" />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
@@ -275,7 +285,10 @@ function Podium({ top }: { top: ReturnType<typeof useHall>["ranked"] }) {
   const area = (i: number) => (i === focus ? "big" : i === others[0] ? "l" : "r");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-[0.8vh]">
+    // min-h, not min-h-0. Three cards and their controls need a floor, and
+    // being flex-1 in a column with a fixed-height sibling is not one — it
+    // means "take what is left", which was sometimes nothing.
+    <div className="flex min-h-[32vh] flex-1 flex-col gap-[0.8vh]">
       <div
         className="grid min-h-0 flex-1 gap-[1vh]"
         style={{
