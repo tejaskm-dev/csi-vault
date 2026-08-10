@@ -29,8 +29,13 @@ const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp }))
 );
 import { GameProvider } from "./context/GameContext";
+import { ReactionProvider } from "./lib/reactions";
 import { PageWrapper } from "./components/PageWrapper";
 import { Blueprint } from "./components/Blueprint";
+import { IncomingMeet } from "./components/IncomingMeet";
+import { RoomReset } from "./components/RoomReset";
+import { RouteGuard } from "./components/RouteGuard";
+import { Reaction } from "./components/Reaction";
 import { scrollToTop } from "./lib/scroll";
 
 /**
@@ -136,29 +141,41 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <GameProvider>
-      <Router>
-        <Routes>
-          {/* Admin renders outside GameShell — a laptop and a projector, not a
-              phone, so no 480px column and no device frame. Lazily loaded so
-              none of it reaches a player's download. */}
-          <Route
-            path="/admin/*"
-            element={
-              <Suspense fallback={null}>
-                <AdminApp />
-              </Suspense>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <GameShell>
-                <AnimatedRoutes />
-              </GameShell>
-            }
-          />
-        </Routes>
-      </Router>
+      <ReactionProvider>
+        <Router>
+          <Routes>
+            {/* Admin renders outside GameShell — a laptop and a projector, not a
+                phone, so no 480px column and no device frame. Lazily loaded so
+                none of it reaches a player's download. */}
+            <Route
+              path="/admin/*"
+              element={
+                <Suspense fallback={null}>
+                  <AdminApp />
+                </Suspense>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <GameShell>
+                  <AnimatedRoutes />
+                  {/* Both of these live outside AnimatedRoutes on purpose.
+                      They are not screens — they are things that happen TO the
+                      player wherever they happen to be, and mounting them
+                      inside the route tree would unmount a half-shown reaction
+                      (or, much worse, a pending handshake prompt) the moment
+                      the player navigated. */}
+                  <RouteGuard />
+                  <IncomingMeet />
+                  <RoomReset />
+                  <Reaction />
+                </GameShell>
+              }
+            />
+          </Routes>
+        </Router>
+      </ReactionProvider>
     </GameProvider>
   );
 }

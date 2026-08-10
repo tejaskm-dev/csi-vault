@@ -12,8 +12,10 @@ import { Login } from "./Login";
  * viewport with no phone frame around them.
  *
  * The session is component state and nothing more: no token, no storage, gone
- * on refresh. That is on purpose while there is no backend — persisting a
- * client-side "signed in" flag would look like auth without being any.
+ * on refresh. That stays true now the backend exists, for a better reason than
+ * before — the host code is what actually authorises anything, every host RPC
+ * re-checks it server-side, and keeping it in memory means it is never sitting
+ * in localStorage on a laptop that gets left open on a lectern.
  *
  * /admin/display is deliberately NOT behind the gate. It is the screen that
  * gets thrown at a wall, it shows only what the room can already see, and
@@ -21,7 +23,8 @@ import { Login } from "./Login";
  * minutes in front of an audience.
  */
 export function AdminApp() {
-  const [authed, setAuthed] = useState(false);
+  // The code itself, not a boolean. Every host action re-sends it.
+  const [hostCode, setHostCode] = useState<string | null>(null);
 
   // GameShell tints the document to the current header colour, and it does not
   // render here — so arriving from a game route would leave the page behind
@@ -42,10 +45,10 @@ export function AdminApp() {
       <Route
         path="*"
         element={
-          authed ? (
-            <Dashboard onSignOut={() => setAuthed(false)} />
+          hostCode ? (
+            <Dashboard hostCode={hostCode} onSignOut={() => setHostCode(null)} />
           ) : (
-            <Login onPass={() => setAuthed(true)} />
+            <Login onPass={setHostCode} />
           )
         }
       />

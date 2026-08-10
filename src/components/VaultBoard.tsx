@@ -5,17 +5,24 @@ import { boardStagger, riseIn } from "../lib/motion";
 import { cn } from "../lib/utils";
 
 /**
- * How many positions are playable at once. Strictly sequential lets one hard
- * question stall a player for the whole event; fully open means the locked
- * state never appears. A rolling window of three keeps both.
+ * Vaults open one at a time, in order.
+ *
+ * This used to be a rolling window of three, on the reasoning that a strict
+ * sequence lets one hard vault stall a player for the whole event. That
+ * reasoning does not survive contact with the actual board: three tiles glowing
+ * at once with 0/9 solved gives a first-year no idea where to start, and the
+ * ramp — easy tutorial vaults first, hard ones later — is meaningless if you
+ * can skip straight to vault 3.
+ *
+ * The stall risk is handled by making vaults 1 and 2 genuinely easy instead,
+ * and by every challenge having a hint.
  */
-const OPEN_WINDOW = 3;
-
 export function vaultStates(unlockedVaults: string[]): VaultState[] {
   const solvedCount = unlockedVaults.length;
   return Array.from({ length: 9 }, (_, i) => {
     if (unlockedVaults.includes(String(i + 1))) return "solved";
-    return i < solvedCount + OPEN_WINDOW ? "active" : "locked";
+    // Exactly one live target: the first unsolved position.
+    return i === solvedCount ? "active" : "locked";
   });
 }
 

@@ -4,6 +4,7 @@ import { Medal, Trophy, MysteryBox } from "../components/Props";
 import { Safe } from "../components/Safe";
 import { RayBurst, Laurel, RankDelta, Halftone, Sparkline } from "./DisplayArt";
 import { useHall } from "./useHall";
+import { PhotoWall } from "./PhotoWall";
 import { cn, formatClock } from "../lib/utils";
 
 /**
@@ -73,6 +74,9 @@ export function Display() {
         <div className="flex w-[32%] shrink-0 flex-col gap-[1.4vh]">
           <Podium top={podium} />
           <RoomPanel stats={stats} history={history} />
+          {/* Renders nothing until the first photo arrives, so the column does
+              not reserve space for an empty frame during the opening minutes. */}
+          <PhotoWall className="shrink-0" />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">

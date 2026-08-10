@@ -10,12 +10,71 @@ export type GlyphKey =
   | 'box' | 'circle' | 'triangle' | 'hexagon' | 'wind'
   | 'apple' | 'banana' | 'grapes' | 'orange';
 
-export type ChallengeType = 'multiple_choice' | 'image_grid' | 'text_input';
+/**
+ * The mechanics, and they fall into two families.
+ *
+ * The first three are solo and were here from the prototype. The rest arrived
+ * with the backend, and the split that matters is not new-vs-old — it is
+ * whether a challenge can be finished sitting down:
+ *
+ *   multiple_choice · image_grid · text_input · observe   solo, at your seat
+ *   connect · exchange · recall · photo                   you have to get up
+ *
+ * A player's nine are drawn across both families, so a board is a mix of
+ * "think" and "go and talk to someone".
+ */
+export type ChallengeType =
+  | 'multiple_choice'
+  | 'image_grid'
+  | 'text_input'
+  | 'observe'
+  | 'connect'
+  | 'exchange'
+  | 'recall'
+  | 'photo'
+  | 'minigame'
+  | 'charades';
+
+/** Kinds that put a player on their feet. Used for the badge on the tile. */
+export const SOCIAL_TYPES: ReadonlySet<ChallengeType> = new Set<ChallengeType>([
+  'connect',
+  'exchange',
+  'recall',
+  'photo',
+  'charades',
+]);
 
 export interface ChallengeOption {
   id: string;
   label: string;
   glyph?: GlyphKey;
+}
+
+/**
+ * Payload for the kinds that need more than a list of options — the observe
+ * micro-games, and the generated halves a social challenge hands each player.
+ * Mirrors ChallengePayload in src/lib/api.ts.
+ */
+export interface ChallengeExtras {
+  options?: ChallengeOption[];
+  /** minigame: which one to render, and the integer it is generated from. */
+  game?: string;
+  seed?: number;
+  level?: number;
+  letters?: string;
+  /** tumbler: the dealt combination. */
+  combo?: number[];
+  mode?: 'colour_trap' | 'impostor';
+  word?: string;
+  ink?: string;
+  choices?: string[];
+  fill?: GlyphKey;
+  odd?: GlyphKey;
+  count?: number;
+  odd_index?: number;
+  mine?: number;
+  symbol?: string;
+  about?: string;
 }
 
 export interface Challenge {
@@ -24,12 +83,33 @@ export interface Challenge {
   type: ChallengeType;
   question: string;
   options?: ChallengeOption[];
-  correctAnswerId?: string;
-  correctAnswerText?: string;
   hint: string;
   timeLimit: number;
   isBonus?: boolean;
   glyph: GlyphKey;
+
+  /* --- Offline only -------------------------------------------------- *
+   * The answer, for the mock board. A live board never carries these: the
+   * server strips them, which is the whole reason the backend exists. Any
+   * code reading them must tolerate undefined.                           */
+  correctAnswerId?: string;
+  correctAnswerText?: string;
+
+  /* --- Live only ----------------------------------------------------- *
+   * Present when the challenge came from my_board(). `assignmentId` is what
+   * every write is addressed to — the challenge id alone is not enough,
+   * because sixty players hold their own instance of the same question.  */
+  assignmentId?: string;
+  slot?: number;
+  /** Position within the vault's stage. 1 when a vault has a single step. */
+  step?: number;
+  /** The vault's theme name, e.g. "Networking". */
+  vaultLabel?: string;
+  solved?: boolean;
+  payload?: ChallengeExtras;
+  /** Resolved per player by pick_target(). Null on a fallback-any-player task. */
+  targetNo?: number | null;
+  targetName?: string | null;
 }
 
 /**
@@ -304,6 +384,81 @@ export const challengePool: Challenge[] = [
     correctAnswerId: 'b',
     hint: 'The clue is the word "source".',
     timeLimit: 45,
+  },
+
+  /* ---------------------------------------------------------------- *
+   * The mechanics that need the room
+   * ---------------------------------------------------------------- *
+   * Mirrors of the seeded rows in supabase/migrations/0004_seed.sql, so
+   * every screen state can be built and reviewed offline. The social ones
+   * cannot actually be *completed* without a server — there is no second
+   * phone to shake hands with — so each carries a mock target and the
+   * challenge screen shows a plain "needs a live session" note rather than
+   * a button that silently does nothing.
+   */
+
+  {
+    id: 'colour_trap',
+    title: 'Colour Trap',
+    type: 'observe',
+    question: 'Tap the COLOUR the word is printed in. Not the word.',
+    glyph: 'flame',
+    payload: { mode: 'colour_trap', word: 'BLUE', ink: 'red', choices: ['red', 'blue', 'green', 'yellow'] },
+    correctAnswerId: 'red',
+    hint: 'Read it with your eyes, not your voice.',
+    timeLimit: 25,
+  },
+  {
+    id: 'impostor',
+    title: 'Find The Impostor',
+    type: 'observe',
+    question: 'Every symbol in the grid is the same, except one. Tap it.',
+    glyph: 'search',
+    payload: { mode: 'impostor', fill: 'circle', odd: 'hexagon', count: 16, odd_index: 11 },
+    correctAnswerId: '11',
+    hint: 'Sweep row by row instead of staring at the middle.',
+    timeLimit: 30,
+  },
+  {
+    id: 'connect_useless',
+    title: 'New Friend Detected',
+    type: 'connect',
+    question: 'Find your target. Ask them: "What is your most useless talent?" Then both phones tap.',
+    glyph: 'bubble',
+    targetNo: 31,
+    targetName: 'Player 31',
+    hint: 'Their vault number is on their screen. Just ask.',
+    timeLimit: 120,
+  },
+  {
+    id: 'exchange_sum',
+    title: 'Two Halves',
+    type: 'exchange',
+    question: 'You each hold half of the combination. Find your target, meet, then add both numbers together.',
+    glyph: 'key',
+    targetNo: 12,
+    targetName: 'Player 12',
+    payload: { mine: 27, symbol: '▲' },
+    hint: 'You cannot do this from your seat.',
+    timeLimit: 150,
+  },
+  {
+    id: 'recall_who',
+    title: 'Who Told You?',
+    type: 'recall',
+    question: 'Earlier, someone answered a question for you. Which vault number was it?',
+    glyph: 'bubble',
+    hint: 'Picture where you were standing when you asked.',
+    timeLimit: 60,
+  },
+  {
+    id: 'photo_red',
+    title: 'Evidence: Red',
+    type: 'photo',
+    question: 'Photograph something red that is NOT a phone case. Anything in this room counts.',
+    glyph: 'camera',
+    hint: 'Look at what people are wearing.',
+    timeLimit: 90,
   },
 ];
 

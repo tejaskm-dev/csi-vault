@@ -6,25 +6,40 @@ import {
   type HallPlayer,
   type HallEvent,
 } from "./hallData";
+import { isLive, supabase } from "../lib/supabase";
+import * as api from "../lib/api";
 
 /**
- * The live feed, faked.
+ * The live feed for the hall display.
  *
- * One interval advances a random player, which is enough to exercise every
- * moving part of the display: rank changes, the leader swapping, the ticker,
- * and the counters climbing. When Supabase lands, this hook is the only thing
- * that changes — the components take `players`, `ranked`, `stats` and
- * `events`, and none of them know where those came from.
+ * The previous version of this file promised that when Supabase landed, this
+ * hook would be the only thing that changed — the components take `players`,
+ * `ranked`, `stats` and `events` and none of them know where those came from.
+ * That held: everything below the return statement is untouched, and the
+ * display, the ticker and the counters are unaware there is a database now.
  *
- * The tick is deliberately slow. On a projector, rows that reorder every
- * second are unreadable; every ~2.2s a single row moves, which is legible
- * from the back of a hall and still feels alive.
+ * Offline it still fakes a room of 58, because you cannot design a projector
+ * screen against an empty table, and you will spend far more time looking at
+ * this on a laptop than in an actual hall.
  */
 const TICK_MS = 2200;
 const EVENT_LIMIT = 6;
 
+/**
+ * How often the live board re-polls.
+ *
+ * Not a realtime subscription, deliberately. Sixty players solving vaults
+ * would push a recompute several times a second, and a projector where rows
+ * reorder faster than you can follow them is worse than one that lags by two
+ * seconds. The subscription below only listens for the *fact* that something
+ * changed, and lets this interval do the reading.
+ */
+const POLL_MS = 2500;
+
 export function useHall(live = true) {
-  const [players, setPlayers] = useState<HallPlayer[]>(() => seedHall());
+  const [players, setPlayers] = useState<HallPlayer[]>(() =>
+    isLive ? [] : seedHall()
+  );
   const [events, setEvents] = useState<HallEvent[]>([]);
   const counter = useRef(0);
   const tick = useRef(0);
@@ -37,8 +52,107 @@ export function useHall(live = true) {
   const latest = useRef(players);
   latest.current = players;
 
+  /* ------------------------------------------------------------------ *
+   * LIVE
+   * ------------------------------------------------------------------ */
+
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!live) return;
+    if (!isLive) return;
+    api.defaultSession().then((s) => setSessionId(s?.id ?? null)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!isLive || !sessionId || !live) return;
+    let stopped = false;
+
+    const pull = async () => {
+      try {
+        const rows = await api.fetchLeaderboard(sessionId, 200);
+        if (stopped) return;
+
+        const next: HallPlayer[] = rows.map((r) => ({
+          id: r.player_id,
+          name: r.name,
+          initials: (r.name.trim().charAt(0) || "?").toUpperCase(),
+          digits: Number(r.vaults),
+          bonus: Number(r.bonus) > 0,
+          elapsed: r.elapsed,
+        }));
+
+        // Diff against the previous pull to find what actually happened. The
+        // server has no event stream — it has state — so the ticker's "X just
+        // cracked their 4th" is derived here by comparing two snapshots.
+        const before = new Map(latest.current.map((p) => [p.id, p]));
+        const fresh: HallEvent[] = [];
+        for (const p of next) {
+          const was = before.get(p.id);
+          if (was && p.digits > was.digits) {
+            fresh.push({
+              id: counter.current++,
+              name: p.name,
+              digits: p.digits,
+              at: Date.now(),
+            });
+            p.justScored = true;
+            p.justBonus = p.bonus && !was.bonus;
+
+            // Clear the flash a beat later so the row stops glowing.
+            window.clearTimeout(clearScored.current[p.id]);
+            clearScored.current[p.id] = window.setTimeout(() => {
+              setPlayers((cur) =>
+                cur.map((x) =>
+                  x.id === p.id ? { ...x, justScored: false, justBonus: false } : x
+                )
+              );
+            }, 2600);
+          }
+        }
+
+        setPlayers(next);
+        if (fresh.length) {
+          setEvents((e) => [...fresh.reverse(), ...e].slice(0, EVENT_LIMIT));
+        }
+      } catch {
+        // A dropped poll is not worth clearing the board over — the projector
+        // keeps showing the last good state and the next tick recovers.
+      }
+    };
+
+    void pull();
+    const id = setInterval(pull, POLL_MS);
+
+    // Nudge, don't subscribe to the data. An INSERT on assignments means
+    // something moved; the poll above is what reads it.
+    const channel = supabase
+      ?.channel("hall")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "assignments" },
+        () => { void pull(); }
+      )
+      .subscribe();
+
+    return () => {
+      stopped = true;
+      clearInterval(id);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
+  }, [sessionId, live]);
+
+  /* ------------------------------------------------------------------ *
+   * OFFLINE — the faked room
+   * ------------------------------------------------------------------ */
+  // One interval advances a random player, which is enough to exercise every
+  // moving part of the display: rank changes, the leader swapping, the ticker,
+  // and the counters climbing.
+  //
+  // The tick is deliberately slow. On a projector, rows that reorder every
+  // second are unreadable; every ~2.2s a single row moves, which is legible
+  // from the back of a hall and still feels alive.
+  useEffect(() => {
+    if (isLive || !live) return;
     const id = setInterval(() => {
       // Every fourth tick, award a bonus instead of a digit. The seeded data
       // set bonuses once and never changed them, so the display had no way to

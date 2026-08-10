@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { Art } from "../components/Art";
+import { ReclaimPanel } from "../components/RecoveryCode";
 import { useGame } from "../context/GameContext";
 import { screenChoreo, riseIn } from "../lib/motion";
 
@@ -25,15 +26,68 @@ const BRIEFING = [
 export function NameEntry() {
   const [name, setName] = useState("");
   const [focused, setFocused] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { setUsername } = useGame();
+  const { join, player, live, session } = useGame();
+
+  /**
+   * The game is running and this phone is not already in it.
+   *
+   * Almost always means one of two things: a genuine latecomer, or somebody
+   * who cleared their browser storage mid-game and lost their anonymous
+   * identity. The server refuses both — otherwise clearing storage would be a
+   * free board reroll — so the screen says so BEFORE they type a name, rather
+   * than letting them fill it in and fail on the button.
+   */
+  const doorsShut =
+    live && session?.phase === "live" && session?.doors_open === false;
+
+  /** The round is over. Joining will always fail, so do not offer it. */
+  const gameOver = live && session?.phase === "ended";
+  const cannotJoin = doorsShut || gameOver;
 
   const valid = name.trim().length >= 2;
 
-  const handleStart = () => {
-    if (!valid) return;
-    setUsername(name.trim());
-    navigate("/booting", { replace: true });
+  /**
+   * One way into the game, whichever door you came through.
+   *
+   * A fresh join navigates itself below, but a reclaim happens inside
+   * ReclaimPanel and has no idea where it is mounted. Watching for a player to
+   * appear covers both, and means the recovery path cannot drift out of sync
+   * with the normal one.
+   */
+  useEffect(() => {
+    if (player) navigate("/booting", { replace: true });
+  }, [player, navigate]);
+
+  /**
+   * The door.
+   *
+   * Live, this is a round trip: the server mints a player row, assigns a vault
+   * number and deals a board before the player is allowed through. Doing it
+   * here rather than on the next screen is deliberate — a first-year whose join
+   * failed should find out standing at this button, not three screens later
+   * with an empty board and no idea why.
+   *
+   * Offline it is instantaneous and cannot fail, so none of the below is ever
+   * seen while you are building screens.
+   */
+  const handleStart = async () => {
+    if (!valid || joining) return;
+    setJoinError(null);
+    setJoining(true);
+    try {
+      await join(name.trim());
+      navigate("/booting", { replace: true });
+    } catch (e) {
+      setJoining(false);
+      setJoinError(
+        e instanceof Error && /session/i.test(e.message)
+          ? "The game has not been opened yet. Hang on a moment."
+          : "Could not get you in. Check your signal and tap again."
+      );
+    }
   };
 
   return (
@@ -157,9 +211,38 @@ export function NameEntry() {
         {/* Last in the sequence — the research point that attention should end
             on the primary action. */}
         <motion.div variants={riseIn} className="mt-auto pt-7 short:pt-4">
-          <PrimaryButton disabled={!valid} onClick={handleStart} className="h-16 w-full short:h-14">
-            START MISSION
+          {/* Failures are stated above the button rather than in a toast. This
+              is the one screen where a player is stuck until it works, so the
+              message has to stay put and sit next to the thing they will tap
+              again. */}
+          {joinError && (
+            <p className="mb-3 rounded-btn border-3 border-ink bg-red px-4 py-2 text-center font-body text-[13px] font-bold text-white">
+              {joinError}
+            </p>
+          )}
+          {cannotJoin && (
+            <div className="mb-3 rounded-btn border-3 border-ink bg-brass px-4 py-3 text-center">
+              <p className="font-display text-[15px] uppercase leading-tight text-ink">
+                {gameOver ? "This round is over" : "The game is already running"}
+              </p>
+              <p className="mt-1 font-body text-[12px] font-bold leading-snug text-ink/70">
+                {gameOver
+                  ? "Hang on for the next round — the host will reopen the room."
+                  : "New players cannot join now. If you were already playing, get back in below. Otherwise find the host."}
+              </p>
+            </div>
+          )}
+
+          <PrimaryButton
+            disabled={!valid || joining || cannotJoin}
+            onClick={handleStart}
+            className="h-16 w-full short:h-14"
+          >
+            {gameOver ? "ROUND OVER" : doorsShut ? "DOORS CLOSED" : joining ? "OPENING THE DOOR…" : "START MISSION"}
           </PrimaryButton>
+          {/* Folded away behind one line. A first-year arriving for the first
+              time should see a name field and a button, not a recovery form. */}
+          <ReclaimPanel defaultOpen={doorsShut} />
         </motion.div>
       </motion.div>
     </div>
