@@ -55,8 +55,21 @@ const landings: [string, RouteState][] = [
 ];
 for (const [n,s] of landings) console.log(`  ${n} -> ${landingFor(s)}`);
 
+console.log("\nmid-rejoin — must NOT bounce to the door");
+// The reported bug: host presses Start while people sit in the waiting room,
+// and they land on the name screen saying the game has already begun.
+check("rejoining, lobby", S({ hasPlayer:false, rejoinable:true, phase:"lobby" }), {});
+check("rejoining, live",  S({ hasPlayer:false, rejoinable:true, phase:"live"  }), {});
+
+console.log("\nevicted — the notice must still send them to the door");
+// rejoinable is false once evicted, so this keeps working.
+check("evicted", S({ hasPlayer:false, rejoinable:false, phase:"live" }), {
+  "/home":"/name", "/vault":"/name", "/challenge/3":"/name",
+  "/waiting":"/name", "/leaderboard":"/name", "/winner":"/name" });
+
 console.log("\nno redirect loops");
-for (const s of [S({phase:"live"}), S({hasPlayer:true,phase:"lobby"}),
+for (const s of [S({phase:"live"}), S({hasPlayer:false,rejoinable:true,phase:"live"}),
+                 S({hasPlayer:true,phase:"lobby"}),
                  S({hasPlayer:true,phase:"live"}), S({hasPlayer:true,phase:"ended"}),
                  S({hasPlayer:false,phase:"ended"})]) {
   for (const p of PATHS) {

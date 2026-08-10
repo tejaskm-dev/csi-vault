@@ -19,11 +19,11 @@ import { redirectFor } from "../lib/routing";
  * stop its siblings from rendering.
  */
 export function RouteGuard({ children }: { children: React.ReactNode }) {
-  const { live, booted, player, session } = useGame();
+  const { live, booted, player, session, rejoinable } = useGame();
   const { pathname } = useLocation();
 
   const target = redirectFor(
-    { live, booted, hasPlayer: Boolean(player), phase: session?.phase },
+    { live, booted, hasPlayer: Boolean(player), rejoinable, phase: session?.phase },
     pathname
   );
 

@@ -62,7 +62,7 @@ const LINES = [
 
 export function Booting() {
   const navigate = useNavigate();
-  const { username, live, booted, player, session } = useGame();
+  const { username, live, booted, player, session, rejoinable } = useGame();
 
   const numberRef = useRef<HTMLSpanElement | null>(null);
   const [filled, setFilled] = useState(0);
@@ -113,7 +113,7 @@ export function Booting() {
           // someone joining a lobby saw the board flash past on the way to the
           // waiting room, because the guard corrected it a frame later.
           navigate(landingFor({
-            live, booted, hasPlayer: Boolean(player), phase: session?.phase,
+            live, booted, hasPlayer: Boolean(player), rejoinable, phase: session?.phase,
           }), { replace: true });
         }, reduced ? 80 : 420);
       }
