@@ -33,9 +33,12 @@ check("lobby", S({ hasPlayer:true, phase:"lobby" }), {
   "/home":"/waiting", "/vault":"/waiting", "/challenge/3":"/waiting",
   "/leaderboard":"/waiting", "/winner":"/waiting" });
 
-console.log("\njoined, live — pushed off the waiting room");
+console.log("\njoined, live — pushed off the waiting room AND off the results");
+// /winner used to be a dead end: reopening the room left players sitting on
+// the final standings for the whole of the next round, with nowhere to go but
+// the leaderboard and back.
 check("live", S({ hasPlayer:true, phase:"live" }), {
-  "/":"/booting", "/name":"/booting", "/waiting":"/home" });
+  "/":"/booting", "/name":"/booting", "/waiting":"/home", "/winner":"/home" });
 
 console.log("\nended, played");
 check("ended+player", S({ hasPlayer:true, phase:"ended" }), {
@@ -66,6 +69,19 @@ console.log("\nevicted — the notice must still send them to the door");
 check("evicted", S({ hasPlayer:false, rejoinable:false, phase:"live" }), {
   "/home":"/name", "/vault":"/name", "/challenge/3":"/name",
   "/waiting":"/name", "/leaderboard":"/name", "/winner":"/name" });
+
+console.log("\nthe room reopens — nobody may be left on the results");
+// Host: End Game, then reopen. Every combination of who is still holding a
+// player row has to have somewhere to go from /winner.
+for (const [label, s] of [
+  ["reopened to lobby, still a player", S({ hasPlayer:true,  phase:"lobby" })],
+  ["reopened to live,  still a player", S({ hasPlayer:true,  phase:"live"  })],
+  ["reopened, player was wiped",        S({ hasPlayer:false, phase:"lobby" })],
+] as [string, RouteState][]) {
+  const got = redirectFor(s, "/winner");
+  if (!got) { fails++; console.log(`  FAIL ${label}: stranded on /winner`); }
+  else console.log(`  ${label} -> ${got}`);
+}
 
 console.log("\nno redirect loops");
 for (const s of [S({phase:"live"}), S({hasPlayer:false,rejoinable:true,phase:"live"}),
