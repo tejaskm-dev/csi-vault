@@ -187,6 +187,41 @@ left join storage.objects o
   on o.bucket_id = 'memes' and o.name = m.storage_path
 where m.active and o.id is null
 
+union all
+
+-- 18. A vault that deals the same MECHANIC twice.
+--     Checks boards as actually dealt rather than the dealer's intent, which
+--     is the only way this was ever going to be caught: the family rule read
+--     correctly for four migrations while doing nothing inside a vault,
+--     because the SELECT that applied it ran once for all of the vault's
+--     steps. Two colour traps in vault 1, three odd-one-outs in vault 2.
+select 'BLOCKER', 'vault repeats a mechanic',
+       p.name || ' vault ' || a.slot,
+       string_agg(c.family, ', ' order by a.step)
+from public.assignments a
+join public.challenges c on c.id = a.challenge_id
+join public.players p on p.id = a.player_id
+where a.slot > 0
+group by p.name, a.slot
+having count(*) > count(distinct c.family)
+
+union all
+
+-- 19. A board that points two steps at the same person.
+--     Unsolved steps only: once a step is solved its partner is history, and
+--     what matters is whether the player still has two live challenges telling
+--     them to go and find the same number — which is unsatisfiable, because
+--     the second visit is refused as a repeat while every other number is
+--     refused as "not your target".
+select 'BLOCKER', 'board sends a player to the same partner twice',
+       p.name, 'target #' || t.vault_no || ' on ' || count(*) || ' open steps'
+from public.assignments a
+join public.players p on p.id = a.player_id
+join public.players t on t.id = a.target_id
+where a.solved_at is null
+group by p.name, t.vault_no
+having count(*) > 1
+
 )
 select severity, problem, id, detail
 from problems
