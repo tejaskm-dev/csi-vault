@@ -17,7 +17,8 @@ import type { MinigameProps } from "./types";
  * theoretical minimum is known — a submission below it is impossible, and
  * anything at or above it means the board really was cleared.
  */
-const GLYPHS = ["star", "rocket", "key", "flame", "leaf", "droplet", "hexagon", "wave"] as const;
+// All eight have art files — see the note on GlyphKey.
+const GLYPHS = ["star", "rocket", "key", "flame", "apple", "wave", "box", "shield"] as const;
 const PAIRS_BY_LEVEL = [6, 8, 8];
 
 export function Pairs({ seed, level = 1, onSubmit, busy }: MinigameProps) {
