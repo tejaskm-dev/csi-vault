@@ -181,6 +181,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [evicted, setEvicted] = useState(false);
 
   /**
+   * Consecutive roster reads that came back without us in them.
+   *
+   * Eviction is destructive — it throws away the board — so it needs more
+   * evidence than one query. See the block in refresh() for why a single read
+   * is not enough in either direction.
+   */
+  const missingSelf = useRef(0);
+
+  /**
    * Is the websocket actually delivering?
    *
    * Held in a ref as well as state because the poll closure reads it every
@@ -386,23 +395,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        * player sees nine locked vaults and no way forward, and nothing tells
        * them why.
        *
-       * The roster was already being fetched on every tick; it just was not
-       * being read. If our own id is no longer in it, we have been evicted.
+       * This has now been wrong in BOTH directions, and the two mistakes look
+       * identical from here:
        *
-       * Note there is no `roster.length > 0` guard, and that is deliberate: a
-       * full reset deletes EVERY player, so the empty roster is precisely the
-       * case to catch. fetchPlayers throws on a failed request rather than
-       * returning [], so an empty array here means genuinely empty.
+       *   · Trusting one empty read evicted the entire room at once, because
+       *     fetchPlayers is a plain RLS-filtered select and a moment where the
+       *     auth token is not attached yet returns [] with no error at all.
+       *
+       *   · Requiring `roster.length > 0` to compensate then broke the case
+       *     the check exists for. host_reset deletes EVERY player, so after a
+       *     reset the roster is legitimately empty — and that guard meant no
+       *     phone ever noticed. Every player kept a dead board and got dragged
+       *     between /waiting and /winner by a `player` object the server had
+       *     already deleted. That is the reset the host pressed and nobody's
+       *     phone reacted to.
+       *
+       * So: count instead of guessing. A failed fetch (roster === null) is not
+       * evidence of anything and is ignored. A successful read that does not
+       * contain us is one strike, and two consecutive strikes — eight seconds
+       * — is the wipe. Any read that finds us clears the count.
        */
-      // Only trust an eviction when the roster actually arrived. A failed
-      // fetch is not evidence that the player was deleted.
-      // roster.length > 0 matters: a successful-but-empty fetch used to
-      // satisfy this and evict EVERY player at once. You are always in your own
-      // room, so an empty list is evidence the fetch was wrong, not that you
-      // were removed.
-      if (roster && roster.length > 0 && player && !roster.some((p) => p.id === player.id)) {
-        evict();
-        return;
+      if (!player || (roster && roster.some((p) => p.id === player.id))) {
+        missingSelf.current = 0;
+      } else if (roster) {
+        missingSelf.current += 1;
+        if (missingSelf.current >= 2) {
+          missingSelf.current = 0;
+          evict();
+          return;
+        }
       }
 
       if (player && rows) applyBoard(rows);

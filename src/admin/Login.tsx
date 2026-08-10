@@ -70,17 +70,20 @@ export function Login({ onPass }: { onPass: (code: string) => void }) {
       // at "incorrect code" will retype a correct code until the server locks
       // them out, so anything that is not a rejected passcode says what it is.
       const msg = e instanceof Error ? e.message : String(e);
-      reject(
-        /already hosting/i.test(msg)
-          ? "Another device is hosting. Release it there, or wait 12 hours."
-          : /too many/i.test(msg)
-          ? "Too many attempts. Wait a few minutes."
-          : /bad host code/i.test(msg)
-          ? null // the one genuine wrong-code case
-          : /no session|no such session/i.test(msg)
-          ? "No open session. Check the migrations have run."
-          : `Could not reach the server — ${msg.slice(0, 90)}`
-      );
+      if (/bad host code/i.test(msg)) {
+        reject(null);                                   // genuinely wrong
+      } else if (/already hosting/i.test(msg)) {
+        reject("Another device is hosting. Release it there, or wait 12 hours.", false);
+      } else if (/too many/i.test(msg)) {
+        reject("Too many attempts on this device. Wait a few minutes.", false);
+      } else if (/no session|no such session/i.test(msg)) {
+        reject("No open session. Check the migrations have run.", false);
+      } else if (/timed out|failed to fetch|networkerror/i.test(msg)) {
+        // Code kept, so the fix is one tap rather than six.
+        reject("Server did not answer. Tap UNLOCK to try again.", false);
+      } else {
+        reject(`Could not reach the server — ${msg.slice(0, 80)}`, false);
+      }
       // Full detail to the console regardless. The screen has room for one
       // line; a Postgres error code belongs where it can be read properly.
       console.error("[vault] host claim failed", e);
@@ -89,18 +92,28 @@ export function Login({ onPass }: { onPass: (code: string) => void }) {
     }
   };
 
-  const reject = (message: string | null = null) => {
+  /**
+   * `wrongCode` separates "you typed the wrong six digits" from "the server
+   * did not answer". Only the first should count against the try limit or
+   * clear the field — losing a correct code to a dropped request, and then
+   * being told you have four attempts left, is how a locked-out operator
+   * happens thirty seconds before a game starts.
+   */
+  const reject = (message: string | null = null, wrongCode = true) => {
     playWrong();
     setNote(message);
-    setTries((t) => t + 1);
+    if (wrongCode) {
+      setTries((t) => t + 1);
+      setCode("");
+    }
     setShake(true);
-    setCode("");
     window.setTimeout(() => setShake(false), 420);
   };
 
   const onChange = (raw: string) => {
     if (locked || checking) return;
     const next = raw.replace(/\D/g, "").slice(0, 6);
+    setNote(null);
     setCode(next);
     if (next.length === 6) void submit(next);
     else if (next.length > code.length) playTap();
@@ -202,12 +215,20 @@ export function Login({ onPass }: { onPass: (code: string) => void }) {
             </p>
           ) : null}
 
+          {/* This used to only focus the input.
+              The single way to submit was typing the sixth digit, so after any
+              failure — which also WIPED the code — tapping UNLOCK did nothing
+              at all and the operator had to retype all six with no feedback.
+              That is the "it does not register" behaviour. */}
           <PrimaryButton
-            onClick={() => inputRef.current?.focus()}
-            disabled={locked}
+            onClick={() => {
+              if (code.length === 6) void submit(code);
+              else inputRef.current?.focus();
+            }}
+            disabled={locked || checking}
             className="mt-5 h-14 w-full"
           >
-            {locked ? "LOCKED" : "UNLOCK"}
+            {checking ? "CHECKING…" : locked ? "LOCKED" : code.length === 6 ? "UNLOCK" : "ENTER CODE"}
           </PrimaryButton>
 
           {/* Offline, the check is a browser-side string compare and printing

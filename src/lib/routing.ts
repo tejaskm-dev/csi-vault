@@ -99,6 +99,21 @@ export function redirectFor(s: RouteState, pathname: string): string | null {
   // phone in the waiting room moves to the board by itself.
   if (s.phase === "live" && pathname === "/waiting") return "/home";
 
+  /**
+   * The results screen is somewhere the game ENDS, not somewhere to live.
+   *
+   * Nothing used to move a player off /winner once the room reopened, so a
+   * phone that had seen the final standings stayed on them for the whole of
+   * the next round. And the screen offers exactly two destinations — the
+   * leaderboard, and the leaderboard's back button, which returns here — so
+   * there was no third way out short of clearing site data.
+   *
+   * The lobby case is already covered above (everything that is not /waiting
+   * goes to /waiting). This is the live one: reopening straight to a running
+   * game, which is what the host does after a reset.
+   */
+  if (s.phase === "live" && pathname === "/winner") return "/home";
+
   return null;
 }
 
