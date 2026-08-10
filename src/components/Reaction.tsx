@@ -27,6 +27,10 @@ export function Reaction() {
   const [failed, setFailed] = useState(false);
   useEffect(() => { setFailed(false); }, [current?.url]);
 
+  // Both are supported so a bucket upload (gif) and a hosted link (mp4) can
+  // coexist without the component caring which it got.
+  const isVideo = /\.(mp4|webm)(\?|$)/i.test(current?.url ?? "");
+
   return (
     <AnimatePresence>
       {current && (
@@ -45,6 +49,26 @@ export function Reaction() {
               lands on a half-uploaded bucket. */}
           {current.url && !failed ? (
             <div className="ink overflow-hidden rounded-plate bg-white p-2 shadow-ink">
+              {/* Video, not <img>.
+                  The reactions are served as mp4 because Tenor's GIF variants
+                  that are small enough for venue wifi are single-frame stills —
+                  which is why they appeared frozen. The mp4s animate AND are
+                  roughly fifteen times smaller: the set went from 14MB to under
+                  1MB. `playsInline` is not optional; without it iOS takes the
+                  video fullscreen the moment it plays. */}
+              {isVideo ? (
+                <video
+                  key={current.url}
+                  src={current.url}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  aria-hidden
+                  className="aspect-square w-full rounded-btn object-cover"
+                  onError={() => setFailed(true)}
+                />
+              ) : (
               <img
                 src={current.url}
                 alt={current.label}
@@ -56,6 +80,7 @@ export function Reaction() {
                 loading="eager"
                 onError={() => setFailed(true)}
               />
+              )}
               <p className="pt-1 text-center font-display text-[13px] uppercase tracking-wide text-ink">
                 {current.shout}
               </p>
