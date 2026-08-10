@@ -89,18 +89,24 @@ export function HostControls({ code }: { code: string }) {
         </span>
       </div>
 
-      {/* The join code is the single most-looked-at thing on this page during
-          the five minutes before a game — it goes on a slide and gets read out
-          loud — so it is set in the display face at a size that survives being
-          photographed off a laptop screen by someone in the third row. */}
-      <div className="mt-4 rounded-btn border-3 border-ink bg-paper-deep px-4 py-3 text-center">
-        <span className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-ink/50">
-          Join code
+      {/* NOT a code players type.
+          This used to be rendered huge and labelled "Join code", which is an
+          instruction to put it on a slide — and sixty students would then hunt
+          for a field that does not exist. Players are auto-joined into the
+          open room; this is only here so the host can tell WHICH room is live
+          when more than one exists. Sized accordingly. */}
+      <div className="mt-4 flex items-center justify-between rounded-btn border-2 border-ink/15 bg-paper-deep px-3 py-2">
+        <span className="font-body text-[10px] font-bold uppercase tracking-[0.16em] text-ink/45">
+          Room
         </span>
-        <div className="font-display text-[38px] leading-none tracking-widest text-ink">
+        <span className="font-readout text-[14px] font-bold tracking-widest text-ink/70">
           {session?.join_code ?? "…"}
-        </div>
+        </span>
       </div>
+      <p className="mt-2 font-body text-[11px] font-semibold leading-snug text-ink/45">
+        Players do not enter this. Send them the site link — they land in
+        whichever room is open.
+      </p>
 
       {stats && (
         <dl className="mt-4 grid grid-cols-3 gap-2">

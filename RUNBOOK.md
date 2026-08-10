@@ -57,7 +57,14 @@ Without them the reaction layer still works — it shows a hand-lettered shout
 and GIFs replace the shouts automatically, with the shout as a caption. A file
 that 404s falls back per-reaction, so a half-uploaded bucket is fine.
 
-## 5. Change the host code
+## 5. There is no player join code
+
+`CSI1` names the room in the database. **Players never type it** — they open
+the site link and land in whichever room is open. Do not put it on a slide.
+
+The only thing students need is the URL (and a QR code to it).
+
+## 6. Change the host code
 
 ```sql
 update public.sessions set host_code = '<six digits>' where join_code = 'CSI1';
