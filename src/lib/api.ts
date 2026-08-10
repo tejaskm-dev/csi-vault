@@ -193,6 +193,39 @@ function client() {
 }
 
 /**
+ * Every RPC goes through here, and every RPC gets a deadline.
+ *
+ * supabase-js has no default timeout, so a request that hangs — routine on
+ * congested venue wifi — hangs forever. The challenge screen sets status to
+ * "checking" before awaiting, which disables every control, so a single
+ * stalled request left the game frozen with no way out but a page reload.
+ * That is the "it freezes and won't progress until I reload" bug.
+ *
+ * Twelve seconds is far longer than any of these should take and short enough
+ * that a player retries rather than gives up. The rejection is an ordinary
+ * Error, so it lands in the same humanError path as everything else and the
+ * player is told what happened instead of watching a dead button.
+ */
+const RPC_TIMEOUT_MS = 12000;
+
+async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
+  const call = client().rpc(name, args);
+
+  const result = await Promise.race([
+    call,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Timed out talking to the server (${name}).`)),
+        RPC_TIMEOUT_MS
+      )
+    ),
+  ]);
+
+  if (result.error) throw result.error;
+  return result.data as T;
+}
+
+/**
  * Both session reads go through `sessions_public`, never the base table.
  *
  * The base table carries `host_code`, and Postgres RLS filters rows, not
@@ -261,11 +294,10 @@ export async function joinSession(
   name: string
 ): Promise<{ player: PlayerRow; pin: string }> {
   await ensureAuth();
-  const { data, error } = await client().rpc("join_session", {
+  const data = await rpc<any>("join_session", {
     p_join_code: joinCode,
     p_name: name,
   });
-  if (error) throw error;
   return data as { player: PlayerRow; pin: string };
 }
 
@@ -281,12 +313,11 @@ export async function reclaimPlayer(
   pin: string
 ): Promise<{ player: PlayerRow; pin: string }> {
   await ensureAuth();
-  const { data, error } = await client().rpc("reclaim_player", {
+  const data = await rpc<any>("reclaim_player", {
     p_join_code: joinCode,
     p_vault_no: vaultNo,
     p_pin: pin,
   });
-  if (error) throw error;
   // A wrong PIN comes back as ok:false rather than a Postgres error, because
   // raising would roll back the failed-attempt row that arms the throttle.
   // See the note in 0006_security.sql.
@@ -297,8 +328,7 @@ export async function reclaimPlayer(
 
 /** This player's nine plus the bonus, answers stripped by the server. */
 export async function fetchBoard(sessionId: string): Promise<Challenge[]> {
-  const { data, error } = await client().rpc("my_board", { p_session: sessionId });
-  if (error) throw error;
+  const data = await rpc<any>("my_board", { p_session: sessionId });
   return (data as BoardRow[]).map(toChallenge);
 }
 
@@ -310,31 +340,28 @@ export async function submitAnswer(
   assignmentId: string,
   answer: Record<string, unknown>
 ): Promise<SubmitResult> {
-  const { data, error } = await client().rpc("submit_answer", {
+  const data = await rpc<any>("submit_answer", {
     p_assignment: assignmentId,
     p_answer: answer,
   });
-  if (error) throw error;
   return data as SubmitResult;
 }
 
 /** "I am standing in front of you." Opens a handshake the target must confirm. */
 export async function requestConnect(assignmentId: string, targetNo: number) {
-  const { data, error } = await client().rpc("request_connect", {
+  const data = await rpc<any>("request_connect", {
     p_assignment: assignmentId,
     p_target_no: targetNo,
   });
-  if (error) throw error;
   return data as { interaction_id: string; target_id: string };
 }
 
 /** The second phone. Only the person being met can call this. */
 export async function confirmConnect(interactionId: string, fact: Record<string, unknown> = {}) {
-  const { data, error } = await client().rpc("confirm_connect", {
+  const data = await rpc<any>("confirm_connect", {
     p_interaction: interactionId,
     p_fact: fact,
   });
-  if (error) throw error;
   return data as { ok: boolean; kind: string };
 }
 
@@ -378,17 +405,30 @@ export async function uploadPhoto(
   if (!uid) throw new Error("not signed in");
 
   const path = `${uid}/${assignmentId}-${Date.now()}.jpg`;
-  const { error: upErr } = await client()
-    .storage.from("photos")
-    .upload(path, file, { contentType: "image/jpeg", upsert: true });
+
+  /**
+   * The upload needs its own, longer deadline.
+   *
+   * It is the only call in the app that is not an RPC, so it bypassed the
+   * timeout helper entirely — and it is also the single most likely thing to
+   * hang, because it is the only one sending a couple of hundred KB over
+   * congested venue wifi. 30s rather than 12: a slow upload is normal, a dead
+   * one is not, and the difference matters when sixty phones upload at once.
+   */
+  const { error: upErr } = await Promise.race([
+    client().storage.from("photos")
+      .upload(path, file, { contentType: "image/jpeg", upsert: true }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Upload timed out. Check your signal.")), 30000)
+    ),
+  ]);
   if (upErr) throw upErr;
 
-  const { error } = await client().rpc("record_photo", {
+  await rpc<unknown>("record_photo", {
     p_assignment: assignmentId,
     p_path: path,
     p_caption: caption ?? null,
   });
-  if (error) throw error;
   return path;
 }
 
@@ -400,10 +440,9 @@ export async function uploadPhoto(
  * `ready: false` when that is still the case.
  */
 export async function prepareRecall(assignmentId: string) {
-  const { data, error } = await client().rpc("prepare_recall", {
+  const data = await rpc<any>("prepare_recall", {
     p_assignment: assignmentId,
   });
-  if (error) throw error;
   return data as { ready: boolean; about?: string; other?: string };
 }
 
@@ -413,33 +452,29 @@ export async function prepareRecall(assignmentId: string) {
  * and only the server knows whether a guess was right.
  */
 export async function charadesBrief(assignmentId: string) {
-  const { data, error } = await client().rpc("charades_brief", { p_assignment: assignmentId });
-  if (error) throw error;
+  const data = await rpc<any>("charades_brief", { p_assignment: assignmentId });
   return data as { word: string };
 }
 
 export async function charadesOptions(interactionId: string) {
-  const { data, error } = await client().rpc("charades_options", { p_interaction: interactionId });
-  if (error) throw error;
+  const data = await rpc<any>("charades_options", { p_interaction: interactionId });
   return data as { options: string[] };
 }
 
 export async function charadesGuess(interactionId: string, guess: string) {
-  const { data, error } = await client().rpc("charades_guess", {
+  const data = await rpc<any>("charades_guess", {
     p_interaction: interactionId,
     p_guess: guess,
   });
-  if (error) throw error;
   return data as { correct: boolean; word: string };
 }
 
 /** Ranked board. Effective vaults, then elapsed — Bible §1's ordering. */
 export async function fetchLeaderboard(sessionId: string, limit = 100): Promise<LeaderRow[]> {
-  const { data, error } = await client().rpc("leaderboard", {
+  const data = await rpc<any>("leaderboard", {
     p_session: sessionId,
     p_limit: limit,
   });
-  if (error) throw error;
   return (data ?? []) as LeaderRow[];
 }
 
@@ -501,11 +536,10 @@ export async function fetchMemes() {
  */
 export async function hostClaim(sessionId: string, code: string) {
   await ensureAuth();
-  const { data, error } = await client().rpc("host_claim", {
+  const data = await rpc<any>("host_claim", {
     p_session: sessionId,
     p_code: code,
   });
-  if (error) throw error;
   // Same reasoning as reclaimPlayer: a rejection is a value, not an exception,
   // so that the attempt log survives to feed the throttle.
   const r = data as { ok: boolean; error?: string };
@@ -514,46 +548,41 @@ export async function hostClaim(sessionId: string, code: string) {
 
 /** Hand the room back so another laptop can take it. */
 export async function hostRelease(sessionId: string) {
-  const { error } = await client().rpc("host_release", { p_session: sessionId });
-  if (error) throw error;
+  await rpc<unknown>("host_release", { p_session: sessionId });
 }
 
 /** Recovery PINs, for a student who lost theirs. Host-only. */
 export async function hostPins(sessionId: string, code: string) {
-  const { data, error } = await client().rpc("host_pins", {
+  const data = await rpc<any>("host_pins", {
     p_session: sessionId,
     p_code: code,
   });
-  if (error) throw error;
   return (data ?? []) as { vault_no: number; name: string; pin: string }[];
 }
 
 /** Let a latecomer in without pausing the room. */
 export async function hostSetDoors(sessionId: string, code: string, open: boolean) {
-  const { error } = await client().rpc("host_set_doors", {
+  await rpc<unknown>("host_set_doors", {
     p_session: sessionId,
     p_code: code,
     p_open: open,
   });
-  if (error) throw error;
 }
 
 export async function hostSetPhase(sessionId: string, code: string, phase: string) {
-  const { data, error } = await client().rpc("host_set_phase", {
+  const data = await rpc<any>("host_set_phase", {
     p_session: sessionId,
     p_code: code,
     p_phase: phase,
   });
-  if (error) throw error;
   return data as SessionRow;
 }
 
 export async function hostOverview(sessionId: string, code: string) {
-  const { data, error } = await client().rpc("host_overview", {
+  const data = await rpc<any>("host_overview", {
     p_session: sessionId,
     p_code: code,
   });
-  if (error) throw error;
   return data as {
     players: number;
     vaults: number;
@@ -568,15 +597,13 @@ export async function hostOverview(sessionId: string, code: string) {
 }
 
 export async function hostHidePhoto(photoId: string, code: string, visible = false) {
-  const { error } = await client().rpc("host_hide_photo", {
+  await rpc<unknown>("host_hide_photo", {
     p_photo: photoId,
     p_code: code,
     p_visible: visible,
   });
-  if (error) throw error;
 }
 
 export async function hostReset(sessionId: string, code: string) {
-  const { error } = await client().rpc("host_reset", { p_session: sessionId, p_code: code });
-  if (error) throw error;
+  await rpc<unknown>("host_reset", { p_session: sessionId, p_code: code });
 }

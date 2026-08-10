@@ -118,6 +118,22 @@ const GameContext = createContext<GameState | undefined>(undefined);
  */
 const ClockContext = createContext<number>(0);
 
+/**
+ * Cheap "did this actually change?" for the polled lists.
+ *
+ * The refresh runs every four seconds and replaced `board`, `players`,
+ * `liveBoard` and `unlockedVaults` with brand new arrays whether or not
+ * anything had moved. New array identity means a new context value, and a new
+ * context value re-renders EVERY consumer — including the vault board, which
+ * is nine safes of twenty-seven SVG nodes each.
+ *
+ * So four times a minute the entire tree rebuilt itself for nothing, and on a
+ * mid-range phone that lands as a visible stall: taps queued behind the
+ * re-render feel like the screen ignored them. Comparing a short signature
+ * first makes the common case (nothing changed) free.
+ */
+function sameSig(a: string, b: string) { return a === b; }
+
 function readJSON<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -157,6 +173,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   );
   /** True when the host wiped the room and this phone must rejoin. */
   const [evicted, setEvicted] = useState(false);
+
+  /**
+   * Is the websocket actually delivering?
+   *
+   * Held in a ref as well as state because the poll closure reads it every
+   * three seconds and must not be rebuilt (and the channel torn down) each
+   * time it flips.
+   */
+  const [realtimeOk, setRealtimeOk] = useState(false);
+  const realtimeOkRef = useRef(false);
+  realtimeOkRef.current = realtimeOk;
 
   /**
    * Has this phone finished working out who it is?
@@ -240,7 +267,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * ------------------------------------------------------------------ */
 
   const applyBoard = useCallback((rows: Challenge[]) => {
-    setBoard(rows);
+    // Identity, solved-state and dealt payload are the only things a re-render
+    // could depend on; anything else on a row is immutable for the session.
+    const sig = rows.map((c) => `${c.assignmentId}:${c.solved ? 1 : 0}`).join("|");
+    setBoard((prev) =>
+      sameSig(sig, prev.map((c) => `${c.assignmentId}:${c.solved ? 1 : 0}`).join("|"))
+        ? prev
+        : rows
+    );
 
     // Progress is DERIVED from server rows, never accumulated locally. A player
     // who reinstalls the browser, switches from data to wifi, or hands the
@@ -264,7 +298,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     for (const [slot, agg] of bySlot) {
       if (slot > 0 && agg.done === agg.total) open.push(String(slot));
     }
-    setUnlockedVaults(open);
+    setUnlockedVaults((prev) =>
+      prev.length === open.length && prev.every((v, i) => v === open[i]) ? prev : open
+    );
 
     const bonus = bySlot.get(0);
     setBonusSolved(Boolean(bonus && bonus.done === bonus.total));
@@ -317,11 +353,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!isLive || !session) return;
     try {
-      const [rows, ranked, roster] = await Promise.all([
+      /**
+       * allSettled, NOT all.
+       *
+       * With Promise.all a single failing call discarded the other two — so a
+       * board fetch that errored (or timed out) also threw away a perfectly
+       * good leaderboard, and the standings silently stopped updating. Each
+       * result is now applied on its own merits.
+       */
+      const [boardRes, rankRes, rosterRes] = await Promise.allSettled([
         player ? api.fetchBoard(session.id) : Promise.resolve([]),
         api.fetchLeaderboard(session.id),
         api.fetchPlayers(session.id),
       ]);
+
+      const rows   = boardRes.status  === 'fulfilled' ? boardRes.value  : null;
+      const ranked = rankRes.status   === 'fulfilled' ? rankRes.value   : null;
+      const roster = rosterRes.status === 'fulfilled' ? rosterRes.value : null;
 
       /**
        * Did the host wipe the room out from under us?
@@ -340,14 +388,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
        * case to catch. fetchPlayers throws on a failed request rather than
        * returning [], so an empty array here means genuinely empty.
        */
-      if (player && !roster.some((p) => p.id === player.id)) {
+      // Only trust an eviction when the roster actually arrived. A failed
+      // fetch is not evidence that the player was deleted.
+      if (roster && player && !roster.some((p) => p.id === player.id)) {
         evict();
         return;
       }
 
-      if (player) applyBoard(rows);
-      setLiveBoard(ranked);
-      setPlayers(roster);
+      if (player && rows) applyBoard(rows);
+
+      if (ranked) setLiveBoard((prev) =>
+        sameSig(
+          ranked.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|"),
+          prev.map((r) => `${r.player_id}:${r.vaults}:${r.bonus}`).join("|")
+        ) ? prev : ranked
+      );
+
+      // The roster only grows during a session; names and numbers never change.
+      if (roster) setPlayers((prev) =>
+        prev.length === roster.length &&
+        prev.every((p, i) => p.id === roster[i].id) ? prev : roster
+      );
     } catch (e) {
       setError(humanError(e, "Could not reach the game. Check your signal."));
     }
@@ -471,9 +532,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // A different room, or an identity from before this was tracked. Drop it
-    // and send them through the door properly.
-    if (storedRoom || username) forgetRoom(false);
+    // A different room, or an identity whose room stamp is gone — which is
+    // what evict() leaves behind, since it clears the room but keeps the name.
+    //
+    // Do NOT auto-join, but KEEP the name. Wiping it meant a player who
+    // reloaded after a reset had to retype a name the app already knew, and
+    // the name screen now pre-fills from it so getting back in is one tap.
+    if (storedRoom) forgetRoom(true);
     setBooted(true);
   }, [session, username, join, evicted, forgetRoom]);
 
@@ -523,7 +588,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         { event: 'UPDATE', schema: 'public', table: 'assignments' },
         () => { void refreshRef.current(); }
       )
-      .subscribe();
+      /**
+       * The status callback is the point.
+       *
+       * `.subscribe()` with no callback swallows everything — a channel that
+       * never connects behaves exactly like one where nothing has happened
+       * yet, which is why "realtime does not work" was impossible to tell
+       * apart from "nobody has tapped anything". CHANNEL_ERROR and TIMED_OUT
+       * now say so, and the poll below tightens to cover it.
+       */
+      .subscribe((status) => {
+        const ok = status === 'SUBSCRIBED';
+        setRealtimeOk(ok);
+        if (!ok) {
+          console.warn('[vault] realtime channel:', status, '— falling back to polling');
+        }
+      });
 
     /**
      * Poll for pending handshakes as well as subscribing to them.
@@ -540,6 +620,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Never clobber a prompt that is already on screen; confirmMeet()
         // clears it, and replacing the row underneath a tap would drop it.
         setIncoming((cur) => cur ?? rows[0] ?? null);
+        // The board too, when the socket is not delivering — otherwise a
+        // connect or photo completion would never be noticed on a phone whose
+        // channel failed to subscribe.
+        if (!realtimeOkRef.current) void refreshRef.current();
       } catch { /* next tick */ }
     };
     void poll();
@@ -699,11 +783,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
+        // audit-ok: the OFFLINE branch. It only runs when there is no server
+        // to ask, and the live board never carries an answer to compare with.
         const correct =
           challenge.type === 'text_input'
             ? String(answer.text ?? '').trim().toLowerCase() ===
-              challenge.correctAnswerText?.toLowerCase()
-            : String(answer.option ?? '') === challenge.correctAnswerId;
+              challenge.correctAnswerText?.toLowerCase()  // audit-ok
+            : String(answer.option ?? '') === challenge.correctAnswerId; // audit-ok
         // Offline boards are one challenge per vault, so a correct answer
         // always completes it.
         result = { correct, solved: correct, vaultComplete: correct };

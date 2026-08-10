@@ -77,7 +77,7 @@ export function ExchangeTask({ challenge, submit, onCorrect, onWrong, busy }: Ta
           </p>
         </motion.div>
 
-        <ConnectTask challenge={challenge} />
+        <ConnectTask key={challenge.assignmentId} challenge={challenge} />
       </div>
     );
   }

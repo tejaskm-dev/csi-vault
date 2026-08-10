@@ -96,7 +96,7 @@ export function CharadesTask({ challenge }: { challenge: Challenge }) {
       {/* Finding the person is the same handshake as everything else, so it is
           the same component. Their phone shows the four options the moment
           they confirm. */}
-      <ConnectTask challenge={challenge} />
+      <ConnectTask key={challenge.assignmentId} challenge={challenge} />
     </div>
   );
 }

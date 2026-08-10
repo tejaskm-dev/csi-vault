@@ -33,7 +33,6 @@ export interface MinigameProps {
 export type MinigameKey =
   | "tumbler"
   | "maze"
-  | "wordbuild"
   | "survival"
   | "pairs"
   | "wires"

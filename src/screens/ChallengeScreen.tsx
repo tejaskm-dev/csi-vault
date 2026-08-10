@@ -101,6 +101,36 @@ export function ChallengeScreen() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  /**
+   * Wipe the per-question state when the question changes.
+   *
+   * Steps inside one vault navigate to the SAME path — /challenge/2 step 1 and
+   * step 2 are both "/challenge/2" — so React never unmounts this screen and
+   * every piece of local state survived into the next question. The previous
+   * answer stayed selected, CRACK IT stayed enabled, and one tap submitted a
+   * stale option for a question the player had not read.
+   *
+   * Keyed on assignmentId, which is unique per question per player, rather
+   * than on the route, which is exactly what failed to change.
+   */
+  useEffect(() => {
+    // Timers from the PREVIOUS question would otherwise still fire into this
+    // one — the delayed miss overlay especially, which would slam a "Not
+    // quite" screen over a question the player had only just been shown.
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setSelectedId(null);
+    setTextInput("");
+    setWrongId(null);
+    setToast(null);
+    setStatus("idle");
+    setMisses(0);
+    setShowMiss(false);
+    setSubmitError(null);
+    setHintOpen(false);
+    setTime(challenge?.timeLimit ?? 45);
+  }, [challenge?.assignmentId]);
+
   useEffect(() => {
     if (status === "correct") return;
     const interval = setInterval(() => {
@@ -370,19 +400,19 @@ export function ChallengeScreen() {
         {/* Choices Layout */}
         <div className="grow flex flex-col justify-center my-2">
           {challenge.type === "observe" ? (
-            <ObserveTask {...taskProps} />
+            <ObserveTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "connect" ? (
-            <ConnectTask challenge={challenge} />
+            <ConnectTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "exchange" ? (
-            <ExchangeTask {...taskProps} />
+            <ExchangeTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "recall" ? (
-            <RecallTask {...taskProps} />
+            <RecallTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "photo" ? (
-            <PhotoTask challenge={challenge} />
+            <PhotoTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "charades" ? (
-            <CharadesTask challenge={challenge} />
+            <CharadesTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "minigame" ? (
-            <Minigame
+            <Minigame key={challenge.assignmentId}
               game={challenge.payload?.game ?? "tumbler"}
               // Seeded server-side at deal time. Two players get different
               // puzzles, the same player gets the same one back after a
