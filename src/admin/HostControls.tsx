@@ -23,6 +23,9 @@ export function HostControls({ code }: { code: string }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [pins, setPins] = useState<{ vault_no: number; name: string; pin: string }[]>([]);
   const [stuck, setStuck] = useState<Awaited<ReturnType<typeof api.hostStuck>>>([]);
+  const [errors, setErrors] = useState<Awaited<ReturnType<typeof api.hostErrors>>>([]);
+  const [notice, setNotice] = useState("");
+  const [killId, setKillId] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export function HostControls({ code }: { code: string }) {
         setSession(s);
         setStats(await api.hostOverview(s.id, code));
         if (!stop) setStuck(await api.hostStuck(s.id, code));
+        if (!stop) setErrors(await api.hostErrors(s.id, code));
       } catch (e) {
         if (!stop) setErr(humanError(e, "Could not read the room state."));
       }
@@ -200,6 +204,99 @@ export function HostControls({ code }: { code: string }) {
             Reset room
           </HostButton>
         )}
+      </div>
+
+      {/* ── Say something to the room ────────────────────────────────
+          The most useful control here, because it does not need to know what
+          went wrong. Most unexpected problems at an event are solved by being
+          able to tell sixty people one sentence. */}
+      <div className="mt-4 border-t-3 border-ink/10 pt-4">
+        <span className="font-display text-[13px] uppercase tracking-[0.14em] text-ink/55">
+          Message every phone
+        </span>
+        <div className="mt-2 flex gap-2">
+          <input
+            value={notice}
+            onChange={(e) => setNotice(e.target.value.slice(0, 240))}
+            placeholder="e.g. Vault 5 is broken — use the skip button"
+            className="ink flex-1 rounded-btn bg-paper-deep px-3 py-2 font-body text-[13px] font-semibold text-ink shadow-ink-sm focus:outline-none"
+          />
+          <HostButton
+            tone="green"
+            disabled={busy || !session || !notice.trim()}
+            onClick={() => session && act(async () => {
+              await api.hostBroadcast(session.id, code, notice);
+              setNotice("");
+            })}
+          >
+            Send
+          </HostButton>
+          <HostButton
+            tone="steel"
+            disabled={busy || !session}
+            onClick={() => session && act(() => api.hostBroadcast(session.id, code, ""))}
+          >
+            Clear
+          </HostButton>
+        </div>
+      </div>
+
+      {/* ── Errors the phones are reporting ──────────────────────────
+          Students whose phones are failing do not walk over and say so; they
+          quietly stop playing. This is how you find out while you can still
+          do something. */}
+      {errors.length > 0 && (
+        <div className="mt-4 rounded-btn border-3 border-red-deep bg-red p-3">
+          <p className="font-display text-[13px] uppercase tracking-[0.14em] text-white">
+            Errors on player phones
+          </p>
+          <div className="mt-2 max-h-40 space-y-1 overflow-y-auto">
+            {errors.map((e, i) => (
+              <div key={i} className="rounded-btn bg-white/90 px-2 py-1.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-display text-[12px] text-ink">{e.where_at}</span>
+                  <span className="font-body text-[10px] font-bold text-ink/50">
+                    {e.hits}x · {e.players} player{Number(e.players) === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <p className="truncate font-body text-[10px] font-semibold text-ink/60">
+                  {e.message}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Kill a broken challenge ──────────────────────────────────
+          Deactivating alone leaves everyone already holding it stuck, so this
+          also releases them. One id, one tap, problem contained. */}
+      <div className="mt-4">
+        <span className="font-display text-[13px] uppercase tracking-[0.14em] text-ink/55">
+          Remove a broken challenge
+        </span>
+        <div className="mt-2 flex gap-2">
+          <input
+            value={killId}
+            onChange={(e) => setKillId(e.target.value.trim())}
+            placeholder="challenge id, e.g. t_clock"
+            className="ink flex-1 rounded-btn bg-paper-deep px-3 py-2 font-readout text-[13px] text-ink shadow-ink-sm focus:outline-none"
+          />
+          <HostButton
+            tone="red"
+            disabled={busy || !session || !killId}
+            onClick={() => session && act(async () => {
+              const r = await api.hostKillChallenge(session.id, code, killId);
+              setErr(`Removed ${killId} — freed ${r.freed} stuck player(s).`);
+              setKillId("");
+            })}
+          >
+            Remove
+          </HostButton>
+        </div>
+        <p className="mt-1 font-body text-[10px] font-semibold text-ink/45">
+          Stops it being dealt again AND marks it done for anyone holding it.
+        </p>
       </div>
 
       {/* ── Who is jammed ───────────────────────────────────────────

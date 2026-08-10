@@ -93,9 +93,25 @@ const FRIENDLY: [RegExp, string][] = [
  * the screen, because a generic "something went wrong" tells them nothing
  * about what to do next.
  */
-export function humanError(e: unknown, fallback = "Something went wrong. Try that again."): string {
+/**
+ * Set by the app at startup so this module can report without importing api.ts
+ * (which imports supabase, which would make this a cycle).
+ */
+let reporter: ((where: string, message: string) => void) | null = null;
+export function setErrorReporter(fn: typeof reporter) { reporter = fn; }
+
+export function humanError(
+  e: unknown,
+  fallback = "Something went wrong. Try that again.",
+  where = "app"
+): string {
   const raw = rawMessage(e);
   if (!raw) return fallback;
+
+  // Every error a player is shown is also sent to the operator. That is the
+  // whole point: a student whose phone is failing does not walk over and tell
+  // you, they quietly stop playing.
+  reporter?.(where, raw.slice(0, 400));
 
   for (const [pattern, friendly] of FRIENDLY) {
     if (pattern.test(raw)) return friendly;

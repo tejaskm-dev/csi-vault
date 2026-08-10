@@ -186,6 +186,33 @@ challenges are spread across vault 3 only, which staggers them naturally.
 
 ---
 
+## When something breaks that nobody predicted
+
+Four controls on the dashboard, in the order you should reach for them.
+
+**1. Message every phone.** Reach for this first, before diagnosing anything.
+It does not need to know what is wrong: *"Vault 5 is broken — use the skip
+button"* or *"everyone to the front, two minutes"* resolves most situations
+faster than any fix. Appears as a banner on all sixty phones within four
+seconds. Clear it when it no longer applies.
+
+**2. Errors on player phones.** Appears by itself when phones start failing,
+grouped by message with a count. This is how you learn about a bug at all — a
+student whose phone is erroring does not walk over and tell you, they quietly
+stop playing. If one line shows twenty players, that is your problem.
+
+**3. Remove a broken challenge.** Paste its id. It stops being dealt AND every
+player currently stuck on it is released. Get the id from the errors panel or
+by asking a student what the challenge was called.
+
+**4. Stuck list.** Anyone on one challenge for over four minutes, with a skip
+button each. Use it for individuals; use *Remove* when it is the challenge
+rather than the person.
+
+Players also have a self-service escape: after five minutes on a challenge that
+needs somebody else, a *"Cannot finish this one?"* button appears. So a jam
+usually resolves without you.
+
 ## Mid-event levers
 
 | Problem | Fix |

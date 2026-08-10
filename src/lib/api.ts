@@ -93,6 +93,9 @@ export interface SessionRow {
   phase: "lobby" | "live" | "ended";
   started_at: string | null;
   join_code: string;
+  /** Operator message shown on every phone. Null when there is nothing to say. */
+  notice?: string | null;
+  notice_at?: string | null;
   /** Can a brand-new player still join? False once the game is running. */
   doors_open?: boolean;
 }
@@ -251,7 +254,7 @@ async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
 export async function findSession(joinCode: string): Promise<SessionRow | null> {
   const { data, error } = await client()
     .from("sessions_public")
-    .select("id,name,phase,started_at,join_code,doors_open")
+    .select("id,name,phase,started_at,join_code,doors_open,notice,notice_at")
     .eq("join_code", joinCode.trim().toUpperCase())
     .maybeSingle();
   if (error) throw error;
@@ -279,7 +282,7 @@ export async function findSession(joinCode: string): Promise<SessionRow | null> 
 export async function defaultSession(): Promise<SessionRow | null> {
   const { data, error } = await client()
     .from("sessions_public")
-    .select("id,name,phase,started_at,join_code,doors_open")
+    .select("id,name,phase,started_at,join_code,doors_open,notice,notice_at")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -595,6 +598,35 @@ export async function hostStuck(sessionId: string, code: string) {
 export async function hostSkipStep(sessionId: string, code: string, vaultNo: number) {
   return rpc<{ ok: boolean }>("host_skip_step",
     { p_session: sessionId, p_code: code, p_vault_no: vaultNo });
+}
+
+/** Say something to every phone at once. Empty string clears it. */
+export async function hostBroadcast(sessionId: string, code: string, text: string) {
+  return rpc<{ ok: boolean }>("host_broadcast",
+    { p_session: sessionId, p_code: code, p_text: text });
+}
+
+/** Take a broken challenge out of the game and free everyone stuck on it. */
+export async function hostKillChallenge(sessionId: string, code: string, challengeId: string) {
+  return rpc<{ ok: boolean; freed: number }>("host_kill_challenge",
+    { p_session: sessionId, p_code: code, p_challenge: challengeId });
+}
+
+/** Errors the phones have reported, grouped. */
+export async function hostErrors(sessionId: string, code: string) {
+  return rpc<{ where_at: string; message: string; hits: number; players: number; last_at: string }[]>(
+    "host_errors", { p_session: sessionId, p_code: code });
+}
+
+/**
+ * Tell the operator something went wrong on this phone.
+ *
+ * Fire-and-forget on purpose: a failure to report a failure must never become
+ * a second failure the player can see.
+ */
+export async function reportError(where: string, message: string) {
+  try { await rpc<unknown>("report_error", { p_where: where, p_message: message }); }
+  catch { /* nothing sensible to do if even this fails */ }
 }
 
 export async function hostSetPhase(sessionId: string, code: string, phase: string) {
