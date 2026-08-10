@@ -98,6 +98,20 @@ After running `0014`, check the SQL editor output for any
 `Vault N wants X step(s) but only Y qualify` warnings. That means a vault
 cannot be filled and would strand players.
 
+### Fresh session (2 min)
+
+An identity is scoped to the room it was made in. Within a session, refreshing
+or locking the phone rejoins silently — that path must keep working. Across
+sessions it must not.
+
+- Join, play a bit, then **Reset room**. The phone shows VAULTS RESEALED and
+  goes back to the door — it must not silently rejoin with the old name.
+- Refresh mid-game in the *same* session → straight back to your board, no
+  name screen. (If this breaks, it is worse than the bug it replaced.)
+- Create a second session in SQL while a phone is open:
+  `insert into sessions (name, join_code, phase) values ('Round 2','CSI2','lobby');`
+  That phone should drop its old board and return to the door.
+
 ### Routing (3 min)
 
 The URL is now driven by state, not just by buttons. Check all four:
