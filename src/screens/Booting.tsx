@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Safe } from "../components/Safe";
 import { useGame } from "../context/GameContext";
+import { landingFor } from "../lib/routing";
 import { playTap, playUnlock } from "../lib/sound";
 
 /**
@@ -61,7 +62,7 @@ const LINES = [
 
 export function Booting() {
   const navigate = useNavigate();
-  const { username } = useGame();
+  const { username, live, booted, player, session } = useGame();
 
   const numberRef = useRef<HTMLSpanElement | null>(null);
   const [filled, setFilled] = useState(0);
@@ -108,14 +109,19 @@ export function Booting() {
         // it land instead of feeling cut off.
         window.setTimeout(() => {
           setLeaving(true);
-          navigate("/home", { replace: true });
+          // Ask where this player actually belongs. Hardcoding "/home" meant
+          // someone joining a lobby saw the board flash past on the way to the
+          // waiting room, because the guard corrected it a frame later.
+          navigate(landingFor({
+            live, booted, hasPlayer: Boolean(player), phase: session?.phase,
+          }), { replace: true });
         }, reduced ? 80 : 420);
       }
     };
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [navigate]);
+  }, [navigate, live, booted, player, session?.phase]);
 
   return (
     <motion.div

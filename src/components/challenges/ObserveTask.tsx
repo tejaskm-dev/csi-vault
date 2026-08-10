@@ -38,16 +38,26 @@ export function ObserveTask({ challenge, submit, onCorrect, onWrong, busy }: Tas
     return () => cancelAnimationFrame(id);
   }, [challenge.id]);
 
+  // Belt and braces: a new challenge always starts unlocked, whatever the
+  // previous one left behind.
+  useEffect(() => { setLocked(false); }, [challenge.id]);
+
   const answer = async (option: string) => {
     if (locked || busy) return;
     setLocked(true);
     playTap();
+    // Still sent, still recorded on the attempt — but it no longer decides
+    // anything. It used to: answers faster than 250ms were rejected outright,
+    // which marked correct taps wrong for anyone who spotted it instantly and
+    // read on the phone as the touch not registering at all.
     const ms = Math.round(performance.now() - shownAt.current);
     try {
       const result = await submit({ option, ms });
       if (result.correct) onCorrect();
-      else { onWrong(); setLocked(false); }
-    } catch {
+      else onWrong();
+    } finally {
+      // ALWAYS unlock. Previously a thrown submit left the grid dead until the
+      // player navigated away, with nothing on screen to say why.
       setLocked(false);
     }
   };
@@ -111,9 +121,29 @@ export function ObserveTask({ challenge, submit, onCorrect, onWrong, busy }: Tas
 
   /* ---------------------------------------------------------------- *
    * Find the impostor — one square is not like the others
-   * ---------------------------------------------------------------- */
+   * ---------------------------------------------------------------- *
+   * The original version put a DIFFERENT ICON in the odd square — a hexagon
+   * among circles, a sun among stars. That is not a spot-the-difference, it is
+   * spot-the-other-thing, and it is solved from across the room without
+   * looking. It also meant the puzzle's difficulty came from which two art
+   * assets happened to be picked.
+   *
+   * Now every square is the SAME asset and the impostor differs by one
+   * property — turned, smaller, or slightly off-colour. `strength` sets how
+   * subtle, so the same mechanic can be a gentle tutorial or a genuine hunt
+   * without needing any new art.
+   */
   const count = payload.count ?? 16;
   const oddIndex = payload.odd_index ?? 0;
+  const variant = payload.variant ?? "rotate";
+  const strength = payload.strength ?? 1;
+
+  /** What makes the odd one odd. Applied to that cell's art only. */
+  const oddStyle: React.CSSProperties =
+    variant === "rotate" ? { transform: `rotate(${22 - strength * 6}deg)` }
+    : variant === "size" ? { transform: `scale(${1 - 0.06 * (4 - strength)})` }
+    : variant === "flip" ? { transform: "scaleX(-1)" }
+    : /* tint */          { filter: `hue-rotate(${40 - strength * 9}deg) saturate(1.25)` };
   // Square-ish grid. 16 wants 4 columns, 25 wants 5 — anything else settles on
   // whatever keeps the cells closest to square on a 390px screen.
   const cols = Math.round(Math.sqrt(count));
@@ -144,11 +174,17 @@ export function ObserveTask({ challenge, submit, onCorrect, onWrong, busy }: Tas
           // carries the meaning.
           aria-label={`Square ${i + 1}`}
         >
-          <Art
-            name={(i === oddIndex ? payload.odd : payload.fill) ?? "circle"}
-            alt=""
-            className="h-full w-full object-contain"
-          />
+          {/* Wrapped rather than styling <Art> directly — Art is shared by
+              every screen and does not take a style prop, and widening its API
+              for one puzzle is the wrong trade. */}
+          <div className="h-full w-full" style={i === oddIndex ? oddStyle : undefined}>
+            <Art
+              // Same asset in every cell. The difference is the transform.
+              name={payload.fill ?? "circle"}
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
         </motion.button>
       ))}
     </motion.div>

@@ -72,6 +72,9 @@ export interface ChallengeExtras {
   odd?: GlyphKey;
   count?: number;
   odd_index?: number;
+  /** impostor: how the odd tile differs, and how subtly (1 easiest). */
+  variant?: 'rotate' | 'size' | 'flip' | 'tint';
+  strength?: number;
   mine?: number;
   symbol?: string;
   about?: string;

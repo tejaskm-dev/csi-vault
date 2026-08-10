@@ -77,6 +77,8 @@ union all
 
 -- 7. Impostor grid where the odd tile is outside the grid, or the answer does
 --    not point at it. Tapping the visibly-odd square would be marked wrong.
+--    Also catches an impostor with no `variant`, which would render 36
+--    identical tiles and be unsolvable by anyone.
 select 'BLOCKER', 'impostor odd_index wrong', c.id,
        'odd_index=' || (c.payload->>'odd_index') || ' count=' || (c.payload->>'count')
 from public.challenges c
@@ -84,7 +86,8 @@ join public.challenge_answers ca on ca.challenge_id = c.id
 where c.active and c.payload->>'mode' = 'impostor'
   and (
     (c.payload->>'odd_index')::int >= (c.payload->>'count')::int
-    or ca.answer->>'option' <> c.payload->>'odd_index')
+    or ca.answer->>'option' <> c.payload->>'odd_index'
+    or coalesce(c.payload->>'variant','') not in ('rotate','size','flip','tint'))
 
 union all
 
@@ -132,16 +135,17 @@ where upper(w.word) = any (select upper(unnest(w.decoys)))
 
 union all
 
--- 13. A vault that cannot be filled. Its steps would come up short, and a
---     short vault can never be completed — the player is stranded forever.
-select 'BLOCKER', 'vault cannot be filled',
-       'vault ' || v.vault_no, v.label || ' wants ' || v.steps || ', has ' || (
-  select count(*) from public.challenges c
+-- 13. A vault that cannot be filled without repeating a mechanic. Counts
+--     DISTINCT FAMILIES, because a vault offered two colour traps has enough
+--     rows but not enough variety, and the board refuses the repeat.
+select 'WARNING', 'vault short on distinct mechanics',
+       'vault ' || v.vault_no, v.label || ' wants ' || v.steps || ' families, has ' || (
+  select count(distinct c.family) from public.challenges c
   where c.active and not c.is_bonus
     and c.category = any(v.categories)
     and c.difficulty <= v.max_difficulty)
 from public.vault_plan v
-where (select count(*) from public.challenges c
+where (select count(distinct c.family) from public.challenges c
        where c.active and not c.is_bonus
          and c.category = any(v.categories)
          and c.difficulty <= v.max_difficulty) < v.steps
