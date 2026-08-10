@@ -69,8 +69,11 @@ interface ReactionState {
  * sticker in the app's own voice; with uploads the GIF plays instead and the
  * shout becomes its caption. Same timing, same rules, no configuration.
  */
+// Deliberately generic. These used to include clip-specific lines like
+// "SIUUU", which was fine as a standalone sticker but wrong the moment it was
+// printed under a different GIF. Nothing here names a particular meme.
 const SHOUTS: Record<Trigger, string[]> = {
-  fast_solve:     ["TOO FAST", "SIUUU", "INSTANT"],
+  fast_solve:     ["TOO FAST", "INSTANT", "BLINK AND MISS IT"],
   slow_solve:     ["FINALLY", "TOOK A WHILE"],
   timeout:        ["CLOCK'S OUT"],
   wrong:          ["NOPE"],
@@ -82,7 +85,7 @@ const SHOUTS: Record<Trigger, string[]> = {
   rank_down:      ["SLIPPING"],
   vault_complete: ["ALL NINE", "VAULT OPEN"],
   first_connect:  ["NEW CREW", "FIRST CONTACT"],
-  photo_done:     ["EVIDENCE LOGGED", "ABSOLUTE CINEMA"],
+  photo_done:     ["EVIDENCE LOGGED", "SHOT TAKEN"],
 };
 
 function pickShout(t: Trigger) {

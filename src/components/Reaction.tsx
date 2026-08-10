@@ -81,9 +81,12 @@ export function Reaction() {
                 onError={() => setFailed(true)}
               />
               )}
-              <p className="pt-1 text-center font-display text-[13px] uppercase tracking-wide text-ink">
-                {current.shout}
-              </p>
+              {/* No caption over a GIF.
+                  The shout was picked from the TRIGGER's phrase list, not from
+                  the clip that was chosen — so "SIUUU" could land on the Flash
+                  running, captioning one meme with another's punchline. The
+                  GIF is the joke; it does not need subtitling. Shouts remain
+                  the fallback for when no clip is available. */}
             </div>
           ) : (
             <div className="ink rounded-plate bg-brass px-4 py-3 text-center shadow-[0_6px_0_0_var(--color-brass-deep)]">

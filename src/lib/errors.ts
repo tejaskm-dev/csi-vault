@@ -36,7 +36,7 @@ const FRIENDLY: [RegExp, string][] = [
   [/no player with that number/i,
    "Nobody in this room has that number. Check their screen and try again."],
   [/already met|pair farming|interactions_no_pair_farming|duplicate key/i,
-   "You have already teamed up with them. Find someone new — repeats do not count."],
+   "You have already teamed up with them, and there are still people here you have not met. Find someone new."],
   [/that is you/i,
    "That is your own number. You need someone else's."],
   [/not your target/i,

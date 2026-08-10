@@ -115,6 +115,59 @@ for (const file of walk(SRC)) {
   });
 }
 
+/**
+ * Content must only name art that exists.
+ *
+ * GlyphKey declared 29 names against 22 files, so seven of them rendered as a
+ * two-letter placeholder — an impostor grid built from `droplet` was 36 tiles
+ * reading "DR". Nothing in TypeScript or SQL could catch that, because the
+ * type says the name is legal and only the filesystem knows it is not. This
+ * compares the two directly.
+ */
+{
+  const glyphDir = join(ROOT, "src", "art", "glyphs");
+  const real = new Set(
+    readdirSync(glyphDir).filter((f) => f.endsWith(".webp")).map((f) => f.replace(".webp", ""))
+  );
+  const declared = (readFileSync(join(SRC, "data", "mockData.ts"), "utf8")
+    .split("export type GlyphKey")[1] ?? "").split(";")[0]
+    .match(/'([a-z]+)'/g)?.map((x) => x.replace(/'/g, "")) ?? [];
+
+  const orphans = declared.filter((g) => !real.has(g));
+  if (orphans.length) {
+    (byRule["glyph-without-asset"] ??= []).push(
+      `src/data/mockData.ts  declared but no file: ${orphans.join(", ")}`
+    );
+    findings += orphans.length;
+  }
+
+  // Migrations are append-only, and 0022 rewrites every earlier glyph to a
+  // real one. Only files from the normalising migration onward are policed —
+  // otherwise the checker permanently reports history it cannot change.
+  const dir = join(ROOT, "supabase", "migrations");
+  const NORMALISED_FROM = "0022";
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".sql") && f >= NORMALISED_FROM)) {
+    readFileSync(join(dir, f), "utf8").split("\n").forEach((line, i) => {
+      if (line.trim().startsWith("--")) return;
+      for (const m of line.matchAll(/"glyph"\s*:\s*"([a-z]+)"|'(?:glyph|fill|odd)',\s*'([a-z]+)'/g)) {
+        const g = m[1] ?? m[2];
+        if (g && !real.has(g)) {
+          (byRule["glyph-without-asset"] ??= []).push(
+            `supabase/migrations/${f}:${i + 1}  "${g}" has no art file`
+          );
+          findings++;
+        }
+      }
+    });
+  }
+}
+
+RULES.push({
+  id: "glyph-without-asset",
+  why: "A glyph with no file renders as its first two letters — that is the 'DR' players saw, which was `droplet`.",
+  fix: "Use one of the names in src/art/glyphs, or add the .webp.",
+});
+
 // SQL rules run over the migrations, where the duplicated-truth risk lives.
 for (const rule of RULES.filter((r) => r.sql)) {
   const dir = join(ROOT, "supabase", "migrations");

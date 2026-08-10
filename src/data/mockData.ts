@@ -3,11 +3,20 @@
  * icon depicts, leaving the redesign free to render it as emoji, an icon set,
  * a sprite sheet or hand-drawn art without touching this file.
  */
+/**
+ * EVERY NAME HERE MUST HAVE A FILE in src/art/glyphs.
+ *
+ * This list used to declare 29 names against 22 files. The seven without art —
+ * droplet, hexagon, leaf, lightning, sun, triangle, wind — fell through to a
+ * placeholder that prints the first two letters, so players saw tiles reading
+ * "DR" and "HE". TypeScript could not catch it: the type said the name was
+ * legal and only the filesystem knew otherwise. `npm run audit:code` now
+ * compares the two.
+ */
 export type GlyphKey =
   | 'mountain' | 'search' | 'headphones' | 'dog' | 'penguin' | 'camera'
   | 'bubble' | 'star' | 'rocket' | 'code' | 'key' | 'shield' | 'terminal'
-  | 'dice' | 'flame' | 'wave' | 'lightning' | 'droplet' | 'leaf' | 'sun'
-  | 'box' | 'circle' | 'triangle' | 'hexagon' | 'wind'
+  | 'dice' | 'flame' | 'wave' | 'box' | 'circle'
   | 'apple' | 'banana' | 'grapes' | 'orange';
 
 /**
@@ -166,7 +175,7 @@ export const challengePool: Challenge[] = [
       { id: '1', label: 'Penguin', glyph: 'penguin' },
       { id: '2', label: 'Corgi', glyph: 'dog' },
       { id: '3', label: 'Wave Rider', glyph: 'wave' },
-      { id: '4', label: 'Drop Splash', glyph: 'droplet' },
+      { id: '4', label: 'Drop Splash', glyph: 'wave' },
     ],
     correctAnswerId: '2',
     hint: 'Three of them love deep water. One prefers running in grass.',
@@ -189,8 +198,8 @@ export const challengePool: Challenge[] = [
     question: 'Which shape is identical in angle and proportion to the key?',
     glyph: 'search',
     options: [
-      { id: '1', label: 'Triangle A', glyph: 'triangle' },
-      { id: '2', label: 'Hexagon B', glyph: 'hexagon' },
+      { id: '1', label: 'Triangle A', glyph: 'shield' },
+      { id: '2', label: 'Hexagon B', glyph: 'box' },
       { id: '3', label: 'Box C', glyph: 'box' },
       { id: '4', label: 'Circle D', glyph: 'circle' },
     ],
@@ -205,10 +214,10 @@ export const challengePool: Challenge[] = [
     question: 'Which programming language is named after a snake?',
     glyph: 'code',
     options: [
-      { id: '1', label: 'JavaScript', glyph: 'lightning' },
-      { id: '2', label: 'Python', glyph: 'leaf' },
+      { id: '1', label: 'JavaScript', glyph: 'flame' },
+      { id: '2', label: 'Python', glyph: 'apple' },
       { id: '3', label: 'Ruby', glyph: 'star' },
-      { id: '4', label: 'Java', glyph: 'droplet' },
+      { id: '4', label: 'Java', glyph: 'wave' },
     ],
     correctAnswerId: '2',
     hint: 'A very large constrictor.',
@@ -232,8 +241,8 @@ export const challengePool: Challenge[] = [
     glyph: 'code',
     options: [
       { id: 'a', label: 'Hyper Text Markup Language', glyph: 'code' },
-      { id: 'b', label: 'High Tech Modern Language', glyph: 'hexagon' },
-      { id: 'c', label: 'Hyperlink Text Module Logic', glyph: 'triangle' },
+      { id: 'b', label: 'High Tech Modern Language', glyph: 'box' },
+      { id: 'c', label: 'Hyperlink Text Module Logic', glyph: 'shield' },
       { id: 'd', label: 'Home Tool Markup Language', glyph: 'circle' },
     ],
     correctAnswerId: 'a',
@@ -247,7 +256,7 @@ export const challengePool: Challenge[] = [
     question: 'Which lens aperture allows the most light in low light?',
     glyph: 'camera',
     options: [
-      { id: '1', label: 'Wide Aperture', glyph: 'sun' },
+      { id: '1', label: 'Wide Aperture', glyph: 'star' },
       { id: '2', label: 'Narrow Pin', glyph: 'circle' },
       { id: '3', label: 'Filter Shield', glyph: 'shield' },
       { id: '4', label: 'Dark Shutter', glyph: 'box' },
@@ -264,8 +273,8 @@ export const challengePool: Challenge[] = [
     glyph: 'dice',
     options: [
       { id: 'a', label: 'OR', glyph: 'circle' },
-      { id: 'b', label: 'XOR', glyph: 'triangle' },
-      { id: 'c', label: 'NOT', glyph: 'hexagon' },
+      { id: 'b', label: 'XOR', glyph: 'shield' },
+      { id: 'c', label: 'NOT', glyph: 'box' },
       { id: 'd', label: 'AND', glyph: 'box' },
     ],
     correctAnswerId: 'd',
@@ -281,8 +290,8 @@ export const challengePool: Challenge[] = [
     options: [
       { id: '1', label: 'Seven (7)', glyph: 'star' },
       { id: '2', label: 'Two (2)', glyph: 'circle' },
-      { id: '3', label: 'Twelve (12)', glyph: 'hexagon' },
-      { id: '4', label: 'Five (5)', glyph: 'triangle' },
+      { id: '3', label: 'Twelve (12)', glyph: 'box' },
+      { id: '4', label: 'Five (5)', glyph: 'shield' },
     ],
     correctAnswerId: '1',
     hint: 'There are six different ways to make this total.',
@@ -296,7 +305,7 @@ export const challengePool: Challenge[] = [
     glyph: 'terminal',
     options: [
       { id: 'a', label: 'git push', glyph: 'rocket' },
-      { id: 'b', label: 'git pull', glyph: 'wind' },
+      { id: 'b', label: 'git pull', glyph: 'wave' },
       { id: 'c', label: 'git commit', glyph: 'key' },
       { id: 'd', label: 'git status', glyph: 'search' },
     ],
@@ -309,11 +318,11 @@ export const challengePool: Challenge[] = [
     title: 'Short Term Memory',
     type: 'multiple_choice',
     question: 'Which component loses everything when you power off?',
-    glyph: 'lightning',
+    glyph: 'flame',
     options: [
       { id: 'a', label: 'Hard Disk', glyph: 'box' },
-      { id: 'b', label: 'RAM', glyph: 'lightning' },
-      { id: 'c', label: 'SSD', glyph: 'hexagon' },
+      { id: 'b', label: 'RAM', glyph: 'flame' },
+      { id: 'c', label: 'SSD', glyph: 'box' },
       { id: 'd', label: 'USB Drive', glyph: 'circle' },
     ],
     correctAnswerId: 'b',
@@ -337,10 +346,10 @@ export const challengePool: Challenge[] = [
     question: 'The very first computer "bug" was literally what?',
     glyph: 'bubble',
     options: [
-      { id: 'a', label: 'A moth', glyph: 'wind' },
+      { id: 'a', label: 'A moth', glyph: 'wave' },
       { id: 'b', label: 'A typo', glyph: 'bubble' },
-      { id: 'c', label: 'A power cut', glyph: 'lightning' },
-      { id: 'd', label: 'A cracked screen', glyph: 'triangle' },
+      { id: 'c', label: 'A power cut', glyph: 'flame' },
+      { id: 'd', label: 'A cracked screen', glyph: 'shield' },
     ],
     correctAnswerId: 'a',
     hint: 'It had wings, and it was found taped into a logbook.',
@@ -382,7 +391,7 @@ export const challengePool: Challenge[] = [
       { id: 'a', label: 'It costs nothing to buy', glyph: 'circle' },
       { id: 'b', label: 'Anyone can read and change the code', glyph: 'code' },
       { id: 'c', label: 'It only runs online', glyph: 'wave' },
-      { id: 'd', label: 'It has no bugs', glyph: 'hexagon' },
+      { id: 'd', label: 'It has no bugs', glyph: 'box' },
     ],
     correctAnswerId: 'b',
     hint: 'The clue is the word "source".',
@@ -417,7 +426,7 @@ export const challengePool: Challenge[] = [
     type: 'observe',
     question: 'Every symbol in the grid is the same, except one. Tap it.',
     glyph: 'search',
-    payload: { mode: 'impostor', fill: 'circle', odd: 'hexagon', count: 16, odd_index: 11 },
+    payload: { mode: 'impostor', fill: 'circle', odd: 'box', count: 16, odd_index: 11 },
     correctAnswerId: '11',
     hint: 'Sweep row by row instead of staring at the middle.',
     timeLimit: 30,

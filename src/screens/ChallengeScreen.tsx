@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ProgressDots } from "../components/ProgressDots";
@@ -249,6 +249,32 @@ export function ChallengeScreen() {
   const isTextInput = challenge.type === "text_input";
   const canSubmit = isTextInput ? textInput.trim().length > 0 : Boolean(selectedId);
   const ownsCommit = OWNS_COMMIT.has(challenge.type);
+  /**
+   * Option order, shuffled per player and stable per question.
+   *
+   * The order was whatever the content author typed, so the right answer sat
+   * in the same position on all sixty phones — and after one person said "it's
+   * the second one", it was the second one for everybody. Seeded from the
+   * assignment id so it never reshuffles under the player's thumb, and differs
+   * between players because assignment ids do.
+   *
+   * Safe to do on the client: the answer is graded by option ID, so where it
+   * appears on screen tells the server nothing.
+   */
+  const shuffledOptions = useMemo(() => {
+    const opts = challenge?.options ?? [];
+    const key = challenge?.assignmentId ?? challenge?.id ?? "";
+    let h = 2166136261;
+    for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+    const out = [...opts];
+    for (let i = out.length - 1; i > 0; i--) {
+      h = Math.imul(h ^ (h >>> 15), 1 | h);
+      const j = Math.abs(h) % (i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }, [challenge?.assignmentId, challenge?.id, challenge?.options]);
+
   /** How many challenges this vault holds. 1 on a pre-stage board. */
   const stageTotal = challenges.filter((c) => c.slot === challenge.slot).length || 1;
 
@@ -455,7 +481,7 @@ export function ChallengeScreen() {
                   : "flex flex-col gap-3"
               )}
             >
-              {challenge.options?.map((opt) => (
+              {shuffledOptions.map((opt) => (
                 <motion.div key={opt.id} variants={riseIn}>
                   <AnswerOptionCard
                     label={opt.label}
