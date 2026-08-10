@@ -73,6 +73,8 @@ export interface ChallengePayload {
   game?: string;
   seed?: number;
   level?: number;
+  /** compute: the personalised sum this player must work out. */
+  prompt?: string;
   /** anagram: the scrambled letters, dealt server-side. */
   letters?: string;
   /** tumbler: the dealt combination. */
@@ -165,6 +167,8 @@ const KIND_TO_TYPE: Record<string, Challenge["type"]> = {
   photo: "photo",
   minigame: "minigame",
   charades: "charades",
+  duel: "duel",
+  compute: "compute",
 };
 
 function toChallenge(row: BoardRow): Challenge {
@@ -486,6 +490,24 @@ export async function markSeen(assignmentId: string) {
 /** The player's own escape from a challenge that has become impossible. */
 export async function releaseStuck(assignmentId: string) {
   return rpc<{ ok: boolean }>("release_stuck", { p_assignment: assignmentId });
+}
+
+/**
+ * Throw in a duel.
+ *
+ * Returns `waiting` until BOTH players have committed — the server holds the
+ * throws and reveals once, so no amount of watching the network wins a round.
+ */
+export async function duelThrow(interactionId: string, choice: string) {
+  return rpc<{ state: "waiting" | "round" | "over"; round: number;
+               you?: string; them?: string; score?: number[]; result?: string }>(
+    "duel_throw", { p_interaction: interactionId, p_choice: choice });
+}
+
+/** Poll for the opponent, without learning their hand mid-round. */
+export async function duelState(interactionId: string) {
+  return rpc<{ score: number[]; pending: boolean; over: boolean }>(
+    "duel_state", { p_interaction: interactionId });
 }
 
 /** Ranked board. Effective vaults, then elapsed — Bible §1's ordering. */

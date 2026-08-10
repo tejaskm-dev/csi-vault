@@ -126,8 +126,12 @@ for (const file of walk(SRC)) {
  */
 {
   const glyphDir = join(ROOT, "src", "art", "glyphs");
+  // Every format the art index globs, not just webp — the SVG glyphs are real
+  // assets and a checker that cannot see them reports 24 false positives.
   const real = new Set(
-    readdirSync(glyphDir).filter((f) => f.endsWith(".webp")).map((f) => f.replace(".webp", ""))
+    readdirSync(glyphDir)
+      .filter((f) => /\.(webp|svg|png)$/.test(f))
+      .map((f) => f.replace(/\.(webp|svg|png)$/, ""))
   );
   const declared = (readFileSync(join(SRC, "data", "mockData.ts"), "utf8")
     .split("export type GlyphKey")[1] ?? "").split(";")[0]
