@@ -46,7 +46,7 @@ interface BoardRow {
 export interface ChallengePayload {
   options?: ChallengeOption[];
   /** observe: which micro-game to render */
-  mode?: "colour_trap" | "impostor";
+  mode?: "colour_trap" | "impostor" | "flash" | "pair";
   /** colour_trap */
   word?: string;
   ink?: string;
@@ -59,6 +59,11 @@ export interface ChallengePayload {
   /** impostor: how the odd tile differs, and how subtly (1 easiest). */
   variant?: 'rotate' | 'size' | 'flip' | 'tint';
   strength?: number;
+  /** flash: the row shown, which position is asked, and the options. */
+  symbols?: string[];
+  ask_index?: number;
+  /** pair: the grid, with exactly two matching tiles. */
+  tiles?: string[];
   /** exchange: this player's half of the combination */
   mine?: number;
   symbol?: string;
@@ -469,6 +474,17 @@ export async function charadesGuess(interactionId: string, guess: string) {
   return data as { correct: boolean; word: string };
 }
 
+/** Stamps when a player first opened a challenge — the "stuck" clock. */
+export async function markSeen(assignmentId: string) {
+  try { await rpc<unknown>("mark_seen", { p_assignment: assignmentId }); }
+  catch { /* purely advisory; never block a challenge on it */ }
+}
+
+/** The player's own escape from a challenge that has become impossible. */
+export async function releaseStuck(assignmentId: string) {
+  return rpc<{ ok: boolean }>("release_stuck", { p_assignment: assignmentId });
+}
+
 /** Ranked board. Effective vaults, then elapsed — Bible §1's ordering. */
 export async function fetchLeaderboard(sessionId: string, limit = 100): Promise<LeaderRow[]> {
   const data = await rpc<any>("leaderboard", {
@@ -567,6 +583,18 @@ export async function hostSetDoors(sessionId: string, code: string, open: boolea
     p_code: code,
     p_open: open,
   });
+}
+
+/** Players who have been on one challenge long enough that something is wrong. */
+export async function hostStuck(sessionId: string, code: string) {
+  return rpc<{ vault_no: number; name: string; vault: number; step: number; kind: string; minutes: number }[]>(
+    "host_stuck", { p_session: sessionId, p_code: code });
+}
+
+/** Move a named player past whatever they are jammed on. */
+export async function hostSkipStep(sessionId: string, code: string, vaultNo: number) {
+  return rpc<{ ok: boolean }>("host_skip_step",
+    { p_session: sessionId, p_code: code, p_vault_no: vaultNo });
 }
 
 export async function hostSetPhase(sessionId: string, code: string, phase: string) {

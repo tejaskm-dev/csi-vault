@@ -22,6 +22,7 @@ export function HostControls({ code }: { code: string }) {
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [pins, setPins] = useState<{ vault_no: number; name: string; pin: string }[]>([]);
+  const [stuck, setStuck] = useState<Awaited<ReturnType<typeof api.hostStuck>>>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function HostControls({ code }: { code: string }) {
         if (stop || !s) return;
         setSession(s);
         setStats(await api.hostOverview(s.id, code));
+        if (!stop) setStuck(await api.hostStuck(s.id, code));
       } catch (e) {
         if (!stop) setErr(humanError(e, "Could not read the room state."));
       }
@@ -199,6 +201,40 @@ export function HostControls({ code }: { code: string }) {
           </HostButton>
         )}
       </div>
+
+      {/* ── Who is jammed ───────────────────────────────────────────
+          The number worth watching mid-event. A player sitting on one
+          challenge for ten minutes is not thinking hard — something is broken
+          for them, and they will not come and tell you. */}
+      {stuck.length > 0 && (
+        <div className="mt-4 rounded-btn border-3 border-ink bg-brass p-3">
+          <p className="font-display text-[13px] uppercase tracking-[0.14em] text-ink">
+            Stuck ({stuck.length})
+          </p>
+          <div className="mt-2 max-h-44 space-y-1 overflow-y-auto">
+            {stuck.map((p) => (
+              <div key={p.vault_no} className="flex items-center gap-2 rounded-btn bg-white/70 px-2 py-1.5">
+                <span className="w-7 font-display text-[14px] text-ink">{p.vault_no}</span>
+                <span className="min-w-0 flex-1 truncate font-body text-[11px] font-bold text-ink/70">
+                  {p.name} · vault {p.vault} · {p.kind} · {p.minutes}m
+                </span>
+                <button
+                  type="button"
+                  disabled={busy || !session}
+                  onClick={() => session && act(() => api.hostSkipStep(session.id, code, p.vault_no))}
+                  className="ink rounded-btn bg-red px-2 py-1 font-display text-[10px] uppercase text-white"
+                >
+                  Skip
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 font-body text-[10px] font-semibold leading-snug text-ink/60">
+            Skipping marks the step done and moves them on. Better a generous
+            score than a student stuck watching everyone else play.
+          </p>
+        </div>
+      )}
 
       {/* ── Recovery desk ───────────────────────────────────────────
           For the student who cleared their browser and lost their code. The
