@@ -26,6 +26,9 @@ export function HostControls({ code }: { code: string }) {
   const [errors, setErrors] = useState<Awaited<ReturnType<typeof api.hostErrors>>>([]);
   const [notice, setNotice] = useState("");
   const [killId, setKillId] = useState("");
+  const [dupes, setDupes] = useState<Awaited<ReturnType<typeof api.hostDuplicateNames>>>([]);
+  const [renameNo, setRenameNo] = useState("");
+  const [renameTo, setRenameTo] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export function HostControls({ code }: { code: string }) {
         setStats(await api.hostOverview(s.id, code));
         if (!stop) setStuck(await api.hostStuck(s.id, code));
         if (!stop) setErrors(await api.hostErrors(s.id, code));
+        if (!stop) setDupes(await api.hostDuplicateNames(s.id, code));
       } catch (e) {
         if (!stop) setErr(humanError(e, "Could not read the room state."));
       }
@@ -332,6 +336,53 @@ export function HostControls({ code }: { code: string }) {
           </p>
         </div>
       )}
+
+      {/* ── Rename a player ──────────────────────────────────────────
+          The one moderation tool. A student types something rude, it goes on
+          the projector in front of the whole year, and until now nobody could
+          change it — not the host, and not them. Far likelier to matter on the
+          day than two people sharing a name. */}
+      <div className="mt-4 border-t-3 border-ink/10 pt-4">
+        <span className="font-display text-[13px] uppercase tracking-[0.14em] text-ink/55">
+          Rename a player
+        </span>
+        <div className="mt-2 flex gap-2">
+          <input
+            inputMode="numeric"
+            value={renameNo}
+            onChange={(e) => setRenameNo(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="No."
+            className="ink w-16 rounded-btn bg-paper-deep px-2 py-2 text-center font-display text-[15px] text-ink shadow-ink-sm focus:outline-none"
+          />
+          <input
+            value={renameTo}
+            onChange={(e) => setRenameTo(e.target.value.slice(0, 20))}
+            placeholder="new name"
+            className="ink flex-1 rounded-btn bg-paper-deep px-3 py-2 font-body text-[13px] font-bold text-ink shadow-ink-sm focus:outline-none"
+          />
+          <HostButton
+            tone="brass"
+            disabled={busy || !session || !renameNo || !renameTo.trim()}
+            onClick={() => session && act(async () => {
+              const r = await api.hostRename(session.id, code, parseInt(renameNo, 10), renameTo);
+              setErr(`Renamed #${renameNo}: ${r.from} → ${r.to}`);
+              setRenameNo(""); setRenameTo("");
+            })}
+          >
+            Rename
+          </HostButton>
+        </div>
+
+        {/* Duplicates are allowed on purpose, but worth SEEING — the app shows
+            the vault number beside a shared name, and if two are causing
+            confusion you can rename one here. */}
+        {dupes.length > 0 && (
+          <p className="mt-2 font-body text-[11px] font-semibold leading-snug text-ink/50">
+            Shared names (fine, shown with numbers in-game):{" "}
+            {dupes.map((d) => `${d.name} (#${d.numbers.join(", #")})`).join(" · ")}
+          </p>
+        )}
+      </div>
 
       {/* ── Recovery desk ───────────────────────────────────────────
           For the student who cleared their browser and lost their code. The

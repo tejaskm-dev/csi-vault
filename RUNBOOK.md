@@ -205,7 +205,13 @@ stop playing. If one line shows twenty players, that is your problem.
 player currently stuck on it is released. Get the id from the errors panel or
 by asking a student what the challenge was called.
 
-**4. Stuck list.** Anyone on one challenge for over four minutes, with a skip
+**4. Rename a player.** The one moderation tool. Somebody types something rude
+and it is on the projector in front of the whole year — enter their vault
+number and a new name. Duplicate names are allowed on purpose (sixty
+first-years collide on common ones) and the app shows the vault number beside
+any shared name, so you only need this for content, not clashes.
+
+**5. Stuck list.** Anyone on one challenge for over four minutes, with a skip
 button each. Use it for individuals; use *Remove* when it is the challenge
 rather than the person.
 

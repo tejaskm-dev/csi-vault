@@ -651,6 +651,18 @@ export async function reportError(where: string, message: string) {
   catch { /* nothing sensible to do if even this fails */ }
 }
 
+/** Change a player's name — the only route to fixing a rude one on a projector. */
+export async function hostRename(sessionId: string, code: string, vaultNo: number, name: string) {
+  return rpc<{ ok: boolean; from: string; to: string }>("host_rename",
+    { p_session: sessionId, p_code: code, p_vault_no: vaultNo, p_name: name });
+}
+
+/** Names shared by more than one player, so collisions are visible early. */
+export async function hostDuplicateNames(sessionId: string, code: string) {
+  return rpc<{ name: string; numbers: number[] }[]>("host_duplicate_names",
+    { p_session: sessionId, p_code: code });
+}
+
 export async function hostSetPhase(sessionId: string, code: string, phase: string) {
   const data = await rpc<any>("host_set_phase", {
     p_session: sessionId,
