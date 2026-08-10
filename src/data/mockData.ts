@@ -14,10 +14,13 @@
  * compares the two.
  */
 export type GlyphKey =
-  | 'mountain' | 'search' | 'headphones' | 'dog' | 'penguin' | 'camera'
-  | 'bubble' | 'star' | 'rocket' | 'code' | 'key' | 'shield' | 'terminal'
-  | 'dice' | 'flame' | 'wave' | 'box' | 'circle'
-  | 'apple' | 'banana' | 'grapes' | 'orange';
+  | 'apple' | 'ball' | 'banana' | 'bell' | 'bird' | 'box' | 'bubble'
+  | 'camera' | 'circle' | 'clock' | 'cloud' | 'code' | 'crown' | 'cup'
+  | 'dice' | 'dog' | 'droplet' | 'eye' | 'fish' | 'flag' | 'flame' | 'gear'
+  | 'ghost' | 'grapes' | 'headphones' | 'hexagon' | 'house' | 'key' | 'leaf'
+  | 'lightning' | 'lock' | 'moon' | 'mountain' | 'orange' | 'penguin'
+  | 'robot' | 'rocket' | 'search' | 'shield' | 'star' | 'sun' | 'terminal'
+  | 'tree' | 'triangle' | 'wave' | 'wind';
 
 /**
  * The mechanics, and they fall into two families.
@@ -42,7 +45,9 @@ export type ChallengeType =
   | 'recall'
   | 'photo'
   | 'minigame'
-  | 'charades';
+  | 'charades'
+  | 'duel'
+  | 'compute';
 
 /** Kinds that put a player on their feet. Used for the badge on the tile. */
 export const SOCIAL_TYPES: ReadonlySet<ChallengeType> = new Set<ChallengeType>([
@@ -51,6 +56,7 @@ export const SOCIAL_TYPES: ReadonlySet<ChallengeType> = new Set<ChallengeType>([
   'recall',
   'photo',
   'charades',
+  'duel',
 ]);
 
 export interface ChallengeOption {
@@ -71,6 +77,8 @@ export interface ChallengeExtras {
   seed?: number;
   level?: number;
   letters?: string;
+  /** compute: the personalised sum. */
+  prompt?: string;
   /** tumbler: the dealt combination. */
   combo?: number[];
   mode?: 'colour_trap' | 'impostor' | 'flash' | 'pair';

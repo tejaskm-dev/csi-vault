@@ -17,6 +17,7 @@ import { ExchangeTask } from "../components/challenges/ExchangeTask";
 import { RecallTask } from "../components/challenges/RecallTask";
 import { PhotoTask } from "../components/challenges/PhotoTask";
 import { CharadesTask } from "../components/challenges/CharadesTask";
+import { DuelTask } from "../components/challenges/DuelTask";
 import { Minigame } from "../minigames";
 import { useGame } from "../context/GameContext";
 import { playCorrect, playWrong } from "../lib/sound";
@@ -73,6 +74,7 @@ const OWNS_COMMIT: ReadonlySet<ChallengeType> = new Set<ChallengeType>([
   "photo",
   "minigame",
   "charades",
+  "duel",
 ]);
 
 export function ChallengeScreen() {
@@ -263,7 +265,7 @@ export function ChallengeScreen() {
     );
   }
 
-  const isTextInput = challenge.type === "text_input";
+  const isTextInput = challenge.type === "text_input" || challenge.type === "compute";
   const canSubmit = isTextInput ? textInput.trim().length > 0 : Boolean(selectedId);
   const ownsCommit = OWNS_COMMIT.has(challenge.type);
   /**
@@ -475,6 +477,8 @@ export function ChallengeScreen() {
             <RecallTask key={challenge.assignmentId} {...taskProps} />
           ) : challenge.type === "photo" ? (
             <PhotoTask key={challenge.assignmentId} challenge={challenge} />
+          ) : challenge.type === "duel" ? (
+            <DuelTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "charades" ? (
             <CharadesTask key={challenge.assignmentId} challenge={challenge} />
           ) : challenge.type === "minigame" ? (
@@ -489,6 +493,28 @@ export function ChallengeScreen() {
               busy={busy}
               onSubmit={taskProps.submit}
             />
+          ) : challenge.type === "compute" ? (
+            <div className="flex flex-col gap-4">
+              {/* The sum is dealt per player from their own vault number and
+                  name, so no two answers match and none can be copied. */}
+              <div className="ink rounded-plate bg-brass p-5 text-center shadow-[0_6px_0_0_var(--color-brass-deep)]">
+                <span className="font-body text-[11px] font-bold uppercase tracking-[0.2em] text-ink/60">
+                  Work this out
+                </span>
+                <p className="mt-2 font-body text-[16px] font-bold leading-snug text-ink">
+                  {challenge.payload?.prompt ?? "…"}
+                </p>
+              </div>
+              <input
+                inputMode="numeric"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value.replace(/[^0-9-]/g, "").slice(0, 8))}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                placeholder="YOUR ANSWER"
+                disabled={busy}
+                className="ink w-full rounded-btn bg-white px-6 py-4 text-center font-display text-[26px] text-ink shadow-ink placeholder:text-ink/25 focus:outline-none"
+              />
+            </div>
           ) : isTextInput ? (
             <motion.input
               type="text"
